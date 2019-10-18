@@ -6,6 +6,7 @@ import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import de.tub.dima.scotty.flinkconnector.demo.windowFunctions.SumWindowFunction;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -30,13 +31,18 @@ public class SumScottyJob {
 
         DataStream<String> line = env.readTextFile("EDADS/data/timestamped.csv");
         DataStream<Tuple2<Integer, Integer>> timestamped = line.flatMap(new CreateTuplesFlatMap()) // Create the tuples from the incoming Data
-                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor()).map(a -> new Tuple2<Integer, Integer>(a.f0,a.f1)); // extract the timestamps and add watermarks
+                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor()).map(new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Integer, Integer>>() {
+                    @Override
+                    public Tuple2<Integer, Integer> map(Tuple3<Integer, Integer, Long> value) throws Exception {
+                        return new Tuple2<Integer, Integer>(value.f0,value.f1);
+                    }
+                }); // extract the timestamps and add watermarks
 
         KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Integer>, Tuple2<Integer, Integer>> windowOperator =
                 new KeyedScottyWindowOperator<>(new SumWindowFunction());
 
 // Add multiple windows to the same operator
-        windowOperator.addWindow(new TumblingWindow(WindowMeasure.Time, 1000));
+        windowOperator.addWindow(new TumblingWindow(WindowMeasure.Time, 60000));
 //        windowOperator.addWindow(new SlidingWindow(WindowMeasure.Time, 1000, 5000));
 //        windowOperator.addWindow(new SessionWindow(WindowMeasure.Time,1000));
 
@@ -48,7 +54,12 @@ public class SumScottyJob {
                 .process(windowOperator);
 
 
-        finalSketch.writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        finalSketch.map(new MapFunction<AggregateWindow<Tuple2<Integer, Integer>>, String>() {
+            @Override
+            public String map(AggregateWindow<Tuple2<Integer, Integer>> value) throws Exception {
+                return ""+(value.getStart()-1517499780000L)/60000+" --- "+(value.getEnd()-1517499780000L)/60000+" := "+ value.getAggValues().get(0);
+            }
+        }).writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("Flink Streaming Java API Skeleton");
     }

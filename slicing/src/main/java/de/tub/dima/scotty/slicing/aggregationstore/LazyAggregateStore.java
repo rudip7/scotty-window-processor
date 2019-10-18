@@ -61,6 +61,10 @@ public class LazyAggregateStore<InputType> implements AggregationStore<InputType
 
     @Override
     public void insertValueToSlice(int index, InputType element, long ts) {
+        //TODO: Correct check!!!!!
+        if (index == -1){
+            index = 0;
+        }
         this.getSlice(index).addElement(element, ts);
     }
 
