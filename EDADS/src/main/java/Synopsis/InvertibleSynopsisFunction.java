@@ -14,6 +14,7 @@ public class InvertibleSynopsisFunction<Input> implements InvertibleAggregateFun
     private int keyField;
     private Object[] constructorParam;
     private Constructor<? extends InvertibleSynopsis> constructor;
+    
 
     public InvertibleSynopsisFunction(int keyField, Class<? extends InvertibleSynopsis> synopsisClass, Object... constructorParam){
         this.keyField = keyField;

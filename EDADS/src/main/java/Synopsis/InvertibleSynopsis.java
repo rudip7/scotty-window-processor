@@ -1,6 +1,8 @@
 package Synopsis;
 
-public interface InvertibleSynopsis<T> extends Synopsis<T> {
+import java.io.Serializable;
+
+public interface InvertibleSynopsis<T> extends Synopsis<T>, Serializable {
     InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove);
 
     void decrement(T toDecrement);

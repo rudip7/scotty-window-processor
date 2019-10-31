@@ -1,10 +1,12 @@
 package Jobs;
 
 import Old.ScottyCountMinSketch;
-import Sketches.*;
+import Sketches.CountMinSketch;
 import Source.DemoSource;
+import Synopsis.BuildSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.TumblingWindow;
+import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -12,7 +14,6 @@ import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -22,7 +23,7 @@ import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
 
-public class ScottyJob {
+public class BuildSynopsisJob {
     public static void main(String[] args) throws Exception {
 
 
@@ -30,30 +31,14 @@ public class ScottyJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-//        DataStream<String> line = env.readTextFile("EDADS/data/timestamped.csv").setParallelism(1);
-//        DataStream<Tuple3<Integer, Integer, Long>> timestamped = line.flatMap(new CreateTuplesFlatMap()) // Create the tuples from the incoming Data
-//                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor()); // extract the timestamps and add watermarks
         DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new DemoSource());
-        KeyedScottyWindowOperator<Tuple, Tuple3<Integer, Integer, Long>, CountMinSketch<Tuple3<Integer, Integer, Long>>> windowOperator =
-                new KeyedScottyWindowOperator<>(new ScottyCountMinSketch<>(10,10,1));
 
-// Add multiple windows to the same operator
-        windowOperator.addWindow(new TumblingWindow(WindowMeasure.Time, 5000));
-//        windowOperator.addWindow(new SlidingWindow(WindowMeasure.Time, 1000, 5000));
-//        windowOperator.addWindow(new SessionWindow(WindowMeasure.Time,1000));
+        Window[] windows = {new TumblingWindow(WindowMeasure.Time, 5000)};
+        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 
-// Add count based window
-//        windowOperator.addWindow(new TumblingWindow(WindowMeasure.Count, 1000));
-
-
-// Add operator to Flink job
-        SingleOutputStreamOperator<AggregateWindow<CountMinSketch<Tuple3<Integer, Integer, Long>>>> finalSketch = timestamped.keyBy(0)
-                .process(windowOperator);
-
-
-        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch<Tuple3<Integer, Integer, Long>>>, String>() {
+        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
             @Override
-            public void flatMap(AggregateWindow<CountMinSketch<Tuple3<Integer, Integer, Long>>> value, Collector<String> out) throws Exception {
+            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
                 for (CountMinSketch w: value.getAggValues()){
                     out.collect(w.toString());
                 }

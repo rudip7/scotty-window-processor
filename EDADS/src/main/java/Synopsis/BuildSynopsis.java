@@ -196,7 +196,7 @@ public final class BuildSynopsis {
         return reduce;
     }
 
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindowsOld(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Object... parameters) {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
             KeyedStream<Tuple2<Integer, SampleElement<T>>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>()).map(new AddParallelismTuple<>()).keyBy(0);
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, SampleElement<T>>, S> processingFunction =
@@ -218,8 +218,30 @@ public final class BuildSynopsis {
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction).flatMap(new MergePreAggregates());
+            return keyedStream.process(processingFunction)
+                                .flatMap(new MergePreAggregates())
+                                .setParallelism(1);
         }
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Object... parameters) {
+
+            KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismTuple<>()).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
+            if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
+                processingFunction =
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, synopsisClass, parameters));
+            } else {
+                processingFunction =
+                        new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, synopsisClass, parameters));
+            }
+            for (int i = 0; i < windows.length; i++) {
+                processingFunction.addWindow(windows[i]);
+            }
+            return keyedStream.process(processingFunction)
+                    .flatMap(new MergePreAggregates())
+                    .setParallelism(1);
+
     }
 
 
@@ -335,11 +357,11 @@ public final class BuildSynopsis {
             if (synopsisAggregateWindow == null) {
                 openWindows.put(windowID, new Tuple2<>(1, value));
             } else if (synopsisAggregateWindow.f0 == parallelismKeys - 1) {
-                synopsisAggregateWindow.f1.getAggValues().addAll(value.getAggValues());
+                synopsisAggregateWindow.f1.getAggValues().get(0).merge(value.getAggValues().get(0));
                 out.collect(synopsisAggregateWindow.f1);
                 openWindows.remove(windowID);
             } else {
-                synopsisAggregateWindow.f1.getAggValues().addAll(value.getAggValues());
+                synopsisAggregateWindow.f1.getAggValues().get(0).merge(value.getAggValues().get(0));
                 synopsisAggregateWindow.f0 += 1;
             }
             state.update(openWindows);
