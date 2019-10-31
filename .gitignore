@@ -2,3 +2,33 @@
 *.idea
 *target
 *.class
+
+EDADS/data/
+.idea/
+EDADS/output/
+target/maven-archiver/
+target/maven-status/
+*.iml
+
+# Compiled source #
+###################
+*.com
+*.dll
+*.exe
+*.o
+*.so
+
+*.so
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
