@@ -4,6 +4,7 @@ import Old.ScottyCountMinSketch;
 import Sketches.CountMinSketch;
 import Source.DemoSource;
 import Synopsis.BuildSynopsis;
+import Synopsis.InvertibleSynopsisFunction;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.TumblingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
@@ -11,10 +12,12 @@ import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
@@ -36,12 +39,22 @@ public class BuildSynopsisJob {
         Window[] windows = {new TumblingWindow(WindowMeasure.Time, 5000)};
         SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 
+//        KeyedStream<Tuple2<Integer, Tuple3<Integer, Integer, Long>>, Tuple> keyedStream = timestamped.map(new BuildSynopsis.AddParallelismTuple<>()).keyBy(0);
+//        KeyedScottyWindowOperator windowOperator = new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(0, CountMinSketch.class, 10, 10, 1L));
+//
+//        windowOperator.addWindow(new TumblingWindow(WindowMeasure.Time, 5000));
+//
+//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = keyedStream
+//                .process(windowOperator);
+
         finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
             @Override
             public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
-                for (CountMinSketch w: value.getAggValues()){
-                    out.collect(w.toString());
-                }
+                String result = value.getStart()+" ---> "+value.getEnd()+"\n\n"+value.getAggValues().get(0).toString();
+                out.collect(result);
+//                for (CountMinSketch w: value.getAggValues()){
+//                    out.collect(w.toString());
+//                }
             }
         })
 

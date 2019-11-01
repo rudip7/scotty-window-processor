@@ -310,4 +310,9 @@ public class BarSplittingHistogram implements Synopsis, Serializable {
         Log.error("method not implemented");
     }
 
+    @Override
+    public Synopsis cloneIt() {
+        return null;
+    }
+
 }

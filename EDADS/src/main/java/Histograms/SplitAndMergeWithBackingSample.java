@@ -263,4 +263,9 @@ public class SplitAndMergeWithBackingSample implements Synopsis, Serializable {
     private void readObjectNoData() throws ObjectStreamException{
         Log.error("method not implemented");
     }
+
+    @Override
+    public Synopsis cloneIt() {
+        return null;
+    }
 }

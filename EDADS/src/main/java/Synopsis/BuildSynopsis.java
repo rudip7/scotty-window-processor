@@ -204,7 +204,7 @@ public final class BuildSynopsis {
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction).flatMap(new MergePreAggregates());
+            return keyedStream.process(processingFunction).flatMap(new MergePreAggregates(8));
         } else {
             KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismTuple<>()).keyBy(0);
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
@@ -219,7 +219,7 @@ public final class BuildSynopsis {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction)
-                                .flatMap(new MergePreAggregates())
+                                .flatMap(new MergePreAggregates(8))
                                 .setParallelism(1);
         }
     }
@@ -239,7 +239,7 @@ public final class BuildSynopsis {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
+                    .flatMap(new MergePreAggregates(8))
                     .setParallelism(1);
 
     }
@@ -332,6 +332,14 @@ public final class BuildSynopsis {
             }
             return false;
         }
+
+        @Override
+        public int hashCode()
+        {
+            int result = (int) (start ^ (start >>> 32));
+            result = 31 * result + (int) (end ^ (end >>> 32));
+            return result;
+        }
     }
 
 
@@ -340,13 +348,13 @@ public final class BuildSynopsis {
         WindowState state;
         int parallelismKeys;
 
-        public MergePreAggregates() {
-            this.parallelismKeys = this.getRuntimeContext().getMaxNumberOfParallelSubtasks();
+        public MergePreAggregates(int parallelismKeys) {
+            this.parallelismKeys = parallelismKeys;
         }
 
         @Override
         public void open(Configuration parameters) throws Exception {
-            state = new WindowState(getRuntimeContext().getMaxNumberOfParallelSubtasks());
+            state = new WindowState(parallelismKeys);
         }
 
         @Override

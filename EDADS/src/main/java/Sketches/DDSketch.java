@@ -259,6 +259,11 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
     }
 
     @Override
+    public InvertibleSynopsis cloneIt() {
+        return null;
+    }
+
+    @Override
     public void decrement(T toDecrement) {
         double elemValue = toDecrement.doubleValue();
         checkValueTrackable(elemValue);

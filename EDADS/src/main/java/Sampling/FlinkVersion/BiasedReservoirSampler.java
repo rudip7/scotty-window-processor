@@ -125,6 +125,11 @@ public class BiasedReservoirSampler<T> implements Synopsis<T>, Serializable {
         }
     }
 
+    @Override
+    public Synopsis cloneIt() {
+        return null;
+    }
+
 
     @Override
     public String toString(){

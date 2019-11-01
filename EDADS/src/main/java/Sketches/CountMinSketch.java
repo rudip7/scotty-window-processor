@@ -158,13 +158,22 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     }
 
     @Override
-    public CountMinSketch clone() {
+    public InvertibleSynopsis cloneIt() {
         CountMinSketch cm = new CountMinSketch(width, height, seed);
         cm.setElementsProcessed(this.elementsProcessed);
         cm.setArray(this.array);
 
         return cm;
     }
+
+//    @Override
+//    public CountMinSketch clone() {
+//        CountMinSketch cm = new CountMinSketch(width, height, seed);
+//        cm.setElementsProcessed(this.elementsProcessed);
+//        cm.setArray(this.array);
+//
+//        return cm;
+//    }
 
     @Override
     public void decrement(T toDecrement) {

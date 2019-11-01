@@ -131,4 +131,9 @@ public class BiasedReservoirSampler<T> implements SamplerWithTimestamps<T>, Seri
         s += "\n";
         return s;
     }
+
+    @Override
+    public Synopsis cloneIt() {
+        return null;
+    }
 }

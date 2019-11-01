@@ -110,6 +110,11 @@ public class BloomFilter<T> implements Synopsis<T>, Serializable {
     }
 
     @Override
+    public Synopsis cloneIt() {
+        return null;
+    }
+
+    @Override
     public String toString() {
         String sketch = new String();
         sketch += "Functions\n";

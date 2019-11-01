@@ -98,4 +98,9 @@ public class FiFoSampler<T> implements Synopsis<T>, Serializable {
         s += "\n";
         return s;
     }
+
+    @Override
+    public Synopsis cloneIt() {
+        return null;
+    }
 }

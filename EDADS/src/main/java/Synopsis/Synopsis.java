@@ -10,7 +10,7 @@ import org.apache.flink.annotation.Internal;
  * @author Rudi Poepsel Lemaitre
  */
 @Internal
-public interface Synopsis<T> extends java.io.Serializable{
+public interface Synopsis<T> extends java.io.Serializable, Cloneable{
 
 	/**
 	 * Update the Synopsis structure with a new incoming element.
@@ -27,5 +27,7 @@ public interface Synopsis<T> extends java.io.Serializable{
 	 * @throws Exception
 	 */
 	Synopsis<T> merge(Synopsis<T> other);
+
+	Synopsis<T> cloneIt();
 
 }
