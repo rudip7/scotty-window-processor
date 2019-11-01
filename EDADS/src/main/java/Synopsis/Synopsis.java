@@ -28,6 +28,4 @@ public interface Synopsis<T> extends java.io.Serializable, Cloneable{
 	 */
 	Synopsis<T> merge(Synopsis<T> other);
 
-	Synopsis<T> cloneIt();
-
 }

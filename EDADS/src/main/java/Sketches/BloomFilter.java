@@ -29,10 +29,10 @@ public class BloomFilter<T> implements Synopsis<T>, Serializable {
     /**
      * Create a new Bloom Filter.
      *
-     * @param maxNumElements Expected number of elements
+     * @param maxNumElements Expected number of distinct elements
      * @param numberBits     Desired size of the container in bits
      **/
-    public BloomFilter(Integer maxNumElements, Integer numberBits, Integer seed) {
+    public BloomFilter(Integer maxNumElements, Integer numberBits, Long seed) {
         this.numberBits = numberBits;
         this.nHashFunctions = (int) Math.round(LN2 * numberBits / maxNumElements);
         if (nHashFunctions <= 0) nHashFunctions = 1;
@@ -109,10 +109,6 @@ public class BloomFilter<T> implements Synopsis<T>, Serializable {
         return this;
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 
     @Override
     public String toString() {

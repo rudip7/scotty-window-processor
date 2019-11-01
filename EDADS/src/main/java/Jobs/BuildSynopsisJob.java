@@ -1,11 +1,15 @@
 package Jobs;
 
 import Old.ScottyCountMinSketch;
+import Sampling.BiasedReservoirSampler;
+import Sampling.ReservoirSampler;
+import Sketches.BloomFilter;
 import Sketches.CountMinSketch;
 import Source.DemoSource;
 import Synopsis.BuildSynopsis;
 import Synopsis.InvertibleSynopsisFunction;
 import de.tub.dima.scotty.core.AggregateWindow;
+import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.TumblingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
@@ -36,8 +40,11 @@ public class BuildSynopsisJob {
 
         DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new DemoSource());
 
-        Window[] windows = {new TumblingWindow(WindowMeasure.Time, 5000)};
+        Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
         SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+//        BuildSynopsis.setParallelismKeys(env.getParallelism()*2);
+//        SingleOutputStreamOperator<AggregateWindow<BloomFilter>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BloomFilter.class, 25, 20, 1L);
+//        SingleOutputStreamOperator<AggregateWindow<BiasedReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BiasedReservoirSampler.class, 20);
 
 //        KeyedStream<Tuple2<Integer, Tuple3<Integer, Integer, Long>>, Tuple> keyedStream = timestamped.map(new BuildSynopsis.AddParallelismTuple<>()).keyBy(0);
 //        KeyedScottyWindowOperator windowOperator = new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(0, CountMinSketch.class, 10, 10, 1L));
@@ -56,9 +63,9 @@ public class BuildSynopsisJob {
 //                    out.collect(w.toString());
 //                }
             }
-        })
+        }).print();
 
-        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE);
+//        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("Flink Streaming Java API Skeleton");
     }

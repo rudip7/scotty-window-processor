@@ -157,15 +157,6 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
         throw new IllegalArgumentException("Sketches to merge have to be the same size and hash Functions");
     }
 
-    @Override
-    public InvertibleSynopsis cloneIt() {
-        CountMinSketch cm = new CountMinSketch(width, height, seed);
-        cm.setElementsProcessed(this.elementsProcessed);
-        cm.setArray(this.array);
-
-        return cm;
-    }
-
 //    @Override
 //    public CountMinSketch clone() {
 //        CountMinSketch cm = new CountMinSketch(width, height, seed);

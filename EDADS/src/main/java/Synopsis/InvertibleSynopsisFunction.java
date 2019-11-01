@@ -30,26 +30,15 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
         this.synopsisClass = synopsisClass;
     }
 
-//    public InvertibleSynopsisFunction(Class<? extends InvertibleSynopsis> synopsisClass, Object... constructorParam){
-//        this.keyField = -1;
-//        //this.constructorParam = constructorParam;
-//        Class<?>[] parameterClasses = new Class[constructorParam.length];
-//        for (int i = 0; i < constructorParam.length; i++) {
-//            parameterClasses[i] = constructorParam[i].getClass();
-//        }
-//        try {
-//            Constructor<? extends InvertibleSynopsis> constructor = synopsisClass.getConstructor(parameterClasses);
-//            emptySynopsis = constructor.newInstance(constructorParam);
-//        } catch (NoSuchMethodException e) {
-//            throw new IllegalArgumentException("Synopsis parameters didn't match any constructor");
-//        } catch (InstantiationException e) {
-//            e.printStackTrace();
-//        } catch (IllegalAccessException e) {
-//            e.printStackTrace();
-//        } catch (InvocationTargetException e) {
-//            e.printStackTrace();
-//        }
-//    }
+    public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam){
+        this.keyField = -1;
+        this.constructorParam = constructorParam;
+        this.parameterClasses = new Class[constructorParam.length];
+        for (int i = 0; i < constructorParam.length; i++) {
+            parameterClasses[i] = constructorParam[i].getClass();
+        }
+        this.synopsisClass = synopsisClass;
+    }
 
     public InvertibleSynopsis createAggregate() {
         try {

@@ -136,10 +136,6 @@ public class HyperLogLogSketch<T> implements Synopsis<T>, Serializable {
         return result;
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 
     /**
      * @param logSpaceSize the logarithm of the number of registers in the HLL structure.

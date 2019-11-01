@@ -10,6 +10,4 @@ public interface InvertibleSynopsis<T> extends Synopsis<T>, Serializable {
     @Override
     InvertibleSynopsis<T> merge(Synopsis<T> other);
 
-    @Override
-    InvertibleSynopsis<T> cloneIt();
 }

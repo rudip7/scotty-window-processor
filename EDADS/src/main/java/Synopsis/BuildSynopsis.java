@@ -33,6 +33,12 @@ import java.util.HashMap;
  */
 public final class BuildSynopsis {
 
+    static int parallelismKeys = -1;
+
+    public static void setParallelismKeys(int newParallelismKeys) {
+        parallelismKeys = newParallelismKeys;
+    }
+
     /**
      * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
      * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
@@ -179,7 +185,7 @@ public final class BuildSynopsis {
     public static <T, S extends Synopsis> SingleOutputStreamOperator<S> sampleTimeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Object... parameters) {
         SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
         SingleOutputStreamOperator reduce1 = inputStream
-                .process(new ConvertToSample())
+                .process(new ConvertToSample(keyField))
                 .assignTimestampsAndWatermarks(new SampleTimeStampExtractor())
                 .map(new AddParallelismTuple())
                 .keyBy(0)
@@ -196,15 +202,18 @@ public final class BuildSynopsis {
         return reduce;
     }
 
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindowsOld(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Object... parameters) {
+
+    public static <T extends Tuple, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Object... parameters) {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
-            KeyedStream<Tuple2<Integer, SampleElement<T>>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>()).map(new AddParallelismTuple<>()).keyBy(0);
-            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, SampleElement<T>>, S> processingFunction =
+            KeyedStream<Tuple2<Integer, SampleElement>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(keyField)).map(new AddParallelismTuple<>()).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, SampleElement>, S> processingFunction =
                     new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, synopsisClass, parameters));
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction).flatMap(new MergePreAggregates(8));
+            return keyedStream.process(processingFunction)
+                    .flatMap(new MergePreAggregates())
+                    .setParallelism(1);
         } else {
             KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismTuple<>()).keyBy(0);
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
@@ -219,29 +228,40 @@ public final class BuildSynopsis {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction)
-                                .flatMap(new MergePreAggregates(8))
-                                .setParallelism(1);
+                    .flatMap(new MergePreAggregates())
+                    .setParallelism(1);
         }
     }
 
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Object... parameters) {
 
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, Class<S> synopsisClass, Object... parameters) {
+        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
+            KeyedStream<Tuple2<Integer, SampleElement>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(-1)).map(new AddParallelismTuple<>()).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, SampleElement>, S> processingFunction =
+                    new KeyedScottyWindowOperator<>(new SynopsisFunction(synopsisClass, parameters));
+            for (int i = 0; i < windows.length; i++) {
+                processingFunction.addWindow(windows[i]);
+            }
+            return keyedStream.process(processingFunction)
+                    .flatMap(new MergePreAggregates())
+                    .setParallelism(1);
+        } else {
             KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismTuple<>()).keyBy(0);
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
             if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(synopsisClass, parameters));
             } else {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new SynopsisFunction(synopsisClass, parameters));
             }
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates(8))
+                    .flatMap(new MergePreAggregates())
                     .setParallelism(1);
-
+        }
     }
 
 
@@ -305,7 +325,7 @@ public final class BuildSynopsis {
         }
 
         @Override
-        public int compareTo( Object o) {
+        public int compareTo(Object o) {
             if (o instanceof WindowID) {
                 if (((WindowID) o).start > this.start) {
                     return -1;
@@ -334,8 +354,7 @@ public final class BuildSynopsis {
         }
 
         @Override
-        public int hashCode()
-        {
+        public int hashCode() {
             int result = (int) (start ^ (start >>> 32));
             result = 31 * result + (int) (end ^ (end >>> 32));
             return result;
@@ -346,11 +365,6 @@ public final class BuildSynopsis {
     public static class MergePreAggregates<S extends Synopsis> extends RichFlatMapFunction<AggregateWindow<S>, AggregateWindow<S>> {
 
         WindowState state;
-        int parallelismKeys;
-
-        public MergePreAggregates(int parallelismKeys) {
-            this.parallelismKeys = parallelismKeys;
-        }
 
         @Override
         public void open(Configuration parameters) throws Exception {
@@ -388,6 +402,9 @@ public final class BuildSynopsis {
 
         @Override
         public void open(Configuration parameters) throws Exception {
+            if (parallelismKeys < 1) {
+                setParallelismKeys(this.getRuntimeContext().getNumberOfParallelSubtasks());
+            }
             state = new IntegerState();
         }
 
@@ -396,7 +413,7 @@ public final class BuildSynopsis {
             Tuple2 newTuple = new Tuple2<Integer, T0>();
             int currentNode = state.value();
             int next = currentNode + 1;
-            next = next % this.getRuntimeContext().getNumberOfParallelSubtasks();
+            next = next % parallelismKeys;
             state.update(next);
 
             newTuple.setField(currentNode, 0);
@@ -408,12 +425,22 @@ public final class BuildSynopsis {
 
 
     public static class ConvertToSample<T>
-            extends ProcessFunction<T, SampleElement<T>> {
+            extends ProcessFunction<T, SampleElement> {
+        private int keyField;
+
+        public ConvertToSample(int keyField) {
+            this.keyField = keyField;
+        }
 
         @Override
-        public void processElement(T value, Context ctx, Collector<SampleElement<T>> out) throws Exception {
-            SampleElement<T> sample = new SampleElement<>(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
-            out.collect(sample);
+        public void processElement(T value, Context ctx, Collector<SampleElement> out) throws Exception {
+            if (keyField >= 0 && value instanceof Tuple) {
+                SampleElement sample = new SampleElement<>(((Tuple) value).getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
+                out.collect(sample);
+            } else {
+                SampleElement<T> sample = new SampleElement<>(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
+                out.collect(sample);
+            }
         }
     }
 

@@ -130,8 +130,4 @@ public class EquiWidthHistogram<T extends Number> implements Synopsis<T> {
         return s + "\n\n";
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 }

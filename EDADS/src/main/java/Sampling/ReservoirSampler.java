@@ -208,8 +208,4 @@ public class ReservoirSampler<T> implements Synopsis<T>, Serializable {
         return s;
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 }

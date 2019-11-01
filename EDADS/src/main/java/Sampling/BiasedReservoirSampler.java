@@ -50,7 +50,7 @@ public class BiasedReservoirSampler<T> implements SamplerWithTimestamps<T>, Seri
      */
     @Override
     public void update(SampleElement element) {
-        if (latestPositions.firstKey() < element.getTimeStamp()) {
+        if (latestPositions.isEmpty() || latestPositions.firstKey() < element.getTimeStamp()) {
             if (actualSize < sampleSize){
                 sample[actualSize] = element;
                 latestPositions.put(element.getTimeStamp(), actualSize);
@@ -132,8 +132,4 @@ public class BiasedReservoirSampler<T> implements SamplerWithTimestamps<T>, Seri
         return s;
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 }

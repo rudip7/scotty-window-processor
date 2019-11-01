@@ -264,8 +264,4 @@ public class SplitAndMergeWithBackingSample implements Synopsis, Serializable {
         Log.error("method not implemented");
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 }

@@ -98,8 +98,4 @@ public class FiFoSampler<T> implements SamplerWithTimestamps<T>, Serializable {
         return s;
     }
 
-    @Override
-    public Synopsis cloneIt() {
-        return null;
-    }
 }
