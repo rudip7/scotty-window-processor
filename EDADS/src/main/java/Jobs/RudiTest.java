@@ -1,7 +1,7 @@
 package Jobs;
 
-import Sketches.DDSketch;
-import Synopsis.BuildSynopsis;
+import Synopsis.Sketches.DDSketch;
+import FlinkScottyConnector.BuildSynopsis;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem;

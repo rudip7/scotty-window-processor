@@ -1,7 +1,7 @@
 package Jobs;
 
-import Synopsis.BuildSynopsis;
-import Sketches.CountMinSketch;
+import FlinkScottyConnector.BuildSynopsis;
+import Synopsis.Sketches.CountMinSketch;
 import org.apache.flink.api.common.functions.*;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem;

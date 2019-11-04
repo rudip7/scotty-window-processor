@@ -1,7 +1,6 @@
 package Tests;
 
-import Synopsis.Histograms.BarSplittingHistogram;
-import Synopsis.Histograms.EquiDepthHistogram;
+import Synopsis.Sketches.FastAMS;
 import FlinkScottyConnector.BuildSynopsis;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -18,7 +17,7 @@ import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
 
-public class BashHistogramTest {
+public class FastAMSTest {
     public static void main(String[] args) throws Exception {
 
 
@@ -28,35 +27,32 @@ public class BashHistogramTest {
 
         int keyField = 0;
 
-        Integer numFinalBuckets = 27;
-        Integer precision = 5;
+        Integer width = 64;
+        Integer height = 32;
+        Long seed = 11l;
 
-        Object[] parameters = new Object[]{precision, numFinalBuckets};
-        Class<BarSplittingHistogram> sketchClass = BarSplittingHistogram.class;
+        Object[] parameters = new Object[]{width, height, seed};
+        Class<FastAMS> sketchClass = FastAMS.class;
 
         Time windowTime = Time.minutes(1);
 
         DataStream<String> line = env.readTextFile("data/timestamped.csv");
-        DataStream<Tuple3<Integer, Integer, Long>> timestamped = line.flatMap(new CreateTuplesFlatMap()) // Create the tuples from the incoming Data
-                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor()); // extract the timestamps and add watermarks
+        DataStream<Tuple3<Integer, Integer, Long>> timestamped = line.flatMap(new BashHistogramTest.CreateTuplesFlatMap()) // Create the tuples from the incoming Data
+                .assignTimestampsAndWatermarks(new BashHistogramTest.CustomTimeStampExtractor()); // extract the timestamps and add watermarks
 
 
-        SingleOutputStreamOperator<BarSplittingHistogram> bash = BuildSynopsis.timeBased(timestamped, windowTime, keyField, sketchClass, parameters);
+        SingleOutputStreamOperator<FastAMS> fastAMS = BuildSynopsis.timeBased(timestamped, windowTime, keyField, sketchClass, parameters);
 
-        bash.writeAsText("output/BASHHistogram.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        fastAMS.writeAsText("output/fastAMS.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
-        SingleOutputStreamOperator<EquiDepthHistogram> equiDepthHistograms = bash.map(b -> b.buildEquiDepthHistogram());
-
-        equiDepthHistograms.writeAsText("output/EquiDepth.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
-
-        DataStream<Double> queryResult = equiDepthHistograms.map(new MapFunction<EquiDepthHistogram, Double>() {
+        DataStream<Long> queryResult = fastAMS.map(new MapFunction<FastAMS, Long>() {
             @Override
-            public Double map(EquiDepthHistogram hist) throws Exception {
-                return hist.rangeQuery(2d, 16d);
+            public Long map(FastAMS sketch) throws Exception {
+                return sketch.estimateF2();
             }
         });
 
-        queryResult.writeAsText("output/EquiDepthtHistogramQueryOutput.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        queryResult.writeAsText("output/FastAMS_queryResult.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("Flink Streaming Java API Skeleton");
     }

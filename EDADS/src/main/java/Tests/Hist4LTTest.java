@@ -1,6 +1,6 @@
 package Tests;
 
-import Histograms.RealValuedBucket4LT;
+import Synopsis.Histograms.RealValuedBucket4LT;
 
 public class Hist4LTTest {
 

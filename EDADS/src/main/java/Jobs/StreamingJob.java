@@ -19,9 +19,9 @@
 package Jobs;
 
 
-import Synopsis.BuildSynopsis;
+import FlinkScottyConnector.BuildSynopsis;
 
-import Sketches.CountMinSketch;
+import Synopsis.Sketches.CountMinSketch;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
