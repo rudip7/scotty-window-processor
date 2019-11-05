@@ -1,6 +1,7 @@
 package Synopsis.Sketches;
 
 import Synopsis.Synopsis;
+import Synopsis.CommutativeSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.util.ArrayList;
  * @param <T> the type of elements maintained by this sketch
  * @author Rudi Poepsel Lemaitre
  */
-public class CuckooFilter<T> implements Synopsis<T>, Serializable {
+public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
     private int bucketSize;
     private ArrayList<Byte> buckets[];
     private int maxNumKicks = 500;

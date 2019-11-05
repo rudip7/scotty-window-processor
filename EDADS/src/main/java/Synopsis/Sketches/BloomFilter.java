@@ -2,6 +2,7 @@ package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.PairwiseIndependentHashFunctions;
 import Synopsis.Synopsis;
+import Synopsis.CommutativeSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -18,7 +19,7 @@ import java.util.BitSet;
  *
  * @author Rudi Poepsel Lemaitre
  */
-public class BloomFilter<T> implements Synopsis<T>, Serializable {
+public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
     private BitSet hashmap;
     private int nHashFunctions;
     private int numberBits;

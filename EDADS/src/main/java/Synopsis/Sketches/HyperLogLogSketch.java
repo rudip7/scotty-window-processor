@@ -2,6 +2,7 @@ package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.PairwiseIndependentHashFunctions;
 import Synopsis.Synopsis;
+import Synopsis.CommutativeSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -16,7 +17,7 @@ import java.io.Serializable;
  *
  * @author Joscha von Hein
  */
-public class HyperLogLogSketch<T> implements Synopsis<T>, Serializable {
+public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializable {
 
     // TODO: write method / constructor which selects the logRegNum according to estimated error or available memory
     // TODO: implement the Sparse Representation as given in the Google Paper!

@@ -1,8 +1,7 @@
 package FlinkScottyConnector;
 
+import Synopsis.CommutativeSynopsis;
 import Synopsis.InvertibleSynopsis;
-import Synopsis.Synopsis;
-import de.tub.dima.scotty.core.windowFunction.AggregateFunction;
 import de.tub.dima.scotty.core.windowFunction.CommutativeAggregateFunction;
 import de.tub.dima.scotty.core.windowFunction.InvertibleAggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -15,13 +14,14 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFunction<Tuple2<Integer,Input>, Synopsis, Synopsis>, Serializable {
+public class CommutativeSynopsisFunction<Input,T extends CommutativeSynopsis> implements CommutativeAggregateFunction<Tuple2<Integer,Input>, CommutativeSynopsis, CommutativeSynopsis>, Serializable {
     private int keyField;
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
 
-    public SynopsisFunction(int keyField, Class<T> synopsisClass, Object[] constructorParam){
+
+    public CommutativeSynopsisFunction(int keyField, Class<T> synopsisClass, Object... constructorParam){
         this.keyField = keyField;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -31,7 +31,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
         this.synopsisClass = synopsisClass;
     }
 
-    public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam){
+    public CommutativeSynopsisFunction(Class<T> synopsisClass, Object... constructorParam){
         this.keyField = -1;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -41,7 +41,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
         this.synopsisClass = synopsisClass;
     }
 
-    public Synopsis createAggregate() {
+    public CommutativeSynopsis createAggregate() {
         try {
             Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
             return constructor.newInstance(constructorParam);
@@ -59,9 +59,10 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
         }
     }
 
+
     @Override
-    public Synopsis lift(Tuple2<Integer,Input> inputTuple) {
-        Synopsis partialAggregate = createAggregate();
+    public CommutativeSynopsis lift(Tuple2<Integer,Input> inputTuple) {
+        CommutativeSynopsis partialAggregate = createAggregate();
         if(inputTuple.f1 instanceof Tuple && keyField != -1){
             Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
             partialAggregate.update(field);
@@ -72,7 +73,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis combine(Synopsis input, Synopsis partialAggregate) {
+    public CommutativeSynopsis combine(CommutativeSynopsis input, CommutativeSynopsis partialAggregate) {
         try {
             return input.merge(partialAggregate);
         } catch (Exception e) {
@@ -82,7 +83,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis liftAndCombine(Synopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
+    public CommutativeSynopsis liftAndCombine(CommutativeSynopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
         if(inputTuple.f1 instanceof Tuple && keyField != -1){
             Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
             partialAggregate.update(field);
@@ -93,8 +94,8 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis lower(Synopsis inputInvertibleSynopsis) {
-        return inputInvertibleSynopsis;
+    public CommutativeSynopsis lower(CommutativeSynopsis inputCommutativeSynopsis) {
+        return inputCommutativeSynopsis;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
@@ -126,4 +127,6 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     private void readObjectNoData() throws ObjectStreamException {
         System.out.println("readObjectNoData() called - should give an exception");
     }
+
+
 }

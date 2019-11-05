@@ -1,5 +1,6 @@
 package Synopsis.Sampling;
 
+import Synopsis.CommutativeSynopsis;
 import Synopsis.Synopsis;
 import org.apache.flink.util.XORShiftRandom;
 
@@ -16,7 +17,7 @@ import java.util.ArrayList;
  *
  * @author Rudi Poepsel Lemaitre
  */
-public class ReservoirSampler<T> implements Synopsis<T>, Serializable {
+public class ReservoirSampler<T> implements CommutativeSynopsis<T>, Serializable {
     private T sample[];
     private int sampleSize;
     private XORShiftRandom rand;
