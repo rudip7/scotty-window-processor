@@ -1,5 +1,7 @@
 package Synopsis.Sketches.HashFunctions;
 
+import org.apache.flink.util.XORShiftRandom;
+
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -11,25 +13,22 @@ import java.util.BitSet;
  * @author joschavonhein
  */
 public class EH3_HashFunction implements Serializable {
-    private BitSet seed;
-    private byte n; // input length in bits
-
-    public BitSet getSeed() {
-        return seed;
-    }
-
-    public byte getN() {
-        return n;
-    }
+    private long[] seeds;
+    private int height;
 
     /**
-     *
-     * @param seed  has to have n+1 bits
-     * @param n     input length in bits
+     * @param seed      seed for the random number generator
+     * @param height    the amount of eh3 hash_functions
      */
-    public EH3_HashFunction(BitSet seed, byte n) {
-        this.seed = seed;
-        this.n = n;
+    public EH3_HashFunction(Long seed, int height) {
+        this.height = height;
+
+        // initialize seeds
+        XORShiftRandom random = new XORShiftRandom(seed);
+        for (int i = 0; i < height; i++) {
+            seeds[i] = random.nextLong();
+            seeds[i] >>>= 31; // make sure the seeds are exactly 32 + 1 bits long
+        }
     }
 
     /**
@@ -38,42 +37,37 @@ public class EH3_HashFunction implements Serializable {
      * @param input bits
      * @return  true =1 , false = 0
      */
-    public boolean rand(BitSet input){
-        boolean hash = h(input);
-        input.set(n); // [1,i] -> concatenate 1 and input
+    public boolean[] rand(int input){
 
-        input.and(seed);    // logical AND with the seed
+        long longInput = input + (1 << 32); // [1,input] concatenation -> longInput has exactly 32 + 1 bits
+        boolean[] results = new boolean[height];
 
-        boolean si = input.cardinality() % 2 == 1;  // equal to the sequential XOR of the input.and(seed) bits
-
-        return si ^ hash;   // last XOR
-    }
-
-    /**
-     * nonlinear function of the input bits
-     * @param input bits
-     * @return  true = 1, false = 0
-     */
-    private boolean h(BitSet input){
-        boolean result = input.get(0);
-        for (int i = 1; i < input.size(); i++) {
-            if (i % 2 == 0){
-                result = result ^ input.get(i);
-            }else {
-                result = result | input.get(i);
+        for (int i = 0; i < height; i++) {
+            long temp = longInput;
+            long h = 1 & temp;
+            for (int j = 1; j < 33; j++) {
+                if (i % 2 == 0){
+                    h = h ^ (1 & (temp >> 1));
+                }else {
+                    h = h | (1 & (temp >> 1));
+                }
             }
+
+            long second = longInput & seeds[i];
+            int result = Long.bitCount(second) % 2;    // equal to the sequential XOR of the (longInput & seeds) bits
+            results[i] = (result ^ (int) h) == 1;   // XOR between S*[1,i] and h(i)
         }
-        return result;
+        return results;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        out.writeObject(seed);
-        out.writeByte(n);
+        out.writeObject(seeds);
+        out.writeInt(height);
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        seed = (BitSet) in.readObject();
-        n = in.readByte();
+        seeds = (long[]) in.readObject();
+        height = in.readInt();
     }
 
     private void readObjectNoData() throws ObjectStreamException {

@@ -28,9 +28,10 @@ public class FastAMS implements Synopsis, Serializable {
     private int width;
     private int height;
     private EfficientH3Functions hashFunctions;
-    private EH3_HashFunction[] eh3_array;
+    private EH3_HashFunction eh3_boolean_hashfunctions;
     private final byte n = 32;
-    private BitSet[] seeds; // always have size n+1
+    long seed;
+
 
     @Override
     public String toString() {
@@ -42,7 +43,6 @@ public class FastAMS implements Synopsis, Serializable {
                 ", width=" + width +
                 ", height=" + height +
                 ", n=" + n +
-                ", seeds=" + Arrays.toString(seeds) +
                 "\n Array: " + arrayString +
                 '}';
     }
@@ -55,36 +55,28 @@ public class FastAMS implements Synopsis, Serializable {
      * @param seed      seed for the RandomNumber Generator
      */
     public FastAMS(Integer width, Integer height, Long seed) {
-        if (n > 64){
-            throw new IllegalArgumentException("n can't be larger than 64 (amount of bits of a Long)!");
-        }
+        this.seed = seed;
         this.width = width;
         this.height = height;
-        this.seeds = new BitSet[height];
         hashFunctions = new EfficientH3Functions(height, seed);
-        eh3_array = new EH3_HashFunction[height];
+        eh3_boolean_hashfunctions = new EH3_HashFunction(seed, height);
         array = new int[height][width];
-
-        // initialize the EH3 HashFunctions
-        computeSeeds(seed);
-        for (int i = 0; i < height; i++) {
-            eh3_array[i] = new EH3_HashFunction(seeds[i], n);
-        }
     }
 
     /**
-     * private function which computes the seeds for the hash functions
-     * @param seed
+     * Constructer which uses a random seed - otherwise equal
+     * @param width
+     * @param height
      */
-    private void computeSeeds(long seed){
-        XORShiftRandom random = new XORShiftRandom(seed);
-        int length = (int)Math.ceil(n/8d);
-        byte[] byteArray = new byte[length];
-        for (int i = 0; i < height; i++) {
-            random.nextBytes(byteArray);
-            seeds[i] = BitSet.valueOf(byteArray);
-            seeds[i].clear(n+1, n+8); // make sure the seeds are of size n+1 by clearing the overflow bits
-        }
+    public FastAMS(Integer width, Integer height){
+        XORShiftRandom random = new XORShiftRandom();
+        long seed = random.nextLong();
+        this.seed = seed;
+        this.width = width;
+        this.height = height;
+        hashFunctions = new EfficientH3Functions(height, seed);
+        eh3_boolean_hashfunctions = new EH3_HashFunction(seed, height);
+        array = new int[height][width];
     }
 
 
@@ -124,9 +116,10 @@ public class FastAMS implements Synopsis, Serializable {
 
         int position;
         int[] hashValues = hashFunctions.generateHash(f);
+        boolean[] booleans = eh3_boolean_hashfunctions.rand(f);
         for (int i = 0; i < height; i++) {
             position = Math.abs(hashValues[i] % width); // compute the bucket position
-            boolean b = eh3_array[i].rand(input);
+            boolean b = booleans[i];
             int addition = (increment && b) || (!increment && !b) ? 1 : -1;
             array[i][position] += addition;
         }
@@ -148,15 +141,23 @@ public class FastAMS implements Synopsis, Serializable {
         return n;
     }
 
-    public BitSet[] getSeeds() {
-        return seeds;
+    public EfficientH3Functions getHashFunctions() {
+        return hashFunctions;
+    }
+
+    public EH3_HashFunction getEh3_boolean_hashfunctions() {
+        return eh3_boolean_hashfunctions;
+    }
+
+    public long getSeed() {
+        return seed;
     }
 
     @Override
     public FastAMS merge(Synopsis other) throws IllegalArgumentException {
         if (other instanceof FastAMS){
             FastAMS o = (FastAMS) other;
-            if (width == o.getWidth() && height == o.getHeight() && n == o.getN() && Arrays.equals(seeds, o.getSeeds())){
+            if (width == o.getWidth() && height == o.getHeight() && seed == o.getSeed()){
                 int[][] o_array = ((FastAMS) other).getArray();
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
@@ -217,8 +218,8 @@ public class FastAMS implements Synopsis, Serializable {
         out.writeInt(width);
         out.writeInt(height);
         out.writeObject(hashFunctions);
-        out.writeObject(eh3_array);
-        out.writeObject(seeds);
+        out.writeObject(eh3_boolean_hashfunctions);
+        out.writeLong(seed);
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -226,8 +227,8 @@ public class FastAMS implements Synopsis, Serializable {
         width = in.readInt();
         height = in.readInt();
         hashFunctions = (EfficientH3Functions) in.readObject();
-        eh3_array = (EH3_HashFunction[]) in.readObject();
-        seeds = (BitSet[]) in.readObject();
+        eh3_boolean_hashfunctions = (EH3_HashFunction) in.readObject();
+        seed = in.readLong();
     }
 
     private void readObjectNoData() throws ObjectStreamException {
