@@ -31,7 +31,7 @@ public class EfficientH3Functions {
      * @param input value which is used to generate the hashes - should not be 0!
      * @return  Hash values as Long Array
      */
-    public int[] generateHash(int input){
+    public int[] hash(int input){
         // input = input == 0 ? 1 : input; // input must not be 0
         int[] result = new int[numFunctions];
         for (int i = 0; i < numFunctions; i++) {

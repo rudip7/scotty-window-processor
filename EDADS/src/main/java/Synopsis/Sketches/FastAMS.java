@@ -115,7 +115,7 @@ public class FastAMS implements Synopsis, Serializable {
         }
 
         int position;
-        int[] hashValues = hashFunctions.generateHash(f);
+        int[] hashValues = hashFunctions.hash(f);
         boolean[] booleans = eh3_boolean_hashfunctions.rand(f);
         for (int i = 0; i < height; i++) {
             position = Math.abs(hashValues[i] % width); // compute the bucket position
