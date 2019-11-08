@@ -2,6 +2,7 @@ package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.EH3_HashFunction;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
+import Synopsis.InvertibleSynopsis;
 import Synopsis.Synopsis;
 import org.apache.flink.util.XORShiftRandom;
 
@@ -22,7 +23,7 @@ import java.util.BitSet;
  *
  * @author joschavonhein
  */
-public class FastAMS implements Synopsis, Serializable {
+public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
 
     private int[][] array;
     private int width;
@@ -79,18 +80,6 @@ public class FastAMS implements Synopsis, Serializable {
         array = new int[height][width];
     }
 
-
-
-    /**
-     * Updates the sketch with the given element.
-     * This means the it is assumed that the frequency of the given value is increased by 1.
-     * @param element new incoming element
-     */
-    @Override
-    public void update(Object element) {
-        update(element, true);
-    }
-
     /**
      * Either increments or decrements the given frequency value by 1.
      * This corresponds to either adding a value or removing a tuple of the given attribute value.
@@ -99,7 +88,7 @@ public class FastAMS implements Synopsis, Serializable {
      *                      - otherwise the hashcode of arbitrary objects is taken (n == 32)
      * @param increment     true if sketch should be incremented by 1 for given element, false if frequency should be decreased by 1
      */
-    public void update(Object element, boolean increment) {
+    private void update(Object element, boolean increment) {
         // make sure input element is converted to BitSet of correct length - otherwise throw exception
         BitSet input = new BitSet(n);
         int f;
@@ -123,6 +112,34 @@ public class FastAMS implements Synopsis, Serializable {
             int addition = (increment && b) || (!increment && !b) ? 1 : -1;
             array[i][position] += addition;
         }
+    }
+
+    @Override
+    public void update(T element){
+        update(element, true);
+    }
+
+    @Override
+    public void decrement(T toDecrement) {
+        update(toDecrement, false);
+    }
+
+
+    @Override
+    public InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove) {
+        if (toRemove instanceof FastAMS){
+            if (seed == ((FastAMS<Object>) toRemove).seed && height == ((FastAMS<Object>) toRemove).getHeight() && width == ((FastAMS<Object>) toRemove).getWidth()){
+                int[][] toRemoveArray = ((FastAMS<Object>) toRemove).getArray();
+                for (int i = 0; i < height; i++) {
+                    for (int j = 0; j < width; j++) {
+                        array[i][j] -= toRemoveArray[i][j]; // subtract the value in the array of the sketch to be removed
+                    }
+                }
+                return this;
+            }
+            throw new IllegalArgumentException("Fast AMS Sketch to be removed needs to be the same size and use the same hash functions (seed has to be equal)!");
+        }
+        throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
     public int[][] getArray() {
@@ -154,7 +171,7 @@ public class FastAMS implements Synopsis, Serializable {
     }
 
     @Override
-    public FastAMS merge(Synopsis other) throws IllegalArgumentException {
+    public FastAMS<T> merge(Synopsis other){
         if (other instanceof FastAMS){
             FastAMS o = (FastAMS) other;
             if (width == o.getWidth() && height == o.getHeight() && seed == o.getSeed()){

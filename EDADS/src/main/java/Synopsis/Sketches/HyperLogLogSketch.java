@@ -1,7 +1,6 @@
 package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
-import Synopsis.Sketches.HashFunctions.PairwiseIndependentHashFunctions;
 import Synopsis.Synopsis;
 import Synopsis.CommutativeSynopsis;
 
