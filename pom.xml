@@ -35,6 +35,7 @@
         <module>slicing</module>
         <module>benchmark</module>
         <module>state</module>
+        <module>EDADS</module>
         <module>flink-connector</module>
     </modules>
 

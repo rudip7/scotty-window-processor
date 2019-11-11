@@ -1,0 +1,8 @@
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	

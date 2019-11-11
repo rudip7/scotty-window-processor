@@ -46,7 +46,7 @@ public class BuildSynopsisJob {
         finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
             @Override
             public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
-                String result = value.getStart()+" ---> "+value.getEnd()+"\n\n"+value.getAggValues().get(0).toString();
+                String result = value.getStart()+" ---> "+value.getEnd()+"\n\n";//+value.getAggValues().get(0).toString();
                 out.collect(result);
 //                for (CountMinSketch w: value.getAggValues()){
 //                    out.collect(w.toString());
