@@ -1,10 +1,10 @@
 {
   "name" : "synopses_window_benchmark",
   "runtime" : 10000,
-  "throughput": 100,
+  "throughput": 1000000,
   "windowConfigurations": [
     [
-      "Sliding(1000,250)"
+      "Sliding(2000,1000)"
     ]
   ],
   "sessionConfig": {

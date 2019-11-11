@@ -50,7 +50,7 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
     public void update(T element) {
         int input;
         if (element instanceof Number){
-            input = (int) element;
+            input = ((Number) element).intValue();
         }else {
             input = element.hashCode();
         }

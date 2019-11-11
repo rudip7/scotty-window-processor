@@ -1,6 +1,7 @@
 package Benchmark;
 
 import FlinkScottyConnector.BuildSynopsis;
+import Synopsis.Sampling.ReservoirSampler;
 import Synopsis.Sketches.CountMinSketch;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
@@ -54,13 +55,15 @@ public class BenchmarkJob {
 		DataStream<Tuple3<Integer, Integer, Long>> messageStream = env
 				.addSource(new LoadGeneratorSource(runtime, throughput,  gaps));
 
-		messageStream.flatMap(new ThroughputLogger<>(throughput));
+		SingleOutputStreamOperator<Integer> throughputStadistics = messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
-		SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
-//		finalSketch
+		SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, ReservoirSampler.class, 10);
+
+
+		//		finalSketch
 //				.addSink(new SinkFunction() {
 //
 //					@Override

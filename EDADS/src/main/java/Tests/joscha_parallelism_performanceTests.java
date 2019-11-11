@@ -72,10 +72,10 @@ public class joscha_parallelism_performanceTests {
             int currentNode = state.value();
             EfficientH3Functions functions = new EfficientH3Functions(1, 1000);
             currentNode = currentNode % (getRuntimeContext().getNumberOfParallelSubtasks() * 8);
-            int number = functions.generateHash(currentNode)[0];
+            //int number = functions.generateHash(currentNode)[0];
             int next = currentNode +1;
             state.update(next);
-            newTuple.setField(number,0);
+            //newTuple.setField(number,0);
             newTuple.setField(value,1);
             return newTuple;
         }

@@ -56,7 +56,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     public void update(T element) {
         int input;
         if (element instanceof Number){
-            input = (int) element;
+            input = ((Number) element).intValue();
         }else {
             input = element.hashCode();
         }
@@ -94,7 +94,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     public Integer query(T element) {
         int input;
         if (element instanceof Number){
-            input = (int) element;
+            input = ((Number) element).intValue();
         }else {
             input = element.hashCode();
         }
@@ -183,7 +183,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     public void decrement(T toDecrement) {
         int input;
         if (toDecrement instanceof Number){
-            input = (int) toDecrement;
+            input = ((Number) toDecrement).intValue();
         }else {
             input = toDecrement.hashCode();
         }

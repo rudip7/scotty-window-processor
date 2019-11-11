@@ -1,6 +1,5 @@
 package Benchmark;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.util.Collector;
@@ -12,39 +11,39 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 
-public class ThroughputLogger<T> extends RichFlatMapFunction<T, Integer> {
+public class ThroughputLoggerSTATE<T> extends RichFlatMapFunction<T, Integer> {
 
-	private static final Logger LOG = LoggerFactory.getLogger(ThroughputLogger.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ThroughputLoggerSTATE.class);
 
-	private long totalReceived;
-	private long lastTotalReceived;
-	private long lastLogTimeMs;
+	private LongState totalReceived;
+	private LongState lastTotalReceived;
+	private LongState lastLogTimeMs;
 //	private int elementSize;
 	private long logfreq;
 
-	public ThroughputLogger(long logfreq) {
+	public ThroughputLoggerSTATE(long logfreq) {
 //		this.elementSize = elementSize;
 		this.logfreq = logfreq;
-		this.totalReceived = 0;
-		this.lastTotalReceived = 0;
-		this.lastLogTimeMs = -1;
+		this.totalReceived = new LongState(0);
+		this.lastTotalReceived = new LongState(0);
+		this.lastLogTimeMs = new LongState(-1);
 	}
 
 	@Override
 	public void flatMap(T element, Collector<Integer> collector) throws Exception {
-		totalReceived = totalReceived + 1;
-		if (totalReceived % logfreq == 0) {
+		totalReceived.update(totalReceived.value() + 1);
+		if (totalReceived.value() % logfreq == 0) {
 			// throughput over entire time
 			long now = System.currentTimeMillis();
 
 			// throughput for the last "logfreq" elements
-			if (lastLogTimeMs == -1) {
+			if (lastLogTimeMs.value() == -1) {
 				// init (the first)
-				lastLogTimeMs = now;
-				lastTotalReceived = totalReceived;
+				lastLogTimeMs.update(now);
+				lastTotalReceived.update(totalReceived.value);
 			} else {
-				long timeDiff = now - lastLogTimeMs;
-				long elementDiff = totalReceived - lastTotalReceived;
+				long timeDiff = now - lastLogTimeMs.value();
+				long elementDiff = totalReceived.value() - lastTotalReceived.value();
 				double ex = (1000 / (double) timeDiff);
 				LOG.error("During the last {} ms, we received {} elements. That's {} elements/second/core. ",
 					timeDiff, elementDiff, elementDiff * ex);
@@ -52,8 +51,8 @@ public class ThroughputLogger<T> extends RichFlatMapFunction<T, Integer> {
 				ThroughputStatistics.getInstance().addThrouputResult(elementDiff * ex);
 				//System.out.println(ThroughputStatistics.getInstance().toString());
 				// reinit
-				lastLogTimeMs = now;
-				lastTotalReceived = totalReceived;
+				lastLogTimeMs.update(now);
+				lastTotalReceived.update(totalReceived.value);
 			}
 		}
 	}

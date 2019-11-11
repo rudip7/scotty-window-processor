@@ -52,7 +52,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
     public void update(T element) {
         int input;
         if (element instanceof Number){
-            input = (int) element;
+            input = ((Number) element).intValue();
         }else {
             input = element.hashCode();
         }
@@ -66,7 +66,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
     public boolean query(T element){
         int input;
         if (element instanceof Number){
-            input = (int) element;
+            input = ((Number) element).intValue();
         }else {
             input = element.hashCode();
         }

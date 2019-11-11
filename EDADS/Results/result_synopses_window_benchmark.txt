@@ -6,3 +6,10 @@
 [Sliding(1000,250)] 	CountMinSketch 	NaN	
 [Sliding(1000,250)] 	CountMinSketch 	NaN	
 [Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	NaN	
+[Sliding(1000,250)] 	CountMinSketch 	100.1692642719608	
+[Sliding(2000,1000)] 	CountMinSketch 	1003.7845391380745	
+[Sliding(2000,1000)] 	CountMinSketch 	1003.6604283501955	
+[Sliding(2000,1000)] 	CountMinSketch 	10066.689300056927	
+[Sliding(2000,1000)] 	CountMinSketch 	103565.8693996651	
+[Sliding(2000,1000)] 	CountMinSketch 	1131466.7621869524	
