@@ -1,13 +1,14 @@
 package Synopsis.Sketches;
 
 
-import Synopsis.Sketches.HashFunctions.PairwiseIndependentHashFunctions;
+import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.Synopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * Implementation of classical Count-Min sketch to estimate the frequencies of the elements in a datastream.
@@ -23,7 +24,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     private int height;
     private long seed;
     private int[][] array;
-    private PairwiseIndependentHashFunctions hashFunctions;
+    private EfficientH3Functions hashFunctions;
     private int elementsProcessed;
 //    private HashSet<T> Elements;
 
@@ -40,7 +41,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
         this.height = height;
         this.seed = seed;
         array = new int[height][width];
-        this.hashFunctions = new PairwiseIndependentHashFunctions(height, seed);
+        this.hashFunctions = new EfficientH3Functions(height, seed);
         this.elementsProcessed = 0;
 //        this.Elements = new HashSet<>();
     }
@@ -53,7 +54,13 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
      */
     @Override
     public void update(T element) {
-        int[] indices = hashFunctions.hash(element);
+        int input;
+        if (element instanceof Number){
+            input = (int) element;
+        }else {
+            input = element.hashCode();
+        }
+        int[] indices = hashFunctions.hash(input);
         for (int i = 0; i < height; i++) {
             array[i][indices[i] % width]++;
         }
@@ -85,7 +92,13 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
      * @return The approximate count of tuple so far
      */
     public Integer query(T element) {
-        int[] indices = hashFunctions.hash(element);
+        int input;
+        if (element instanceof Number){
+            input = (int) element;
+        }else {
+            input = element.hashCode();
+        }
+        int[] indices = hashFunctions.hash(input);
         int min = -1;
         for (int i = 0; i < height; i++) {
             if (min == -1)
@@ -168,7 +181,13 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
 
     @Override
     public void decrement(T toDecrement) {
-        int[] indices = hashFunctions.hash(toDecrement);
+        int input;
+        if (toDecrement instanceof Number){
+            input = (int) toDecrement;
+        }else {
+            input = toDecrement.hashCode();
+        }
+        int[] indices = hashFunctions.hash(input);
         for (int i = 0; i < height; i++) {
             array[i][indices[i] % width]--;
         }
@@ -196,26 +215,14 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
 
     @Override
     public String toString() {
-        String sketch = new String();
-        sketch += "Functions\n";
-        for (int i = 0; i < height; i++) {
-            sketch += i + ":  A: " + hashFunctions.getA()[i] + "  ";
-            sketch += "B: " + hashFunctions.getB()[i] + "\n";
-        }
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-
-                sketch += array[i][j] + " | ";
-            }
-            sketch += "\n";
-        }
-        sketch += "Elements processed: " + elementsProcessed + "\n";
-//        for (Object elem :
-//                Elements) {
-//            sketch += elem.toString() + ", ";
-//        }
-//        sketch += "\n";
-        return sketch;
+        return "CountMinSketch{" +
+                "width=" + width +
+                ", height=" + height +
+                ", seed=" + seed +
+                ", array=" + Arrays.toString(array) +
+                ", hashFunctions=" + hashFunctions +
+                ", elementsProcessed=" + elementsProcessed +
+                '}';
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
@@ -239,7 +246,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
                 array[i][j] = in.readInt();
             }
         }
-        hashFunctions = (PairwiseIndependentHashFunctions) in.readObject();
+        hashFunctions = (EfficientH3Functions) in.readObject();
     }
 
     private void readObjectNoData() throws ObjectStreamException {

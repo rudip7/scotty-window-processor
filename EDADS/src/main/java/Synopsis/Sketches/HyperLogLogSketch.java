@@ -1,6 +1,6 @@
 package Synopsis.Sketches;
 
-import Synopsis.Sketches.HashFunctions.PairwiseIndependentHashFunctions;
+import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.Synopsis;
 import Synopsis.CommutativeSynopsis;
 
@@ -26,7 +26,7 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
     private int logRegNum;
     private byte[] registers;
     public long distinctItemCount; // Field so that value is accessible after serializing
-    private PairwiseIndependentHashFunctions hashFunctions;
+    private EfficientH3Functions hashFunctions;
 
     /**
      * @param logRegNum the logarithm of the number of registers. should be in 4...16
@@ -38,7 +38,7 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
         this.regNum = 1 << logRegNum;
         this.registers = new byte[this.regNum];
         this.logRegNum = logRegNum;
-        this.hashFunctions = new PairwiseIndependentHashFunctions(2, seed);
+        this.hashFunctions = new EfficientH3Functions(2, seed);
     }
 
     /**
@@ -48,9 +48,14 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
      */
     @Override
     public void update(T element) {
-
-        long hash = hashFunctions.hash(element)[0];
-        long firstBits = ((long) hashFunctions.hash(element)[1]) << 32;
+        int input;
+        if (element instanceof Number){
+            input = (int) element;
+        }else {
+            input = element.hashCode();
+        }
+        long hash = hashFunctions.hash(input)[0];
+        long firstBits = ((long) hashFunctions.hash(input)[1]) << 32;
         hash += firstBits;
 
         int index = (int)(hash >>> (Long.SIZE - this.logRegNum));
@@ -97,7 +102,7 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
         return distinctItemCount;
     }
 
-    public PairwiseIndependentHashFunctions getHashFunctions() {
+    public EfficientH3Functions getHashFunctions() {
         return hashFunctions;
     }
 
@@ -164,7 +169,7 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
             registers[i] = in.readByte();
         }
         this.distinctItemCount = in.readLong();
-        this.hashFunctions = (PairwiseIndependentHashFunctions) in.readObject();
+        this.hashFunctions = (EfficientH3Functions) in.readObject();
     }
 
     private void readObjectNoData() throws ObjectStreamException {

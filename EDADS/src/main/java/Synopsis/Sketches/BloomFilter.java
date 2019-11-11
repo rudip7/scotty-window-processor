@@ -1,6 +1,6 @@
 package Synopsis.Sketches;
 
-import Synopsis.Sketches.HashFunctions.PairwiseIndependentHashFunctions;
+import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.Synopsis;
 import Synopsis.CommutativeSynopsis;
 
@@ -25,7 +25,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
     private int numberBits;
     private int elementsProcessed;
     private static final double LN2 = 0.6931471805599453; // ln(2)
-    private PairwiseIndependentHashFunctions hashFunctions;
+    private EfficientH3Functions hashFunctions;
 
     /**
      * Create a new Bloom Filter.
@@ -38,7 +38,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
         this.nHashFunctions = (int) Math.round(LN2 * numberBits / maxNumElements);
         if (nHashFunctions <= 0) nHashFunctions = 1;
         this.hashmap = new BitSet(numberBits);
-        this.hashFunctions = new PairwiseIndependentHashFunctions(nHashFunctions, seed);
+        this.hashFunctions = new EfficientH3Functions(nHashFunctions, seed);
         this.elementsProcessed = 0;
     }
 
@@ -50,7 +50,13 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
      */
     @Override
     public void update(T element) {
-        int[] indices = hashFunctions.hash(element);
+        int input;
+        if (element instanceof Number){
+            input = (int) element;
+        }else {
+            input = element.hashCode();
+        }
+        int[] indices = hashFunctions.hash(input);
         for (int i = 0; i < nHashFunctions; i++) {
             hashmap.set(indices[i] % numberBits);
         }
@@ -58,7 +64,13 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
     }
 
     public boolean query(T element){
-        int[] indices = hashFunctions.hash(element);
+        int input;
+        if (element instanceof Number){
+            input = (int) element;
+        }else {
+            input = element.hashCode();
+        }
+        int[] indices = hashFunctions.hash(input);
         for (int i = 0; i < nHashFunctions; i++) {
             if(!hashmap.get(indices[i] % numberBits)){
                 return false;
@@ -83,7 +95,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
         return elementsProcessed;
     }
 
-    public PairwiseIndependentHashFunctions getHashFunctions() {
+    public EfficientH3Functions getHashFunctions() {
         return hashFunctions;
     }
 
@@ -113,16 +125,13 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
 
     @Override
     public String toString() {
-        String sketch = new String();
-        sketch += "Functions\n";
-        for (int i = 0; i < nHashFunctions; i++) {
-            sketch += i + ":  A: " + hashFunctions.getA()[i] + "  ";
-            sketch += "B: " + hashFunctions.getB()[i] + "\n";
-        }
-        sketch += hashmap.toString() + "\n";
-        sketch += "Elements processed: " + elementsProcessed + "\n";
-        sketch += "\n";
-        return sketch;
+        return "BloomFilter{" +
+                "hashmap=" + hashmap +
+                ", nHashFunctions=" + nHashFunctions +
+                ", numberBits=" + numberBits +
+                ", elementsProcessed=" + elementsProcessed +
+                ", hashFunctions=" + hashFunctions +
+                '}';
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
@@ -137,7 +146,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
         nHashFunctions = in.readInt();
         numberBits = in.readInt();
         elementsProcessed = in.readInt();
-        hashFunctions = (PairwiseIndependentHashFunctions) in.readObject();
+        hashFunctions = (EfficientH3Functions) in.readObject();
         hashmap = (BitSet) in.readObject();
     }
 

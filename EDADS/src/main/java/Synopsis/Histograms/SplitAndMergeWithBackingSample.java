@@ -36,7 +36,6 @@ public class SplitAndMergeWithBackingSample implements Synopsis, Serializable {
     private double c;
     private final double GAMMA = 0.5; // hyper parameter which tunes the threshold - has to be greater than -1 and should realistically be smaller than 2
     private int threshold;
-    private static EquiDepthHistBuilder builder = new EquiDepthHistBuilder();
 
     private static final Logger logger = LoggerFactory.getLogger(SplitAndMergeWithBackingSample.class);
 
