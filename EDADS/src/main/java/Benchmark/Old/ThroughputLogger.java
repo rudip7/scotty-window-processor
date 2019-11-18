@@ -1,6 +1,5 @@
-package Benchmark;
+package Benchmark.Old;
 
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.util.Collector;

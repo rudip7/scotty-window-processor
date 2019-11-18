@@ -1,5 +1,6 @@
 package FlinkScottyConnector;
 
+import Synopsis.Sampling.SampleElement;
 import Synopsis.Synopsis;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -58,7 +59,7 @@ public class SynopsisAggregator<T1> implements AggregateFunction<Tuple2<Integer,
             Synopsis synopsis = constructor.newInstance(constructorParam);
             return synopsis;
         } catch (NoSuchMethodException e) {
-            e.printStackTrace();
+            throw new IllegalArgumentException("There is no constructor in class "+sketchClass+" that match with the given parameters.");
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         } catch (InstantiationException e) {
@@ -66,7 +67,7 @@ public class SynopsisAggregator<T1> implements AggregateFunction<Tuple2<Integer,
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         }
-        return null;
+        throw new IllegalArgumentException();
     }
 
     /**

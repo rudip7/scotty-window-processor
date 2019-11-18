@@ -1,4 +1,4 @@
-package Benchmark;
+package Benchmark.Old;
 
 public class ThroughputStatistics {
 

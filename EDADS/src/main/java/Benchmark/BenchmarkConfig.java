@@ -14,6 +14,9 @@ public class BenchmarkConfig {
 	// [Sliding(1,2), Tumbling(1), Session(2)]
 	public List<List<String>> windowConfigurations;
 
+	//Scotty, Flink
+	public List<String> configurations;
+
 	// [CountMinSketch, BloomFilter, ReservoirSampling]
 	public List<String> synopses;
 

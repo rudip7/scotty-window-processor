@@ -3,6 +3,7 @@ package Benchmark;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.Sampling.ReservoirSampler;
 import Synopsis.Sketches.CountMinSketch;
+import Synopsis.Synopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
@@ -32,20 +33,17 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 /**
  * Created by philipp on 5/28/17.
  */
-public class BenchmarkJob {
+public class ScottyBenchmarkJob<S extends Synopsis> {
 
-	public BenchmarkJob(List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
-                        final int throughput, final List<Tuple2<Long, Long>> gaps) {
+	public ScottyBenchmarkJob(List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
+							  final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
 
 
 		Map<String, String> configMap = new HashMap<>();
-		ParameterTool parameters = ParameterTool.fromMap(configMap);
+		ParameterTool parametersTool = ParameterTool.fromMap(configMap);
 
-		env.getConfig().setGlobalJobParameters(parameters);
+		env.getConfig().setGlobalJobParameters(parametersTool);
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-//		Why no parallelism???
-//		env.setParallelism(1);
-//		env.setMaxParallelism(1);
 
 		Window[] windows = new Window[assigner.size()];
 		for (int i = 0; i < assigner.size(); i++) {
@@ -55,24 +53,24 @@ public class BenchmarkJob {
 		DataStream<Tuple3<Integer, Integer, Long>> messageStream = env
 				.addSource(new LoadGeneratorSource(runtime, throughput,  gaps));
 
-		SingleOutputStreamOperator<Integer> throughputStadistics = messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
+//		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
+//		messageStream.flatMap(new ParallelThroughputLogger<>(1000));
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
-				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
+				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000));
 
-		SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, ReservoirSampler.class, 10);
+		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
+
+		synopsesStream.addSink(new SinkFunction() {
+
+			@Override
+			public void invoke(final Object value) throws Exception {
+				//System.out.println(value);
+			}
+		});
 
 
-		//		finalSketch
-//				.addSink(new SinkFunction() {
-//
-//					@Override
-//					public void invoke(final Object value) throws Exception {
-//						System.out.println(value);
-//					}
-//				});
-
-//		finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
+//		synopsesStream.flatMap(new FlatMapFunction<AggregateWindow<S>, String>() {
 //			@Override
 //			public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
 //				String result = value.getStart()+" ---> "+value.getEnd()+"\n\n"+value.getAggValues().get(0).toString();
@@ -80,7 +78,7 @@ public class BenchmarkJob {
 //			}
 //		}).print();
 
-		finalSketch.writeAsText("EDADS/output/BenchmarkTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+//		finalSketch.writeAsText("EDADS/output/BenchmarkTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
 
 		try {
