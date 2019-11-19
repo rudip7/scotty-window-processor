@@ -1,5 +1,10 @@
 package Benchmark;
 
+import Synopsis.Histograms.EquiWidthHistogram;
+import Synopsis.Sampling.BiasedReservoirSampler;
+import Synopsis.Sampling.ReservoirSampler;
+import Synopsis.Sketches.*;
+import Synopsis.Synopsis;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tub.dima.scotty.core.TimeMeasure;
@@ -43,29 +48,80 @@ public class BenchmarkRunner {
         System.out.println(gaps);
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
+        for (String envConf:
+             config.configurations) {
+            if (envConf.equals("Scotty")){
+                for (List<String> windows : config.windowConfigurations) {
+                    for (String syn : config.synopses) {
+                        System.out.println("\n\n\n\n\n\n\n");
 
-        for (List<String> windows : config.windowConfigurations) {
-            for (String syn : config.synopses) {
-                System.out.println("\n\n\n\n\n\n\n");
+                        System.out.println("Start Benchmark with windows " + config.windowConfigurations);
+                        System.out.println("\n\n\n\n\n\n\n");
+                        Tuple2<Class<? extends Synopsis>, Object[]> synopsis = getSynopsis(syn);
+                        new ScottyBenchmarkJob(getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
 
-                System.out.println("Start Benchmark with windows " + config.windowConfigurations);
-                System.out.println("\n\n\n\n\n\n\n");
-                new BenchmarkJob(getAssigners(windows), env, config.runtime, config.throughput, gaps);
-
-                System.out.println(ThroughputStatistics.getInstance().toString());
+                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
 
-                resultWriter.append(windows + " \t" + syn + " \t" +
-                        ThroughputStatistics.getInstance().mean() + "\t");
-                resultWriter.append("\n");
-                resultWriter.flush();
-                ThroughputStatistics.getInstance().clean();
+                        resultWriter.append(windows + " \t" + syn + " \t" +
+                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                        resultWriter.append("\n");
+                        resultWriter.flush();
+                        ParallelThroughputStatistics.getInstance().clean();
 
-                Thread.sleep(seconds(10).toMilliseconds());
+                        Thread.sleep(seconds(10).toMilliseconds());
+                    }
+                }
+
+            } else if(envConf.equals("Flink")){
+                //TODO
+                for (List<String> windows : config.windowConfigurations) {
+                    for (String syn : config.synopses) {
+                        System.out.println("\n\n\n\n\n\n\n");
+
+                        System.out.println("Start Benchmark with windows " + config.windowConfigurations);
+                        System.out.println("\n\n\n\n\n\n\n");
+                        Tuple2<Class<? extends Synopsis>, Object[]> synopsis = getSynopsis(syn);
+                        new FlinkBenchmarkJob(getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+
+                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
+
+
+                        resultWriter.append(windows + " \t" + syn + " \t" +
+                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                        resultWriter.append("\n");
+                        resultWriter.flush();
+                        ParallelThroughputStatistics.getInstance().clean();
+
+                        Thread.sleep(seconds(10).toMilliseconds());
+                    }
+                }
             }
         }
 
+
         resultWriter.close();
+    }
+
+    private static Tuple2<Class<? extends Synopsis>, Object[]> getSynopsis(String syn){
+        if (syn.equals("CountMinSketch")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(CountMinSketch.class, new Object[]{4000,2000,7L});
+        }else if (syn.equals("ReservoirSampler")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(ReservoirSampler.class, new Object[]{500});
+        }else if (syn.equals("BiasedReservoirSampler")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(BiasedReservoirSampler.class, new Object[]{500});
+        }else if (syn.equals("EquiWidthHistogram")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(EquiWidthHistogram.class, new Object[]{0,100,8});
+        }else if (syn.equals("BloomFilter")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(BloomFilter.class, new Object[]{10000000,80000,7L});
+        }else if (syn.equals("CuckooFilter")){
+            return null;
+        }else if (syn.equals("FastAMS")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(FastAMS.class, new Object[]{4000,2000,7L});
+        }else if (syn.equals("HyperLogLogSketch")){
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(HyperLogLogSketch.class, new Object[]{11,7L});
+        }
+        throw new IllegalArgumentException(syn+" is not a valid synopsis for benchmarking");
     }
 
     private static List<Window> getAssigners(List<String> config) {

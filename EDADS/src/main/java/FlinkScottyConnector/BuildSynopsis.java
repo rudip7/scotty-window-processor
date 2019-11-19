@@ -1,5 +1,6 @@
 package FlinkScottyConnector;
 
+import Benchmark.ParallelThroughputLogger;
 import Synopsis.Sampling.SampleElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
 import Synopsis.Synopsis;
@@ -56,6 +57,9 @@ public final class BuildSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
+            return sampleTimeBased(inputStream, windowTime, keyField, synopsisClass, parameters);
+        }
         SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
 
         SingleOutputStreamOperator reduce = inputStream
@@ -64,6 +68,44 @@ public final class BuildSynopsis {
                 .timeWindow(windowTime)
                 .aggregate(agg)
                 .timeWindowAll(windowTime)
+                .reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
+                    @Override
+                    public Synopsis reduce(Synopsis value1, Synopsis value2) throws Exception {
+                        Synopsis merged = value1.merge(value2);
+                        return merged;
+                    }
+                }).returns(synopsisClass);
+        return reduce;
+    }
+
+
+    /**
+     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#timeWindow} will accumulate the a Synopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single Synopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the Synopsis
+     * @param windowTime    the size of the time window
+     * @param keyField      the field of the tuple to build the Synopsis. Set to -1 to build the Synopsis over the whole tuple.
+     * @param synopsisClass the type of Synopsis to be computed
+     * @param parameters    the initialization parameters for the Synopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the Synopsis
+     * @return stream of time window based Synopses
+     */
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
+            return slidingSampleTimeBased(inputStream, windowTime, slideTime, keyField, synopsisClass, parameters);
+        }
+        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+
+        SingleOutputStreamOperator reduce = inputStream
+                .map(new AddParallelismTuple())
+                .keyBy(0)
+                .timeWindow(windowTime,slideTime)
+                .aggregate(agg)
+                .timeWindowAll(windowTime,slideTime)
                 .reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
                     @Override
                     public Synopsis reduce(Synopsis value1, Synopsis value2) throws Exception {
@@ -93,42 +135,7 @@ public final class BuildSynopsis {
         return timeBased(inputStream, windowTime, -1, synopsisClass, parameters);
     }
 
-    /**
-     * Debug function to print the output of the aggregators.
-     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
-     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
-     * {@link KeyedStream#timeWindow} will accumulate the a Synopsis via the {@link SynopsisAggregator}. Afterwards
-     * the partial results of the partitions will be reduced (merged) to a single Synopsis representing the whole window.
-     *
-     * @param inputStream   the data stream to build the Synopsis
-     * @param windowTime    the size of the time window
-     * @param keyField      the field of the tuple to build the Synopsis. Set to -1 to build the Synopsis over the whole tuple.
-     * @param synopsisClass the type of Synopsis to be computed
-     * @param parameters    the initialization parameters for the Synopsis
-     * @param <T>           the type of the input elements
-     * @param <S>           the type of the Synopsis
-     * @return stream of time window based Synopses
-     */
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> debugAggimeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Object... parameters) {
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
 
-        SingleOutputStreamOperator reduce1 = inputStream
-                .map(new AddParallelismTuple())
-                .keyBy(0)
-                .timeWindow(windowTime)
-                .aggregate(agg);
-        reduce1.writeAsText("output/aggregators", FileSystem.WriteMode.OVERWRITE);
-        SingleOutputStreamOperator reduce = reduce1
-                .timeWindowAll(windowTime)
-                .reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
-                    @Override
-                    public Synopsis reduce(Synopsis value1, Synopsis value2) throws Exception {
-                        Synopsis merged = value1.merge(value2);
-                        return merged;
-                    }
-                }).returns(synopsisClass);
-        return reduce;
-    }
 
     /**
      * Build an operator pipeline to generate a stream of count window based Synopses. Firstly each element will be
@@ -192,8 +199,26 @@ public final class BuildSynopsis {
                 .keyBy(0)
                 .timeWindow(windowTime)
                 .aggregate(agg);
-        reduce1.writeAsText("output/aggregators", FileSystem.WriteMode.OVERWRITE);
         SingleOutputStreamOperator reduce = reduce1.timeWindowAll(windowTime)
+                .reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
+                    @Override
+                    public Synopsis reduce(Synopsis value1, Synopsis value2) throws Exception {
+                        return value1.merge(value2);
+                    }
+                }).returns(synopsisClass);
+        return reduce;
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> slidingSampleTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+        SingleOutputStreamOperator reduce1 = inputStream
+                .process(new ConvertToSample(keyField))
+                .assignTimestampsAndWatermarks(new SampleTimeStampExtractor())
+                .map(new AddParallelismTuple())
+                .keyBy(0)
+                .timeWindow(windowTime, slideTime)
+                .aggregate(agg);
+        SingleOutputStreamOperator reduce = reduce1.timeWindowAll(windowTime, slideTime)
                 .reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
                     @Override
                     public Synopsis reduce(Synopsis value1, Synopsis value2) throws Exception {
@@ -427,10 +452,13 @@ public final class BuildSynopsis {
 
     public static class ConvertToSample<T>
             extends ProcessFunction<T, SampleElement> {
-        private int keyField;
+        private int keyField = -1;
 
         public ConvertToSample(int keyField) {
             this.keyField = keyField;
+        }
+
+        public ConvertToSample() {
         }
 
         @Override
@@ -491,5 +519,40 @@ public final class BuildSynopsis {
         }
     }
 
-
+//    /**
+//     * Debug function to print the output of the aggregators.
+//     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
+//     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+//     * {@link KeyedStream#timeWindow} will accumulate the a Synopsis via the {@link SynopsisAggregator}. Afterwards
+//     * the partial results of the partitions will be reduced (merged) to a single Synopsis representing the whole window.
+//     *
+//     * @param inputStream   the data stream to build the Synopsis
+//     * @param windowTime    the size of the time window
+//     * @param keyField      the field of the tuple to build the Synopsis. Set to -1 to build the Synopsis over the whole tuple.
+//     * @param synopsisClass the type of Synopsis to be computed
+//     * @param parameters    the initialization parameters for the Synopsis
+//     * @param <T>           the type of the input elements
+//     * @param <S>           the type of the Synopsis
+//     * @return stream of time window based Synopses
+//     */
+//    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> debugAggimeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+//        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+//
+//        SingleOutputStreamOperator reduce1 = inputStream
+//                .map(new AddParallelismTuple())
+//                .keyBy(0)
+//                .timeWindow(windowTime)
+//                .aggregate(agg);
+//        reduce1.writeAsText("output/aggregators", FileSystem.WriteMode.OVERWRITE);
+//        SingleOutputStreamOperator reduce = reduce1
+//                .timeWindowAll(windowTime)
+//                .reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
+//                    @Override
+//                    public Synopsis reduce(Synopsis value1, Synopsis value2) throws Exception {
+//                        Synopsis merged = value1.merge(value2);
+//                        return merged;
+//                    }
+//                }).returns(synopsisClass);
+//        return reduce;
+//    }
 }
