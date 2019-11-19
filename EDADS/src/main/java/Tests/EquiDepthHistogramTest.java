@@ -1,10 +1,14 @@
 package Tests;
-
-import Synopsis.Histograms.EquiDepthHistogram;
-import org.decimal4j.util.DoubleRounder;
-import org.junit.Assert;
+import Histograms.EquiDepthHistogram;
 import org.junit.Test;
-
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Before;
+import org.junit.After;
+import org.decimal4j.util.DoubleRounder;
+/**
+ * @author Zahra Salmani
+ */
 public class EquiDepthHistogramTest {
 
    //@Before

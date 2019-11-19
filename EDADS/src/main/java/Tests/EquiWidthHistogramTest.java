@@ -1,16 +1,18 @@
 package Tests;
 
-import Synopsis.Histograms.EquiWidthHistogram;
-import Synopsis.Sketches.CountMinSketch;
-import org.junit.Assert;
+import Histograms.EquiWidthHistogram;
+import Sketches.CountMinSketch;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.FileNotFoundException;
+import org.junit.Assert;
+import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Scanner;
-
+import java.io.File;
+import java.lang.Double;
+import java.io.FileNotFoundException;
+/**
+ * @author Zahra Salmani
+ */
 public class EquiWidthHistogramTest {
     @Test(expected = IllegalArgumentException.class)
     public void illegalboundTest(){
@@ -88,7 +90,7 @@ public class EquiWidthHistogramTest {
 
     }
 
-    public int[] updateFrequencyFromFile(String Name, EquiWidthHistogram eqwHistogram){
+    public int[] updateFrequencyFromFile(String Name,EquiWidthHistogram eqwHistogram){
         String fileName= Name;
         File file= new File(fileName);
         EquiWidthHistogram histogram = eqwHistogram;
