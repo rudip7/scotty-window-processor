@@ -1,5 +1,5 @@
 package Tests;
-import Sampling.FiFoSampler;
+import Synopsis.Sampling.FiFoSampler;
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.Arrays;
@@ -11,8 +11,8 @@ import java.io.FileNotFoundException;
  * @author Zahra Salmani
  */
 public class FiFoSamplerTest {
-    @Test
-    public void updateTest() {
+    /* @Test
+   public void updateTest() {
         FiFoSampler fifoSampler = new FiFoSampler(10);
 
         String fileName = "data/testdata.csv";
@@ -65,7 +65,7 @@ public class FiFoSamplerTest {
     public void mergeTest() throws Exception {
 
 
-    }
+    }*/
 }
 
 

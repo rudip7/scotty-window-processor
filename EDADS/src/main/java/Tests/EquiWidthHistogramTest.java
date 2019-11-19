@@ -1,7 +1,7 @@
 package Tests;
 
-import Histograms.EquiWidthHistogram;
-import Sketches.CountMinSketch;
+import Synopsis.Histograms.EquiWidthHistogram;
+import Synopsis.Sketches.CountMinSketch;
 import org.junit.Test;
 import org.junit.Assert;
 import java.util.Scanner;

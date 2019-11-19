@@ -178,6 +178,7 @@ public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
     public int getElementsProcessed() {
         return elementsProcessed;
     }
+    public boolean getBucketStatus() {return full;}
 
     /**
      * Function to Merge two Cuckoo Filters by adding the content of the buckets.

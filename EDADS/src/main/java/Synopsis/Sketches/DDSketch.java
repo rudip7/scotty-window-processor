@@ -154,6 +154,11 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
             return value(counts.lastKey());
         }
     }
+    public int getGlobalCount()
+    {return globalCount;}
+    public int getZeroCount()
+    {return zeroCount;}
+    public int getMaxNumBins(){return maxNumBins;}
 
     /**
      * Estimate the p-Quantile value considering all the elements in the actual structure
@@ -195,26 +200,34 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
         }
 
         final long rank = (long) (quantile * (count - 1));
+
         if (rank < zeroCount) {
+            //System.out.println("zero rank");
             return 0;
         }
 
+
         if (quantile <= 0.5) {
             long n = zeroCount;
-            for (Map.Entry<Integer, Integer> bin : counts.entrySet()) {
-                if (n > rank) {
-                    return value(bin.getKey());
-                }
+
+            for(Map.Entry<Integer,Integer> bin : counts.entrySet()) {
                 n += bin.getValue();
+
+                if (n > rank){
+
+                    return value(bin.getKey());
+
+                }
             }
             return getMaxValue();
         } else {
             long n = count;
-            for (Map.Entry<Integer, Integer> bin : counts.descendingMap().entrySet()) {
-                if (n <= rank) {
+            for(Map.Entry<Integer,Integer> bin : counts.descendingMap().entrySet()) {
+                n -= bin.getValue();
+                if (n <= rank){
                     return value(bin.getKey());
                 }
-                n -= bin.getValue();
+
             }
             return getMinValue();
         }

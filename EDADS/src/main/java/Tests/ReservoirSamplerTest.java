@@ -1,5 +1,5 @@
 package Tests;
-import Sampling.ReservoirSampler;
+import  Synopsis.Sampling.ReservoirSampler;
 /*import org.hamcrest.core.IsEqual;
 import org.hamcrest.core.IsNot;*/
 import org.junit.Assert;

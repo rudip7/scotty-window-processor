@@ -1,7 +1,7 @@
 package Tests;
 
-import Sketches.DDSketch;
-import Sketches.CountMinSketch;
+import Synopsis.Sketches.DDSketch;
+import Synopsis.Sketches.CountMinSketch;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import java.io.File;
@@ -71,16 +71,39 @@ public class DDSketchTest {
     }
 
     @Test
+     public void updateWithCollapseTest(){
+        DDSketch ddSketchobject=new DDSketch(0.01,2000);//DDsketch whose maxNumBin is large enough to not collapse lower buckets
+        DDSketch ddSketch=updateFromFile(ddSketchobject,"data/dataset.csv");
+        DDSketch collapseobject=new DDSketch(0.01,120);
+        DDSketch collapseDDSketch=updateFromFile(collapseobject,"data/dataset.csv");// equall DDsketch whose number of buckets exceeds maxNumBins
+        int collapsedElemetNum= ddSketch.getCounts().size()-collapseDDSketch.getMaxNumBins()+1;
+        int collapsedValue=0;
+        int lastCollapsedkey=0;
+        for(int i=0;i<collapsedElemetNum;i++){
+            Map.Entry<Integer, Integer> bin = ddSketch.getCounts().pollFirstEntry();
+            collapsedValue+=bin.getValue();
+            lastCollapsedkey=bin.getKey();
+        }
+        Assertions.assertEquals(collapseDDSketch.getCounts().firstKey(),lastCollapsedkey);
+        Assertions.assertEquals(collapseDDSketch.getCounts().firstEntry().getValue(),collapsedValue);
+        Assertions.assertTrue(Math.abs(collapseDDSketch.getValueAtQuantile(0.5)-121)<=(0.01*121));
+        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.75)-179)<=(0.01*179));
+
+        //Assertions.assertEquals(collapseDDSketch.getCounts().firstKey(),109);
+        //Assertions.assertEquals(collapseDDSketch.getCounts().firstEntry().getValue(),148);
+    }
+    @Test
     public void getValueAtQuantileTest(){
         double relativeAccuracy= 0.01;
         DDSketch ddSketchobject=new DDSketch(relativeAccuracy,2000);
         DDSketch ddSketch=updateFromFile(ddSketchobject,"data/dataset.csv");
-        /*Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.0)-61)<=(relativeAccuracy*61));
-        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.05)-84)<=(relativeAccuracy*84));
-        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.2)-92)<=(relativeAccuracy*92));
-        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.5)-100)<=(relativeAccuracy*100));
-        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.75)-107)<=(relativeAccuracy*107));
-        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(1.0)-141)<=(relativeAccuracy*141));*/
+//        DDSketch ddSketch=updateFromFile(ddSketchobject,"data/data.csv");
+//        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.0)-66)<=(relativeAccuracy*66));
+//        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.05)-84)<=(relativeAccuracy*84));
+//        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.2)-92)<=(relativeAccuracy*92));
+//        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.5)-100)<=(relativeAccuracy*100));
+//        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(0.75)-107)<=(relativeAccuracy*107));
+//        Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(1.0)-141)<=(relativeAccuracy*141));
 
         Assertions.assertThrows(IllegalArgumentException.class,()->ddSketch.getValueAtQuantile(2));
         Assertions.assertThrows(IllegalArgumentException.class,()->ddSketch.getValueAtQuantile(-2));
@@ -96,6 +119,7 @@ public class DDSketchTest {
     @Test
     public void mergeTest() throws Exception {
         double relativeAccuracy= 0.01;
+
         //Test different illegal merge Scenarios
         DDSketch ddSketchobject=new DDSketch(relativeAccuracy,2000);
         DDSketch illegalDDSketch1=new DDSketch(0.5,2000);
@@ -104,10 +128,42 @@ public class DDSketchTest {
         Assertions.assertThrows(Exception.class,()->ddSketchobject.merge(countMinSketch));
         Assertions.assertThrows(Exception.class,()->ddSketchobject.merge(illegalDDSketch1));
         Assertions.assertThrows(Exception.class,()->ddSketchobject.merge(illegalDDSketch2));
+
         // Test merge with empty DDsketch
         DDSketch ddSketch=updateFromFile(ddSketchobject,"data/dataset.csv");
-        DDSketch other=updateFromFile(new DDSketch(relativeAccuracy,2000),"data/dataset.csv");
-        Assertions.assertEquals(ddSketch.getCounts(),ddSketch.merge(other).getCounts());
+        int oldGlobalCount=ddSketch.getGlobalCount();
+        int oldZeroCount=ddSketch.getZeroCount();
+        TreeMap<Integer, Integer> ddsketchCount=new TreeMap<>();
+        ddsketchCount.putAll(ddSketch.getCounts());
+        DDSketch otherobj=new DDSketch(relativeAccuracy,2000);
+        Assertions.assertEquals( ddsketchCount,ddSketch.merge(otherobj).getCounts());
+
+        //Test merging with non empty ddsketch
+        DDSketch other=updateFromFile(otherobj,"data/data.csv");
+        TreeMap<Integer, Integer> otherCount=other.getCounts();
+        TreeMap<Integer, Integer> mergeCount =ddSketch.merge(other).getCounts();
+        Set result = new HashSet(ddsketchCount.keySet());
+        result.addAll(otherCount.keySet());
+        Assertions.assertEquals(mergeCount.keySet(),result); //whether mergeresult contains both sketches keys
+        for(Map.Entry<Integer,Integer> element:mergeCount.entrySet()){
+            if(otherCount.containsKey(element.getKey())){
+            Assertions.assertTrue(element.getValue()==ddsketchCount.get(element.getKey())+otherCount.get(element.getKey()));
+            }
+            else{
+                Assertions.assertTrue(element.getValue()==ddsketchCount.get(element.getKey()));
+            }
+        }
+        Assertions.assertEquals(ddSketch.getGlobalCount(),oldGlobalCount+other.getGlobalCount());
+        Assertions.assertEquals(ddSketch.getZeroCount(),oldZeroCount+other.getZeroCount());
+    }
+
+    @Test
+    public void mergeWithCollapse(){
+        DDSketch otherobj=new DDSketch(0.01,2000);
+
+        //Test merging with non empty ddsketch
+        DDSketch other=updateFromFile(otherobj,"data/testdata.csv");
+        System.out.println(other.getCounts().size());//merge it with our larger sketch and test the condition
     }
 
     public DDSketch updateFromFile(DDSketch ddSketch,String fileName){

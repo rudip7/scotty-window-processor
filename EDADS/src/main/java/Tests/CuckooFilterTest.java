@@ -1,7 +1,7 @@
 package Tests;
 
-import Sketches.CuckooFilter;
-import Sketches.CountMinSketch;
+import Synopsis.Sketches.CuckooFilter;
+import Synopsis.Sketches.CountMinSketch;
 //import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

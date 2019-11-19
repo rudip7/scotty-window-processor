@@ -42,6 +42,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
         this.elementsProcessed = 0;
     }
 
+
     /**
      * Update the hash map of the Bloom Filter by setting to 1 all the positions calculated by the family
      * of hash functions with respect the new incoming element.
@@ -57,6 +58,9 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
             input = element.hashCode();
         }
         int[] indices = hashFunctions.hash(input);
+//        for (int el : indices){
+//            System.out.println(el);
+//        }
         for (int i = 0; i < nHashFunctions; i++) {
             hashmap.set(indices[i] % numberBits);
         }
@@ -111,13 +115,16 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
     public BloomFilter merge(Synopsis other) {
         if (other instanceof BloomFilter) {
             BloomFilter otherBF = (BloomFilter) other;
-            if (otherBF.getnHashFunctions() == nHashFunctions && otherBF.getNumberBits() == numberBits && hashFunctions.equals(otherBF.hashFunctions))
-            {
+            if (otherBF.getnHashFunctions() == nHashFunctions && otherBF.getNumberBits() == numberBits && hashFunctions.equals(otherBF.hashFunctions)) {
                 hashmap.and(otherBF.getHashmap());
                 elementsProcessed += otherBF.getElementsProcessed();
+            } else {
+                throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
             }
-        } else {
-            throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+        }
+        else {
+
+            throw new IllegalArgumentException("merge arguments should be of the same sketch type");
         }
         return this;
     }

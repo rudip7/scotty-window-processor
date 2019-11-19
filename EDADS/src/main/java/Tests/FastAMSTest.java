@@ -1,9 +1,9 @@
 package Tests;
 
-import Histograms.BarSplittingHistogram;
-import Histograms.EquiDepthHistogram;
-import Sketches.FastAMS;
-import Synopsis.BuildSynopsis;
+import Synopsis.Histograms.BarSplittingHistogram;
+import Synopsis.Histograms.EquiDepthHistogram;
+import Synopsis.Sketches.FastAMS;
+import Jobs.BuildSynopsisJob;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;

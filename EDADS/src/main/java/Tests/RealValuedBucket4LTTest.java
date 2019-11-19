@@ -1,5 +1,5 @@
 package Tests;
-import Histograms.RealValuedBucket4LT;
+import Synopsis.Histograms.RealValuedBucket4LT;
 import org.junit.Test;
 import org.junit.Assert;
 import java.util.Arrays;

@@ -1,9 +1,9 @@
 package Tests;
 
-import Sketches.BloomFilter;
+import Synopsis.Sketches.BloomFilter;
 import org.junit.Assert;
 import org.junit.Test;
-import Sketches.CountMinSketch;
+import Synopsis.Sketches.CountMinSketch;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -130,7 +130,7 @@ public class CountMinSketchTest {
     @Test(expected = Exception.class)
     public void illegalMergeSamplesTest() throws Exception {
         CountMinSketch countmin = new CountMinSketch(12, 10, 7136673L);
-        BloomFilter other= new BloomFilter( 7, 20,200);
+        BloomFilter other= new BloomFilter( 7, 20,200L);
         countmin.merge(other);
     }
     @Test

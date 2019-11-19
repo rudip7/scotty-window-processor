@@ -1,5 +1,5 @@
 package Tests;
-import Histograms.EquiDepthHistogram;
+import Synopsis.Histograms.EquiDepthHistogram;
 import org.junit.Test;
 import org.junit.Assert;
 import org.junit.BeforeClass;
