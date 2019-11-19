@@ -1,0 +1,21 @@
+{
+  "name" : "synopses_window_benchmark",
+  "runtime" : 10000,
+  "throughput": 3000000,
+  "windowConfigurations": [
+    [
+      "Sliding(2000,1000)"
+    ]
+  ],
+  "configurations": [
+    "Scotty"
+  ],
+  "sessionConfig": {
+    "gapCount": 10,
+    "minGapTime": 1000,
+    "maxGapTime": 1001
+  },
+  "synopses":[
+    "CountMinSketch"
+  ]
+}
