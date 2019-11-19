@@ -31,7 +31,8 @@ public class BenchmarkRunner {
     public static void main(String[] args) throws Exception {
 
         //configPath = args[0];
-        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_test.json";
+        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
 
         BenchmarkConfig config = loadConfig();
 
@@ -105,9 +106,9 @@ public class BenchmarkRunner {
 
     private static Tuple2<Class<? extends Synopsis>, Object[]> getSynopsis(String syn){
         if (syn.equals("CountMinSketch")){
-            return new Tuple2<Class<? extends Synopsis>, Object[]>(CountMinSketch.class, new Object[]{4000,2000,7L});
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(CountMinSketch.class, new Object[]{65536,5,7L});
         }else if (syn.equals("ReservoirSampler")){
-            return new Tuple2<Class<? extends Synopsis>, Object[]>(ReservoirSampler.class, new Object[]{500});
+            return new Tuple2<Class<? extends Synopsis>, Object[]>(ReservoirSampler.class, new Object[]{10000});
         }else if (syn.equals("BiasedReservoirSampler")){
             return new Tuple2<Class<? extends Synopsis>, Object[]>(BiasedReservoirSampler.class, new Object[]{500});
         }else if (syn.equals("EquiWidthHistogram")){
