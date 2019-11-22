@@ -1,30 +1,63 @@
 package Tests;
-
-import Synopsis.Histograms.BarSplittingHistogram;
-import Synopsis.Histograms.EquiDepthHistogram;
+import Synopsis.Sketches.DDSketch;
 import Synopsis.Sketches.FastAMS;
-import Jobs.BuildSynopsisJob;
-import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.core.fs.FileSystem;
-import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
-import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.util.Collector;
+import Synopsis.Sketches.CountMinSketch;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.*;
 
-import javax.annotation.Nullable;
+/**
+ * @author Zahra Salmani
+ */
+
 
 public class FastAMSTest {
-    public static void main(String[] args) throws Exception {
+
+    @Test
+    public void updateTest(){
+        int width=200;
+        int height=10;
+        FastAMS fastAMS=updateFromFile(new FastAMS(width,height,345345L),"data/dataset.csv");
+
+        int [][] fastAMSArray =fastAMS.getArray();
+        int [] rowSumArray= new int [height];
+        int rowSum=0;
+        for(int i=0; i< height;i++){
+            rowSum=0;
+            for (int j=0; j<width;j++){
+                rowSum+=Math.abs(fastAMSArray[i][j]);
+            }
+            rowSumArray[i]=rowSum;
+        }
+
+        for (int element :rowSumArray){
+            System.out.println(element);
+            //Assertions.assertTrue(element==4000);
+        }
 
 
 
     }
 
+    private FastAMS updateFromFile(FastAMS fastAMS, String fileName){
+        //String fileName= file;
+        File file= new File(fileName);
+        // this gives you a 2-dimensional array of strings
+        Scanner inputStream;
+        try{
+            inputStream = new Scanner(file);
+            while(inputStream.hasNext()){
+                String line= inputStream.next();
+                //line=line.substring(0, line.length() - 1);
+                fastAMS.update(Integer.parseInt(line));
+            }
+            inputStream.close();
+        }catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        return fastAMS;
+    }
 
 }

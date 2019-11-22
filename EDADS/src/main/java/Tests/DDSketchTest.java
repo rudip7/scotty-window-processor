@@ -116,6 +116,51 @@ public class DDSketchTest {
         Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(1.0)-239)<=(relativeAccuracy*239));
     }
 
+
+//    @Test
+//    public void invertTest(){
+//        double relativeAccuracy= 0.01;
+//        //Test different illegal merge Scenarios
+//        DDSketch ddSketchobject=new DDSketch(relativeAccuracy,2000);
+//        DDSketch illegalDDSketch1=new DDSketch(0.5,2000);
+//        DDSketch illegalDDSketch2=new DDSketch(relativeAccuracy,1000);
+//        CountMinSketch countMinSketch= new CountMinSketch(12,10,7136673L);
+//        Assertions.assertThrows(Exception.class,()->ddSketchobject.invert(countMinSketch));
+//        Assertions.assertThrows(Exception.class,()->ddSketchobject.invert(illegalDDSketch1));
+//        Assertions.assertThrows(Exception.class,()->ddSketchobject.invert(illegalDDSketch2));
+//
+//        // Test invert an empty DDsketch
+//        DDSketch ddSketch=updateFromFile(ddSketchobject,"data/dataset.csv");
+//        int oldGlobalCount=ddSketch.getGlobalCount();
+//        int oldZeroCount=ddSketch.getZeroCount();
+//        TreeMap<Integer, Integer> ddsketchCount=new TreeMap<>();
+//        ddsketchCount.putAll(ddSketch.getCounts());
+//        DDSketch otherobj=new DDSketch(relativeAccuracy,2000);
+//        Assertions.assertEquals( ddsketchCount,ddSketch.merge(otherobj).getCounts());
+//
+//        //Test merging with non empty ddsketch
+//        DDSketch other=updateFromFile(otherobj,"data/data.csv");
+//        TreeMap<Integer, Integer> otherCount=other.getCounts();
+//        TreeMap<Integer, Integer> invertCount =ddSketch.invert(other).getCounts();
+//        Set result = new HashSet(ddsketchCount.keySet());
+//        result.addAll(otherCount.keySet());
+//        Assertions.assertEquals(mergeCount.keySet(),result); //whether mergeresult contains both sketches keys
+//        for(Map.Entry<Integer,Integer> element:mergeCount.entrySet()){
+//            if(otherCount.containsKey(element.getKey())){
+//                Assertions.assertTrue(element.getValue()==ddsketchCount.get(element.getKey())+otherCount.get(element.getKey()));
+//            }
+//            else{
+//                Assertions.assertTrue(element.getValue()==ddsketchCount.get(element.getKey()));
+//            }
+//        }
+//        Assertions.assertEquals(ddSketch.getGlobalCount(),oldGlobalCount+other.getGlobalCount());
+//        Assertions.assertEquals(ddSketch.getZeroCount(),oldZeroCount+other.getZeroCount());
+//
+//    }
+//    @Test
+//    public void decrementTest(){
+//
+//    }
     @Test
     public void mergeTest() throws Exception {
         double relativeAccuracy= 0.01;
@@ -159,11 +204,25 @@ public class DDSketchTest {
 
     @Test
     public void mergeWithCollapse(){
-        DDSketch otherobj=new DDSketch(0.01,2000);
+        // construct a sketch and update it, its normal number of mins without collapsing is 68
+        DDSketch ddSketchObj=new DDSketch(0.01,68);
+        DDSketch ddSketch=updateFromFile(ddSketchObj,"data/testdata.csv");
+        TreeMap<Integer, Integer> ddsketchOldCount=new TreeMap<>();
+        ddsketchOldCount.putAll(ddSketch.getCounts());
 
-        //Test merging with non empty ddsketch
-        DDSketch other=updateFromFile(otherobj,"data/testdata.csv");
-        System.out.println(other.getCounts().size());//merge it with our larger sketch and test the condition
+        // construct another sketch, choose it such that the result of its merge with the first sketch needs more than 68 bins
+        DDSketch otherobj=new DDSketch(0.01,68);
+        DDSketch other=updateFromFile(otherobj,"data/testdata2.csv");
+        Set result = new HashSet(ddSketch.getCounts().keySet());
+        result.addAll(other.getCounts().keySet());
+        Assertions.assertTrue(result.size() > 68);//merge it with our larger sketch and test the condition
+
+        //check merge results
+        ddSketch.merge(other);
+        Assertions.assertTrue(ddSketch.getCounts().firstKey() != ddsketchOldCount.firstKey());
+        Assertions.assertTrue(ddSketch.getCounts().size()==68 && result.size()>ddSketch.getCounts().size());
+
+
     }
 
     public DDSketch updateFromFile(DDSketch ddSketch,String fileName){
