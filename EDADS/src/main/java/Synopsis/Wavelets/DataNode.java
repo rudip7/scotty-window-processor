@@ -2,22 +2,24 @@ package Synopsis.Wavelets;
 
 import java.io.Serializable;
 
+/**
+ * Class which represents an error-tree node in the sibling tree.
+ *
+ */
 public class DataNode implements Serializable {
-    double data;
-    transient double mostpositiveerrorleft;
-    transient double mostnegativeerrorleft;
-    transient double mostpositiveerrorright;
-    transient double mostnegativeerrorright;
-    transient double maxabserror;
-    transient int index;
-    int level;
-    int orderinlevel;
-    transient PointerNode hanged;
-    transient DataNode parent;
-    Utils.relationship reltoparent;
+    double data;    // coefficient value
+    double mostpositiveerrorleft;
+    double mostnegativeerrorleft;
+    double mostpositiveerrorright;
+    double mostnegativeerrorright;
+    double maxabserror;
+    int index;  // index of node in the full error-tree (after padding)
+    int level;  // level of node in sibling-tree
+    int orderinlevel;   // order of node in error-tree level
+    FrontlineNode front;    // Frontline node where this node is hanged
     DataNode leftChild;
+    DataNode parent;
+    Utils.relationship reltoparent;
     DataNode nextSibling;
     DataNode previousSibling;
-    transient HeapNode heap;
-
 }
