@@ -1,14 +1,14 @@
 package Synopsis.Sampling;
 
 import Synopsis.CommutativeSynopsis;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
- * Implementation of the classic Reservoir Synopsis.Sampling algorithm with a given sample size.
+ * Implementation of the classic Reservoir MergeableSynopsis.Sampling algorithm with a given sample size.
  * Firstly the sample will be filled with every incoming element, once the sample has reached the sampleSize
  * bound the upcoming elements will be added to the sample with a probability of sampleSize/processedElements.
  * If an element should be added it will replace a random element of the sample.
@@ -78,7 +78,7 @@ public class ReservoirSampler<T> implements CommutativeSynopsis<T>, Serializable
      * @throws Exception
      */
     @Override
-    public ReservoirSampler<T> merge(Synopsis other) {
+    public ReservoirSampler<T> merge(MergeableSynopsis other) {
         if (other instanceof ReservoirSampler
                 && ((ReservoirSampler) other).getSampleSize() == this.sampleSize) {
             ReservoirSampler<T> o = (ReservoirSampler<T>) other;

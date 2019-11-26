@@ -1,9 +1,9 @@
-package Synopsis.Wavelets;
+package Synopsis.Wavelets.Old;
 
 import java.io.*;
 import java.util.Scanner;
 
-import static Synopsis.Wavelets.Utils.relationship.*;
+import static Synopsis.Wavelets.Old.Utils.relationship.*;
 
 
 public class SiblingTree implements Serializable {

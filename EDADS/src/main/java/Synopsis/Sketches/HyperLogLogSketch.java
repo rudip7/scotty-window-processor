@@ -1,7 +1,7 @@
 package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
 
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 /**
- * Implementation of the classical HyperLogLog Synopsis for count distinct queries on data streams.
+ * Implementation of the classical HyperLogLog MergeableSynopsis for count distinct queries on data streams.
  * This implementation uses 64 bit hash values and should therefore be able to handle up to 2^64 / 30
  * distinct items with adequate accuracy (given acceptable number of registers).
  *
@@ -69,9 +69,9 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
      * @param synopsis the synopsis to merge
      * @return the merged HyperLogLogSketch Datastructure
      */
-    public HyperLogLogSketch merge(Synopsis synopsis){
+    public HyperLogLogSketch merge(MergeableSynopsis synopsis){
         if (synopsis.getClass().isInstance(HyperLogLogSketch.class)){
-            throw new IllegalArgumentException("Synopsis.Sketches can only be merged with other Synopsis.Sketches of the same Type \n" +
+            throw new IllegalArgumentException("MergeableSynopsis.Sketches can only be merged with other MergeableSynopsis.Sketches of the same Type \n" +
                     "otherHLL.getClass() = " + synopsis.getClass() + "\n" +
                     "otherHLL.getClass().isInstance(HyperLogLogSketch.class = false");
         }

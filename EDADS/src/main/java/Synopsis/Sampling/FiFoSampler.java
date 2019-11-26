@@ -1,6 +1,6 @@
 package Synopsis.Sampling;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 
 import java.io.Serializable;
@@ -52,14 +52,14 @@ public class FiFoSampler<T> implements SamplerWithTimestamps<T>, Serializable {
     }
 
     /**
-     * Function to Merge two Synopsis.Sketches
+     * Function to Merge two MergeableSynopsis.Sketches
      *
      * @param other
      * @return
      * @throws Exception
      */
     @Override
-    public FiFoSampler merge(Synopsis other) {
+    public FiFoSampler merge(MergeableSynopsis other) {
         if (other instanceof FiFoSampler
                 && ((FiFoSampler) other).getSampleSize() == this.sampleSize
                 && ((FiFoSampler) other).isEventTime() == this.eventTime) {

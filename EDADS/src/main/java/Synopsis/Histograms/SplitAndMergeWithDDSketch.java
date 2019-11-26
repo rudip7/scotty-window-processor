@@ -1,7 +1,7 @@
 package Synopsis.Histograms;
 
 import Synopsis.Sketches.DDSketch;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import com.esotericsoftware.minlog.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +18,7 @@ import java.util.TreeMap;
  * The incremental update process is done using a split and merge algorithm as proposed in the below mentioned paper.
  * The ddsketch is used to compute the median of buckets which have to be split.
  *
- * Based on the paper: "Fast Incremental Maintenance of Approximate Synopsis.Histograms" - ACM Transactions on Database Systems, Vol. V, 2002
+ * Based on the paper: "Fast Incremental Maintenance of Approximate MergeableSynopsis.Histograms" - ACM Transactions on Database Systems, Vol. V, 2002
  *
  * Our method differs from the algorithm proposed in the paper in the way that we trade the backing sample for a DDSketch.
  * The DDSketch wasn't available at the time the paper was written and provides quantile computation with better error bounds than a backing sample of the same size.
@@ -31,7 +31,7 @@ import java.util.TreeMap;
  *
  * @author joschavonhein
  */
-public class SplitAndMergeWithDDSketch implements Synopsis, Serializable {
+public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializable {
 
     // TODO: check which error bounds apply using the ddsketch instead of backing sample
     // TODO: not yet debugged !!!
@@ -253,7 +253,7 @@ public class SplitAndMergeWithDDSketch implements Synopsis, Serializable {
     }
 
     @Override
-    public SplitAndMergeWithDDSketch merge(Synopsis other) {
+    public SplitAndMergeWithDDSketch merge(MergeableSynopsis other) {
         if (other instanceof SplitAndMergeWithDDSketch){
 
             ddSketch = ddSketch.merge(((SplitAndMergeWithDDSketch) other).getDdSketch());
@@ -267,7 +267,7 @@ public class SplitAndMergeWithDDSketch implements Synopsis, Serializable {
             logger.info("merge complete");
             return this;
         }else {
-            throw new IllegalArgumentException("Synopsis to be merged must be of the same type!");
+            throw new IllegalArgumentException("MergeableSynopsis to be merged must be of the same type!");
         }
     }
 

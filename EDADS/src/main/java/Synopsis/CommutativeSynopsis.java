@@ -2,7 +2,7 @@ package Synopsis;
 
 import java.io.Serializable;
 
-public interface CommutativeSynopsis<T> extends Synopsis<T>, Serializable {
+public interface CommutativeSynopsis<T> extends MergeableSynopsis<T>, Serializable {
     @Override
-    CommutativeSynopsis<T> merge(Synopsis<T> other);
+    CommutativeSynopsis<T> merge(MergeableSynopsis<T> other);
 }

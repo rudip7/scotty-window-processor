@@ -1,7 +1,7 @@
 package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
 
 import java.io.IOException;
@@ -108,7 +108,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
      * @throws Exception
      */
     @Override
-    public BloomFilter merge(Synopsis other) {
+    public BloomFilter merge(MergeableSynopsis other) {
         if (other instanceof BloomFilter) {
             BloomFilter otherBF = (BloomFilter) other;
             if (otherBF.getnHashFunctions() == nHashFunctions && otherBF.getNumberBits() == numberBits && hashFunctions.equals(otherBF.hashFunctions))
@@ -117,7 +117,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
                 elementsProcessed += otherBF.getElementsProcessed();
             }
         } else {
-            throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+            throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
         }
         return this;
     }

@@ -8,6 +8,6 @@ public interface InvertibleSynopsis<T> extends CommutativeSynopsis<T>, Serializa
     void decrement(T toDecrement);
 
     @Override
-    InvertibleSynopsis<T> merge(Synopsis<T> other);
+    InvertibleSynopsis<T> merge(MergeableSynopsis<T> other);
 
 }

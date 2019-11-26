@@ -1,6 +1,6 @@
 package Synopsis.Histograms;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import com.esotericsoftware.minlog.Log;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.slf4j.Logger;
@@ -15,11 +15,11 @@ import java.util.TreeMap;
  * Class which sketch which can be merged with itself and updated in a streaming fashion.
  * Designed for streaming window applications in Flink.
  * Supports method to create an approximate Equi-Depth Histogram from the Sketch data.
- * Based on ideas in the paper: "Fast and Accurate Computation of Equi-Depth Synopsis.Histograms over Data Streams" - ACM International Conference Proceeding Series 2011
+ * Based on ideas in the paper: "Fast and Accurate Computation of Equi-Depth MergeableSynopsis.Histograms over Data Streams" - ACM International Conference Proceeding Series 2011
  *
  * @author joschavonhein
  */
-public class BarSplittingHistogram implements Synopsis, Serializable {
+public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
 
     private int p; // precision hyper parameter
     private int numBuckets; // number of final Buckets
@@ -156,7 +156,7 @@ public class BarSplittingHistogram implements Synopsis, Serializable {
     }
 
     @Override
-    public BarSplittingHistogram merge(Synopsis other) {
+    public BarSplittingHistogram merge(MergeableSynopsis other) {
         if (other instanceof BarSplittingHistogram){
             BarSplittingHistogram o = (BarSplittingHistogram) other;
             BarSplittingHistogram base;
@@ -224,7 +224,7 @@ public class BarSplittingHistogram implements Synopsis, Serializable {
             logger.info("merge complete");
             return base;
         }else {
-            throw new IllegalArgumentException("Synopsis to be merged must be of the same type!");
+            throw new IllegalArgumentException("MergeableSynopsis to be merged must be of the same type!");
         }
     }
 

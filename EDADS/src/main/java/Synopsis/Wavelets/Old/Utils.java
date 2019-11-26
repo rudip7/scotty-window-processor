@@ -1,4 +1,4 @@
-package Synopsis.Wavelets;
+package Synopsis.Wavelets.Old;
 
 public class Utils {
 

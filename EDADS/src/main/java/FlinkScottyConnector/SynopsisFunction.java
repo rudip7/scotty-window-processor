@@ -1,10 +1,7 @@
 package FlinkScottyConnector;
 
-import Synopsis.InvertibleSynopsis;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.windowFunction.AggregateFunction;
-import de.tub.dima.scotty.core.windowFunction.CommutativeAggregateFunction;
-import de.tub.dima.scotty.core.windowFunction.InvertibleAggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 
@@ -15,7 +12,7 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFunction<Tuple2<Integer,Input>, Synopsis, Synopsis>, Serializable {
+public class SynopsisFunction<Input, T extends MergeableSynopsis> implements AggregateFunction<Tuple2<Integer,Input>, MergeableSynopsis, MergeableSynopsis>, Serializable {
     private int keyField;
     private Class<T> synopsisClass;
     private Object[] constructorParam;
@@ -41,12 +38,12 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
         this.synopsisClass = synopsisClass;
     }
 
-    public Synopsis createAggregate() {
+    public MergeableSynopsis createAggregate() {
         try {
             Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
             return constructor.newInstance(constructorParam);
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("Synopsis parameters didn't match any constructor");
+            throw new IllegalArgumentException("MergeableSynopsis parameters didn't match any constructor");
         } catch (InstantiationException e) {
             e.printStackTrace();
             throw new IllegalArgumentException("Couldn't instantiate class");
@@ -60,8 +57,8 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis lift(Tuple2<Integer,Input> inputTuple) {
-        Synopsis partialAggregate = createAggregate();
+    public MergeableSynopsis lift(Tuple2<Integer,Input> inputTuple) {
+        MergeableSynopsis partialAggregate = createAggregate();
         if(inputTuple.f1 instanceof Tuple && keyField != -1){
             Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
             partialAggregate.update(field);
@@ -72,7 +69,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis combine(Synopsis input, Synopsis partialAggregate) {
+    public MergeableSynopsis combine(MergeableSynopsis input, MergeableSynopsis partialAggregate) {
         try {
             return input.merge(partialAggregate);
         } catch (Exception e) {
@@ -82,7 +79,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis liftAndCombine(Synopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
+    public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
         if(inputTuple.f1 instanceof Tuple && keyField != -1){
             Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
             partialAggregate.update(field);
@@ -93,7 +90,7 @@ public class SynopsisFunction<Input, T extends Synopsis> implements AggregateFun
     }
 
     @Override
-    public Synopsis lower(Synopsis inputInvertibleSynopsis) {
+    public MergeableSynopsis lower(MergeableSynopsis inputInvertibleSynopsis) {
         return inputInvertibleSynopsis;
     }
 
