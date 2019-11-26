@@ -28,7 +28,7 @@ public class SiblingTree {
         frontlineBottom.errorhanging = false;
     }
 
-    protected void climbup(double data1, double data2){
+    public void climbup(double data1, double data2){
 
         FrontlineNode frontlineNode = frontlineBottom;
         streamElementCounter += 2;
