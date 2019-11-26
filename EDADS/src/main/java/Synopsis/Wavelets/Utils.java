@@ -2,8 +2,8 @@ package Synopsis.Wavelets;
 
 public class Utils {
     enum relationship {
-        leftRel,
-        rightRel,
+        leftChild,
+        rightChild,
         none
     }
 }

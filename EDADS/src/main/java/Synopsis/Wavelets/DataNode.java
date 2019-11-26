@@ -19,7 +19,7 @@ public class DataNode implements Serializable {
     FrontlineNode front;    // Frontline node where this node is hanged
     DataNode leftChild;
     DataNode parent;
-    Utils.relationship reltoparent;
+    Utils.relationship reltoparent;     // relationship of this node to its parent node
     DataNode nextSibling;
     DataNode previousSibling;
 

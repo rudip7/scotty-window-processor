@@ -1,11 +1,12 @@
 package Tests;
 
-import Synopsis.Wavelets.Old.WaveletSynopsis;
+
+import Synopsis.Wavelets.SiblingTree;
 
 public class waveletTest {
     public static void main(String[] args) throws Exception {
 
-        WaveletSynopsis waveletSynopsis = new WaveletSynopsis(800, 100000);
+        SiblingTree siblingTree = new SiblingTree(20);
 
         for (int i = 0; i < 8; i++) {
             waveletSynopsis.update(i);
