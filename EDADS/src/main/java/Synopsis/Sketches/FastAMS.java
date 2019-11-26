@@ -3,7 +3,7 @@ package Synopsis.Sketches;
 import Synopsis.Sketches.HashFunctions.EH3_HashFunction;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.InvertibleSynopsis;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
 import java.io.IOException;
@@ -139,7 +139,7 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
             }
             throw new IllegalArgumentException("Fast AMS Sketch to be removed needs to be the same size and use the same hash functions (seed has to be equal)!");
         }
-        throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+        throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
     public int[][] getArray() {
@@ -171,7 +171,7 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
     }
 
     @Override
-    public FastAMS<T> merge(Synopsis other){
+    public FastAMS<T> merge(MergeableSynopsis other){
         if (other instanceof FastAMS){
             FastAMS o = (FastAMS) other;
             if (width == o.getWidth() && height == o.getHeight() && seed == o.getSeed()){
@@ -183,7 +183,7 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
                 }
                 return this;
             }else {
-                throw new IllegalArgumentException("Synopsis.Sketches have to be of same height, width, n and seeds / hash_functions to be merged");
+                throw new IllegalArgumentException("MergeableSynopsis.Sketches have to be of same height, width, n and seeds / hash_functions to be merged");
             }
         }else {
             throw new IllegalArgumentException("sketch can only be merged with other sketches of the same class");

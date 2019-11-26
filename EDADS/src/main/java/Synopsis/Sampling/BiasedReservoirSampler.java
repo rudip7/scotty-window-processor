@@ -1,13 +1,13 @@
 package Synopsis.Sampling;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
 import java.io.Serializable;
 import java.util.TreeMap;
 
 /**
- * Implementation of the Biased Reservoir Synopsis.Sampling algorithm with a given sample size.
+ * Implementation of the Biased Reservoir MergeableSynopsis.Sampling algorithm with a given sample size.
  * (@href http://charuaggarwal.net/sigreservoir.pdf)
  * The idea is to give more priority to the newest incoming elements adding them always to the sample in
  * contrast to the traditional Reservoir Sampler. The probability that this element is simply appended to
@@ -89,7 +89,7 @@ public class BiasedReservoirSampler<T> implements SamplerWithTimestamps<T>, Seri
      * @throws Exception
      */
     @Override
-    public BiasedReservoirSampler merge(Synopsis other) {
+    public BiasedReservoirSampler merge(MergeableSynopsis other) {
         if (other instanceof BiasedReservoirSampler
                 && ((BiasedReservoirSampler) other).getSampleSize() == this.sampleSize) {
             BiasedReservoirSampler<T> toMerge = (BiasedReservoirSampler<T>) other;

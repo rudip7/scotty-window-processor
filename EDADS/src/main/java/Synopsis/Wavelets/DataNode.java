@@ -22,4 +22,14 @@ public class DataNode implements Serializable {
     Utils.relationship reltoparent;
     DataNode nextSibling;
     DataNode previousSibling;
+
+    public DataNode(double data, int level, int orderinlevel) {
+        this.data = data;
+        this.level = level;
+        this. orderinlevel = orderinlevel;
+    }
+
+    protected void computeIndex(int maxLevel){
+        index = (int) (Math.pow(2, maxLevel-level)) + orderinlevel - 1;
+    }
 }

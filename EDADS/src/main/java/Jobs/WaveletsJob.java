@@ -1,8 +1,8 @@
 package Jobs;
 
-import Synopsis.Sketches.CountMinSketch;
-import Source.DemoSource;
 import FlinkScottyConnector.BuildSynopsis;
+import Source.DemoSource;
+import Synopsis.Sketches.CountMinSketch;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
@@ -19,7 +19,7 @@ import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
 
-public class BuildSynopsisJob {
+public class WaveletsJob {
     public static void main(String[] args) throws Exception {
 
 
@@ -31,17 +31,7 @@ public class BuildSynopsisJob {
 
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
         SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
-//        BuildSynopsis.setParallelismKeys(env.getParallelism()*2);
-//        SingleOutputStreamOperator<AggregateWindow<BloomFilter>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BloomFilter.class, 25, 20, 1L);
-//        SingleOutputStreamOperator<AggregateWindow<BiasedReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BiasedReservoirSampler.class, 20);
 
-//        KeyedStream<Tuple2<Integer, Tuple3<Integer, Integer, Long>>, Tuple> keyedStream = timestamped.map(new BuildSynopsis.AddParallelismIndex<>()).keyBy(0);
-//        KeyedScottyWindowOperator windowOperator = new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(0, CountMinSketch.class, 10, 10, 1L));
-//
-//        windowOperator.addWindow(new TumblingWindow(WindowMeasure.Time, 5000));
-//
-//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = keyedStream
-//                .process(windowOperator);
 
         finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
             @Override

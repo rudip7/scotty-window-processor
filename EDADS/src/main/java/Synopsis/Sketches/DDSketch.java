@@ -1,7 +1,7 @@
 package Synopsis.Sketches;
 
 import Synopsis.InvertibleSynopsis;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -254,7 +254,7 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
                 return this;
             }
         }
-        throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+        throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
     @Override
@@ -287,7 +287,7 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
      * @throws Exception in case
      */
     @Override
-    public DDSketch merge(Synopsis other) {
+    public DDSketch merge(MergeableSynopsis other) {
         if (other instanceof DDSketch) {
             DDSketch otherDD = (DDSketch) other;
             if (this.relativeAccuracy == otherDD.relativeAccuracy && this.maxNumBins == otherDD.maxNumBins) {
@@ -307,7 +307,7 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
                 return this;
             }
         }
-        throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+        throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
     @Override

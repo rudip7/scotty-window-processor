@@ -1,7 +1,7 @@
 package Synopsis.Histograms;
 
+import Synopsis.MergeableSynopsis;
 import Synopsis.Sampling.FlinkVersion.ReservoirSampler;
-import Synopsis.Synopsis;
 import com.esotericsoftware.minlog.Log;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.slf4j.Logger;
@@ -19,11 +19,11 @@ import java.util.TreeMap;
  * The incremental update process is done using a split and merge algorithm as proposed in the below mentioned paper.
  * The backing sample is used to compute the median of buckets which have to be split.
  *
- * Based on the paper: "Fast Incremental Maintenance of Approximate Synopsis.Histograms" - ACM Transactions on Database Systems, Vol. V, 2002
+ * Based on the paper: "Fast Incremental Maintenance of Approximate MergeableSynopsis.Histograms" - ACM Transactions on Database Systems, Vol. V, 2002
  *
  * @author joschavonhein
  */
-public class SplitAndMergeWithBackingSample implements Synopsis, Serializable {
+public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serializable {
 
 
     private int maxNumBuckets; // maximum number of Bars in the sketch
@@ -214,7 +214,7 @@ public class SplitAndMergeWithBackingSample implements Synopsis, Serializable {
     }
 
     @Override
-    public SplitAndMergeWithBackingSample merge(Synopsis other) {
+    public SplitAndMergeWithBackingSample merge(MergeableSynopsis other) {
         if (other instanceof SplitAndMergeWithBackingSample){
 
             sample = sample.merge(((SplitAndMergeWithBackingSample) other).getSample());
@@ -228,7 +228,7 @@ public class SplitAndMergeWithBackingSample implements Synopsis, Serializable {
             logger.info("merge complete");
             return this;
         }else {
-            throw new IllegalArgumentException("Synopsis to be merged must be of the same type!");
+            throw new IllegalArgumentException("MergeableSynopsis to be merged must be of the same type!");
         }
     }
 

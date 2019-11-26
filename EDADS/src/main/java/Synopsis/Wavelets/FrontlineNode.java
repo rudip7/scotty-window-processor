@@ -12,4 +12,9 @@ public class FrontlineNode {
     double negativeerror;   // error quantities from deleted orphans
     boolean errorhanging;
     int level;
+
+    public FrontlineNode(double value, int level) {
+        this.value = value;
+        this.level = level;
+    }
 }

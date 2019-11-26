@@ -3,7 +3,7 @@ package Synopsis;
 import org.apache.flink.annotation.Internal;
 
 /**
- * Generic interface for a Synopsis.
+ * Generic interface for a MergeableSynopsis.
  *
  * @param <T> the Input Type
  * @author Joscha von Hein
@@ -13,19 +13,9 @@ import org.apache.flink.annotation.Internal;
 public interface Synopsis<T> extends java.io.Serializable, Cloneable{
 
 	/**
-	 * Update the Synopsis structure with a new incoming element.
+	 * Update the MergeableSynopsis structure with a new incoming element.
 	 *
 	 * @param element new incoming element
 	 */
 	void update(T element);
-
-	/**
-	 * Function to Merge two Synopses.
-	 *
-	 * @param other synopsis to be merged with
-	 * @return merged synopsis
-	 * @throws Exception
-	 */
-	Synopsis<T> merge(Synopsis<T> other);
-
 }

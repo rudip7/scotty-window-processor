@@ -66,7 +66,7 @@ public class EquiWidthHistogram4LT {
     public EquiWidthHistogram4LT merge(EquiWidthHistogram4LT other){
         if (other.getLowerBound() != this.lowerBound || other.getUpperBound() != this.upperBound
             || other.getNumBuckets() != this.getNumBuckets()){
-            throw new IllegalArgumentException("Synopsis.Histograms to need to have the same boundaries and the same number of buckets!");
+            throw new IllegalArgumentException("MergeableSynopsis.Histograms to need to have the same boundaries and the same number of buckets!");
         }
         // TODO: implement this
         return null;

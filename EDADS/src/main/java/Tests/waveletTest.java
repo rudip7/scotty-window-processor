@@ -1,6 +1,6 @@
 package Tests;
 
-import Synopsis.Wavelets.WaveletSynopsis;
+import Synopsis.Wavelets.Old.WaveletSynopsis;
 
 public class waveletTest {
     public static void main(String[] args) throws Exception {

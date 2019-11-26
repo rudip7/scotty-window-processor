@@ -43,6 +43,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.8</java.version>
+        <flink.version>1.8.0</flink.version>
+        <scala.binary.version>2.11</scala.binary.version>
         <!-- Overwrite default values from parent pom.
 			 Intellij is (sometimes?) using those values to choose target language level
 			 and thus is changing back to java 1.6 on each maven re-import -->
@@ -70,6 +72,19 @@
             <type>jar</type>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-java</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -96,22 +111,7 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.0.1</version><!--$NO-MVN-MAN-VER$-->
-                        <configuration>
-                            <quiet>true</quiet>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
+
                 </plugins>
             </build>
             <dependencies>
@@ -179,6 +179,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
+                    <doclint>none</doclint>
                     <failOnError>false</failOnError>
                 </configuration>
                 <executions>

@@ -3,7 +3,7 @@ package Synopsis.Sketches;
 
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.InvertibleSynopsis;
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -128,7 +128,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
 
     public void setArray(int[][] array) {
         if (!(array.length == height && array[0].length == width)) {
-            throw new IllegalArgumentException("Synopsis.Sketches have to be the same size");
+            throw new IllegalArgumentException("MergeableSynopsis.Sketches have to be the same size");
         }
         for (int i = 0; i < height; i++) {
             for (int j = 0; j < width; j++) {
@@ -152,7 +152,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
      * @throws Exception
      */
     @Override
-    public CountMinSketch merge(Synopsis<T> other) {
+    public CountMinSketch merge(MergeableSynopsis<T> other) {
         if (other instanceof CountMinSketch) {
             CountMinSketch otherCM = (CountMinSketch) other;
             if (otherCM.getWidth() == width && otherCM.getHeight() == height && hashFunctions.equals(otherCM.hashFunctions)) {
@@ -167,7 +167,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
                 return this;
             }
         }
-        throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+        throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
 //    @Override
@@ -209,7 +209,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
                 return this;
             }
         }
-        throw new IllegalArgumentException("Synopsis.Sketches to invert have to be the same size and hash Functions");
+        throw new IllegalArgumentException("MergeableSynopsis.Sketches to invert have to be the same size and hash Functions");
     }
 
 
