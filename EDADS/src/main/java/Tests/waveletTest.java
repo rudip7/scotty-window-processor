@@ -7,14 +7,20 @@ public class waveletTest {
     public static void main(String[] args) throws Exception {
 
         SiblingTree siblingTree = new SiblingTree(20);
-
-        for (int i = 0; i < 8; i++) {
-            waveletSynopsis.update(i);
-        }
-
-        for (int i = 0; i < 8; i++) {
-            System.out.println("PointQuery of index " + i + " : " + waveletSynopsis.PointQuery(i));
-        }
-        System.out.println(waveletSynopsis.RangeSumQuery(2,4));
+        System.out.println(siblingTree);
+        siblingTree.climbup(9,3);
+        System.out.println(siblingTree);
+        siblingTree.climbup(9, -5);
+        System.out.println(siblingTree);
+        siblingTree.climbup(5, 13);
+        System.out.println(siblingTree);
+        siblingTree.climbup(13, 17);
+        System.out.println(siblingTree);
+        siblingTree.climbup(14, -2);
+        System.out.println(siblingTree);
+        siblingTree.climbup(9, 7);
+        System.out.println(siblingTree);
+        siblingTree.climbup(7, 3);
+        System.out.println(siblingTree);
     }
 }
