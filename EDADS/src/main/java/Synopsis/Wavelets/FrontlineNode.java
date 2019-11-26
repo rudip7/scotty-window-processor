@@ -13,6 +13,10 @@ public class FrontlineNode {
     boolean errorhanging;
     int level;
 
+    public FrontlineNode(int level) {
+        this.level = level;
+    }
+
     public FrontlineNode(double value, int level) {
         this.value = value;
         this.level = level;

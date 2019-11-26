@@ -24,7 +24,7 @@ public class SiblingTree {
         streamElementCounter = 0;
         nodecounter = 0;
 
-        frontlineBottom = new FrontlineNode(0, 1);
+        frontlineBottom = new FrontlineNode( 1);
         frontlineBottom.errorhanging = false;
     }
 
