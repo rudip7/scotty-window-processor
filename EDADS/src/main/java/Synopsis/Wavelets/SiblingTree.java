@@ -91,4 +91,15 @@ public class SiblingTree {
             frontlineNode = frontlineNode.next;
         }
     }
+
+    @Override
+    public String toString() {
+        String s = "";
+        FrontlineNode current = frontlineBottom;
+        while (current != null){
+            s+= ("Level "+current.level+" ---> "+current.value+":\n"+current.hungChild.toString()+"\n\n");
+        }
+
+        return super.toString();
+    }
 }

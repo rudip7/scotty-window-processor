@@ -32,4 +32,9 @@ public class DataNode implements Serializable {
     protected void computeIndex(int maxLevel){
         index = (int) (Math.pow(2, maxLevel-level)) + orderinlevel - 1;
     }
+
+    @Override
+    public String toString() {
+        return  "Value: "+data+"\nLeft child: "+leftChild.toString()+"\nSibling: "+nextSibling.toString();
+    }
 }
