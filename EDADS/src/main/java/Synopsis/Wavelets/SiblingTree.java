@@ -52,13 +52,15 @@ public class SiblingTree {
             }else {
                 average = (average+curentAverage)/2;
                 value = curentAverage - average;
-                child = frontlineNode.prev.hungChild;
-                frontlineNode.prev.hungChild = null;
+                if (frontlineNode.prev != null){
+                    child = frontlineNode.prev.hungChild;
+                    frontlineNode.prev.hungChild = null;
+                }
             }
 
             if (frontlineNode.level == level){
                 sibling = frontlineNode.hungChild;
-                while (sibling.nextSibling != null){
+                while (sibling != null && sibling.nextSibling != null){
                     sibling = sibling.nextSibling;          // set s to be the last sibling of the hung child of f
                 }
             }
