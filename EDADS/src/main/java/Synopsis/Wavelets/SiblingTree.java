@@ -74,6 +74,7 @@ public class SiblingTree {
             // TODO: compute MA; put ci in min-heap H;
 
             frontlineNode.prev = null;
+            frontlineBottom = frontlineNode;
 
             FrontlineNode iterate = frontlineBottom;
             while (iterate.next != null){
@@ -85,6 +86,9 @@ public class SiblingTree {
                 frontlineNode = new FrontlineNode(average, level);
             } else {
                 curentAverage = frontlineNode.value;
+                if (current.level == 1 && current.orderinlevel == 1){
+                    frontlineNode.value = average;
+                }
             }
 
             if (frontlineNode.hungChild == null){
