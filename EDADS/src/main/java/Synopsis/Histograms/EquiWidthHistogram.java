@@ -1,6 +1,6 @@
 package Synopsis.Histograms;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
  * @param <T>
  * @author joschavonhein
  */
-public class EquiWidthHistogram<T extends Number> implements Synopsis<T> {
+public class EquiWidthHistogram<T extends Number> implements MergeableSynopsis<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EquiWidthHistogram.class);
 
@@ -70,7 +70,7 @@ public class EquiWidthHistogram<T extends Number> implements Synopsis<T> {
     }
 
     @Override
-    public EquiWidthHistogram merge(Synopsis other) throws IllegalArgumentException {
+    public EquiWidthHistogram merge(MergeableSynopsis other) throws IllegalArgumentException {
         if (other instanceof EquiWidthHistogram){
             EquiWidthHistogram o = (EquiWidthHistogram) other;
             if (lowerBound == o.getLowerBound()
@@ -81,7 +81,7 @@ public class EquiWidthHistogram<T extends Number> implements Synopsis<T> {
                     frequency[i] += otherFrequencies[i];
                 }
                 return this;
-            }else throw new IllegalArgumentException("Synopsis.Histograms have to have the same properties (boundaries and number of buckets) in order to be merged!");
+            }else throw new IllegalArgumentException("MergeableSynopsis.Histograms have to have the same properties (boundaries and number of buckets) in order to be merged!");
         }
         throw new IllegalArgumentException("merged Class has to be of Class Equi-Width Histogram!");
     }

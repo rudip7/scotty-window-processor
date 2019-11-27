@@ -45,7 +45,7 @@ public class CountMinSketchTest {
                     for (int col=0;col< frequencyArr[row].length;col++){
                         sum+=frequencyArr[row][col];
                     }
-                    Assert.assertEquals(1, sum-rowsum[row]);
+                    Assert.assertEquals(1, sum-rowsum[row]);//is each row's sum increased by 1 in comparison with the previous step
                     rowsum[row]=sum;
                 }
 
@@ -113,8 +113,8 @@ public class CountMinSketchTest {
         }catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        double errorbound = 3173/150;
-        int i = countmin.query(239);
+        double errorbound = 3173/150; //based on what we have in refining errors in paper page:217, we remove Top 20 frequencies and bound error to sum of remaining frequencies
+
         Assert.assertTrue(Math.abs(countmin.query(239)-17)<= errorbound);
         Assert.assertTrue(Math.abs(countmin.query(15)-13)<= errorbound);
         Assert.assertTrue(Math.abs(countmin.query(100)-16)<= errorbound);

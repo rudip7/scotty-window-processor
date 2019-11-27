@@ -1,6 +1,6 @@
 package Synopsis.Sketches;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
@@ -188,7 +188,7 @@ public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
      * @throws Exception
      */
     @Override
-    public CuckooFilter merge(Synopsis other) {
+    public CuckooFilter merge(MergeableSynopsis other) {
         if (other instanceof CuckooFilter) {
             CuckooFilter<T> otherCF = (CuckooFilter) other;
             if (!this.full && !otherCF.full && otherCF.getA() == this.a && otherCF.getB() == this.b && otherCF.getBuckets().length == this.buckets.length
@@ -219,7 +219,7 @@ public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
                 }
             }
         }
-        throw new IllegalArgumentException("Synopsis.Sketches to merge have to be the same size and hash Functions");
+        throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
 
     }
 

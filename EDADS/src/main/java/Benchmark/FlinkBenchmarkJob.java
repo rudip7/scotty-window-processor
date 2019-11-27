@@ -1,28 +1,21 @@
 package Benchmark;
 
 import FlinkScottyConnector.BuildSynopsis;
-import Synopsis.Sampling.ReservoirSampler;
-import Synopsis.Synopsis;
-import de.tub.dima.scotty.core.AggregateWindow;
+import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.TumblingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
@@ -34,7 +27,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 /**
  * Created by philipp on 5/28/17.
  */
-public class FlinkBenchmarkJob<S extends Synopsis> {
+public class FlinkBenchmarkJob<S extends MergeableSynopsis> {
 
 	public FlinkBenchmarkJob(List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
                              final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {

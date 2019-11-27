@@ -31,9 +31,13 @@ public class FastAMSTest {
             }
             rowSumArray[i]=rowSum;
         }
-
+        int correct=0;
+        double error_bound= Math.sqrt(51467/200d);
+        System.out.println(error_bound);
         for (int element :rowSumArray){
             System.out.println(element);
+            System.out.println(Math.abs(element-3173));
+            System.out.println("------------------------");
             //Assertions.assertTrue(element==4000);
         }
 

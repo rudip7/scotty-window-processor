@@ -1,7 +1,7 @@
 package Synopsis.Sampling;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
 
-public interface SamplerWithTimestamps<T> extends Synopsis<SampleElement<T>> {
+public interface SamplerWithTimestamps<T> extends MergeableSynopsis<SampleElement<T>> {
 
 }

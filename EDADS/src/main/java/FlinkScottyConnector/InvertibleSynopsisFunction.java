@@ -46,7 +46,7 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
             Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
             return constructor.newInstance(constructorParam);
         } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("Synopsis parameters didn't match any constructor");
+            throw new IllegalArgumentException("MergeableSynopsis parameters didn't match any constructor");
         } catch (InstantiationException e) {
             e.printStackTrace();
             throw new IllegalArgumentException("Couldn't instantiate class");

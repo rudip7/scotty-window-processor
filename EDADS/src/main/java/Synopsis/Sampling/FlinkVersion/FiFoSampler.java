@@ -1,11 +1,12 @@
 package Synopsis.Sampling.FlinkVersion;
 
-import Synopsis.Synopsis;
+import Synopsis.MergeableSynopsis;
+
 import java.io.Serializable;
 import java.util.*;
 
 /**
- * Implementation of the traditional FiFo Synopsis.Sampling algorithm with a given sample size. This Sampler just collect
+ * Implementation of the traditional FiFo MergeableSynopsis.Sampling algorithm with a given sample size. This Sampler just collect
  * the elements and put them in a Queue of bounded size, if the Queue has reached its maximum capacity the oldest
  * element will be removed from it.
  *
@@ -13,7 +14,7 @@ import java.util.*;
  *
  * @author Rudi Poepsel Lemaitre
  */
-public class FiFoSampler<T> implements Synopsis<T>, Serializable {
+public class FiFoSampler<T> implements MergeableSynopsis<T>, Serializable {
     private LinkedList<T> sample;
     private int sampleSize;
     private int merged;
@@ -63,7 +64,7 @@ public class FiFoSampler<T> implements Synopsis<T>, Serializable {
      * @throws Exception
      */
     @Override
-    public FiFoSampler merge(Synopsis other){
+    public FiFoSampler merge(MergeableSynopsis other){
         if (other instanceof FiFoSampler
                 && ((FiFoSampler) other).getSampleSize() == this.sampleSize) {
 
