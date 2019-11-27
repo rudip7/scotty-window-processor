@@ -45,4 +45,14 @@ public class DataNode implements Serializable {
         }
         return s;
     }
+
+    public void setFrontLineForDescendants(FrontlineNode frontlineNode){
+        front = frontlineNode;
+        if (leftChild != null){
+            leftChild.setFrontLineForDescendants(frontlineNode);
+        }
+        if (nextSibling != null){
+            nextSibling.setFrontLineForDescendants(frontlineNode);
+        }
+    }
 }

@@ -26,7 +26,6 @@ public class SiblingTree {
 
         frontlineBottom = null;
         frontlineTop = null;
-//        frontlineBottom.errorhanging = false;
     }
 
     public void climbup(double data1, double data2) {
@@ -36,10 +35,11 @@ public class SiblingTree {
         streamElementCounter += 2;
 
         int order = streamElementCounter;
-        double curentAverage = Double.MIN_VALUE;
+        double curentAverage = 0;
         double average = 0;
         int level = 0;
         double value;
+        boolean firstLoop = true;
 
         // loop through the levels from bottom to top and merge the smallest unconnected subtrees until there are a maximum of 1 frontline node per level
         while (order > 0 && order % 2 == 0) {
@@ -48,9 +48,10 @@ public class SiblingTree {
             order /= 2;
             level++;
 
-            if (curentAverage == Double.MIN_VALUE) { //first loop / level 0
+            if (firstLoop) { //first loop / level 0
                 average = (data1 + data2) / 2;
                 value = data1 - average;
+                firstLoop = false;
             } else {
                 average = (average + curentAverage) / 2;
                 value = curentAverage - average;
@@ -76,43 +77,31 @@ public class SiblingTree {
 
             // TODO: compute MA; put ci in min-heap H;
 
-            if (frontlineBottom == prevFrontlineNode) {
-                frontlineBottom = null;
-            }
-            if (prevFrontlineNode != null && prevFrontlineNode.next != null) {
-                prevFrontlineNode.next.prev = prevFrontlineNode.prev;
-            }
-            if (frontlineNode.prev != null){
-                frontlineNode.prev = null;
+            if (frontlineNode != null && frontlineNode.prev != null){
+                frontlineNode.prev = null;      // delete the previous fnode
             }
 
-            FrontlineNode iterate = frontlineBottom;
-            while (iterate != null && iterate.next != null) {
-                if (iterate.level == level) break;
-                iterate = iterate.next;
-            }
+            FrontlineNode newFrontlineNode = frontlineNode;
 
-            if (iterate == null || iterate.level != level) {
-                frontlineNode = new FrontlineNode(average, level);
-                if (frontlineTop == null || frontlineTop.level < level){
-                    frontlineTop = frontlineNode;
-                }
-                if (frontlineBottom == null || frontlineBottom.level > level) {
-                    if (frontlineBottom != null) {
-                        frontlineBottom.prev = frontlineNode;
-                        frontlineNode.next = frontlineBottom;
-                    }
-                    frontlineBottom = frontlineNode;
-                }
+            if (frontlineNode == null){     // this is only the case if the new frontline node is the highest frontline-node
+                newFrontlineNode = new FrontlineNode(average, level);
+                frontlineTop = newFrontlineNode;
+                frontlineBottom = newFrontlineNode;
+            }else if (frontlineNode.level != level) {   // this is the case when a new frontline node is created but there are still other frontline nodes with higher levels in the structure
+                newFrontlineNode = new FrontlineNode(average, level);
+                frontlineBottom = newFrontlineNode;
+                newFrontlineNode.next = frontlineNode;
+                frontlineNode.prev = newFrontlineNode;
             } else {
                 curentAverage = frontlineNode.value;
             }
 
-            if (frontlineNode.hungChild == null) {
-                frontlineNode.hungChild = current;
+            if (newFrontlineNode.hungChild == null) {
+                newFrontlineNode.hungChild = current;
+                current.setFrontLineForDescendants(newFrontlineNode);
             }
             prevFrontlineNode = frontlineNode;
-            frontlineNode = frontlineNode.next;
+            frontlineNode = newFrontlineNode.next;
         }
     }
 
