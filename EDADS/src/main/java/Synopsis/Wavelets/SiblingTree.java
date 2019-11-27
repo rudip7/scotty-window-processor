@@ -24,13 +24,15 @@ public class SiblingTree {
         streamElementCounter = 0;
         nodecounter = 0;
 
-        frontlineBottom = new FrontlineNode(0, 1);
-        frontlineBottom.errorhanging = false;
+        frontlineBottom = null;
+        frontlineTop = null;
+//        frontlineBottom.errorhanging = false;
     }
 
-    public void climbup(double data1, double data2){
+    public void climbup(double data1, double data2) {
 
         FrontlineNode frontlineNode = frontlineBottom;
+        FrontlineNode prevFrontlineNode = null;
         streamElementCounter += 2;
 
         int order = streamElementCounter;
@@ -38,56 +40,78 @@ public class SiblingTree {
         double average = 0;
         int level = 0;
         double value;
-        DataNode child = null;
-        DataNode sibling = null;
 
         // loop through the levels from bottom to top and merge the smallest unconnected subtrees until there are a maximum of 1 frontline node per level
-        while (order > 0 && order % 2 == 0){
+        while (order > 0 && order % 2 == 0) {
+            DataNode child = null;
+            DataNode sibling = null;
             order /= 2;
-            level ++;
+            level++;
 
-            if (curentAverage == Double.MIN_VALUE){ //first loop / level 0
+            if (curentAverage == Double.MIN_VALUE) { //first loop / level 0
                 average = (data1 + data2) / 2;
                 value = data1 - average;
-            }else {
-                average = (average+curentAverage)/2;
+            } else {
+                average = (average + curentAverage) / 2;
                 value = curentAverage - average;
-                child = frontlineNode.prev.hungChild;
-                frontlineNode.prev.hungChild = null;
+                child = prevFrontlineNode.hungChild;
+                prevFrontlineNode.hungChild = null;
             }
 
-            if (frontlineNode.level == level){
+            if (frontlineNode != null && frontlineNode.level == level) {
                 sibling = frontlineNode.hungChild;
-                while (sibling.nextSibling != null){
+                while (sibling.nextSibling != null) {
                     sibling = sibling.nextSibling;          // set s to be the last sibling of the hung child of f
                 }
             }
 
             DataNode current = new DataNode(value, level, order);
             current.leftChild = child;
-            current.previousSibling = sibling;
+            if (sibling != null) {
+                current.previousSibling = sibling;
+                sibling.nextSibling = current;
+            }
 
             // TODO: compute error values for current from children, fnode below f
 
             // TODO: compute MA; put ci in min-heap H;
 
-            frontlineNode.prev = null;
+            if (frontlineBottom == prevFrontlineNode) {
+                frontlineBottom = null;
+            }
+            if (prevFrontlineNode != null && prevFrontlineNode.next != null) {
+                prevFrontlineNode.next.prev = prevFrontlineNode.prev;
+            }
+            if (frontlineNode.prev != null){
+                frontlineNode.prev = null;
+            }
 
             FrontlineNode iterate = frontlineBottom;
-            while (iterate.next != null){
+            while (iterate != null && iterate.next != null) {
                 if (iterate.level == level) break;
                 iterate = iterate.next;
             }
 
-            if (iterate.level != level){
+            if (iterate == null || iterate.level != level) {
                 frontlineNode = new FrontlineNode(average, level);
+                if (frontlineTop == null || frontlineTop.level < level){
+                    frontlineTop = frontlineNode;
+                }
+                if (frontlineBottom == null || frontlineBottom.level > level) {
+                    if (frontlineBottom != null) {
+                        frontlineBottom.prev = frontlineNode;
+                        frontlineNode.next = frontlineBottom;
+                    }
+                    frontlineBottom = frontlineNode;
+                }
             } else {
                 curentAverage = frontlineNode.value;
             }
 
-            if (frontlineNode.hungChild == null){
+            if (frontlineNode.hungChild == null) {
                 frontlineNode.hungChild = current;
             }
+            prevFrontlineNode = frontlineNode;
             frontlineNode = frontlineNode.next;
         }
     }
@@ -95,11 +119,20 @@ public class SiblingTree {
     @Override
     public String toString() {
         String s = "";
-        FrontlineNode current = frontlineBottom;
-        while (current != null){
-            s+= ("Level "+current.level+" ---> "+current.value+":\n"+current.hungChild.toString()+"\n\n");
-        }
+        if (frontlineBottom == null) {
+            return "The Sibling Tree is empty.";
+        } else {
+            FrontlineNode current = frontlineBottom;
+            while (current != null) {
+                s += (current.toString() + ":\n");
+                if (current.hungChild != null) {
+                    s += (current.hungChild.toString() + "\n");
+                }
+                s += "----------------------------------------------------------\n";
+                current = current.next;
+            }
 
-        return super.toString();
+            return s;
+        }
     }
 }
