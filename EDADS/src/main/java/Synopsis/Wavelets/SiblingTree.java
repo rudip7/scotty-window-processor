@@ -106,9 +106,6 @@ public class SiblingTree {
                 }
             } else {
                 curentAverage = frontlineNode.value;
-                if (current.level == 1 && current.orderinlevel == 1){
-                    frontlineNode.value = average;
-                }
             }
 
             if (frontlineNode.hungChild == null) {
@@ -125,14 +122,14 @@ public class SiblingTree {
         if (frontlineBottom == null) {
             return "The Sibling Tree is empty.";
         } else {
-            FrontlineNode current = frontlineBottom;
+            FrontlineNode current = frontlineTop;
             while (current != null) {
                 s += (current.toString() + ":\n");
                 if (current.hungChild != null) {
                     s += (current.hungChild.toString() + "\n");
                 }
                 s += "----------------------------------------------------------\n";
-                current = current.next;
+                current = current.prev;
             }
 
             return s;
