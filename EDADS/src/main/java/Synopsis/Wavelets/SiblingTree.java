@@ -106,6 +106,9 @@ public class SiblingTree {
                 }
             } else {
                 curentAverage = frontlineNode.value;
+                if (current.level == 1 && current.orderinlevel == 1){
+                    frontlineNode.value = average;
+                }
             }
 
             if (frontlineNode.hungChild == null) {
