@@ -1,18 +1,20 @@
 package Synopsis.Wavelets;
 
 
+import org.apache.commons.collections.BinaryHeap;
+
+import java.util.PriorityQueue;
 import java.util.TreeSet;
 
 public class SiblingTree {
 
-    private int nodecounter;
+    private int nodecounter = 0;
     private int size;
     private FrontlineNode frontlineBottom;
     private FrontlineNode frontlineTop;
-    private DataNode highest;
     private DataNode rootnode;  // only set after the whole data stream is read (in padding)
     private int streamElementCounter;
-    private TreeSet<DataNode> errorHeap;
+    private PriorityQueue<DataNode> errorHeap;
 
 
     /**
@@ -28,7 +30,7 @@ public class SiblingTree {
 
         frontlineBottom = null;
         frontlineTop = null;
-        errorHeap = new TreeSet<>();
+        errorHeap = new PriorityQueue<>();
     }
 
     public void climbup(double data1, double data2) {
@@ -36,6 +38,7 @@ public class SiblingTree {
         FrontlineNode frontlineNode = frontlineBottom;
         FrontlineNode prevFrontlineNode = null;
         streamElementCounter += 2;
+        nodecounter += 2; // every climbub operation increases the amount of (Data and Frontline) nodes by 2
 
         int order = streamElementCounter;
         double curentAverage = 0;
@@ -72,11 +75,10 @@ public class SiblingTree {
             DataNode current = new DataNode(value, level, order, child, sibling);   // create new DataNode with computed values and bidirectional references to child and sibling
 
 
-            // TODO: compute error values for current from children, fnode below
-            current.computeErrorValues(prevFrontlineNode);
-
+            current.computeErrorValues(prevFrontlineNode);      // compute the error values for the new DataNode from children and the previous frontline node
             current.computeMA();        // compute the maximum absolute error of the new node
             errorHeap.add(current);     // add the new node to the error Heap structure
+
 
             if (frontlineNode != null && frontlineNode.prev != null){
                 frontlineNode.prev = null;      // delete the previous fnode

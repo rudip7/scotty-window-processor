@@ -10,10 +10,10 @@ import java.io.Serializable;
  */
 public class DataNode implements Serializable, Comparable<DataNode> {
     public double data;    // coefficient value
-    public double maxerrorleft;     // maximum error left subtree
-    public double minerrorleft;     // minimum error left subtree
-    public double maxerrorright;     // maximum error right subtree
-    public double minerrorright;     // minimum error right subtree
+    public double maxerrorleft = 0;     // maximum error left subtree
+    public double minerrorleft = 0;     // minimum error left subtree
+    public double maxerrorright = 0;     // maximum error right subtree
+    public double minerrorright = 0;     // minimum error right subtree
     public double maxabserror;
     public int index;  // index of node in the full error-tree (after padding)
     public int level;  // level of node in sibling-tree
@@ -62,6 +62,8 @@ public class DataNode implements Serializable, Comparable<DataNode> {
             currentChild = currentChild.nextSibling;
         }
 
+        // also regard possible stored error metrics in the previous frontline node
+        // since the tree is created from left to right, and orphan's relationship to its missing parent is always left!
         if (prevFrontlineNode != null && prevFrontlineNode.errorhanging){
             maxerrorleft = Math.max(maxerrorleft, prevFrontlineNode.positiveerror);
             minerrorleft = Math.min(minerrorleft, prevFrontlineNode.negativeerror);
