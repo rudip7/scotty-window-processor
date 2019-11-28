@@ -117,8 +117,8 @@ public class BenchmarkRunner {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BloomFilter.class, new Object[]{10000000,80000,7L});
         }else if (syn.equals("CuckooFilter")){
             return null;
-        }else if (syn.equals("FastAMS")){
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(FastAMS.class, new Object[]{4000,2000,7L});
+        }else if (syn.equals("FastAGMS")){
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(FastAGMS.class, new Object[]{4000,2000,7L});
         }else if (syn.equals("HyperLogLogSketch")){
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(HyperLogLogSketch.class, new Object[]{11,7L});
         }

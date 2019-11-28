@@ -1,6 +1,6 @@
 package Tests;
 
-import Synopsis.Sketches.FastAMS;
+import Synopsis.Sketches.FastAGMS;
 import FlinkScottyConnector.BuildSynopsis;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -17,7 +17,7 @@ import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
 
-public class FastAMSTest {
+public class FastAGMSTest {
     public static void main(String[] args) throws Exception {
 
 
@@ -32,7 +32,7 @@ public class FastAMSTest {
         Long seed = 11l;
 
         Object[] parameters = new Object[]{width, height, seed};
-        Class<FastAMS> sketchClass = FastAMS.class;
+        Class<FastAGMS> sketchClass = FastAGMS.class;
 
         Time windowTime = Time.minutes(1);
 
@@ -41,13 +41,13 @@ public class FastAMSTest {
                 .assignTimestampsAndWatermarks(new BashHistogramTest.CustomTimeStampExtractor()); // extract the timestamps and add watermarks
 
 
-        SingleOutputStreamOperator<FastAMS> fastAMS = BuildSynopsis.timeBased(timestamped, windowTime, keyField, sketchClass, parameters);
+        SingleOutputStreamOperator<FastAGMS> fastAMS = BuildSynopsis.timeBased(timestamped, windowTime, keyField, sketchClass, parameters);
 
         fastAMS.writeAsText("output/fastAMS.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
-        DataStream<Long> queryResult = fastAMS.map(new MapFunction<FastAMS, Long>() {
+        DataStream<Long> queryResult = fastAMS.map(new MapFunction<FastAGMS, Long>() {
             @Override
-            public Long map(FastAMS sketch) throws Exception {
+            public Long map(FastAGMS sketch) throws Exception {
                 return sketch.estimateF2();
             }
         });

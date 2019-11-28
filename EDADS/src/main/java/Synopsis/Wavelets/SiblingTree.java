@@ -1,7 +1,7 @@
 package Synopsis.Wavelets;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
+
+import java.util.TreeSet;
 
 public class SiblingTree {
 
@@ -12,6 +12,8 @@ public class SiblingTree {
     private DataNode highest;
     private DataNode rootnode;  // only set after the whole data stream is read (in padding)
     private int streamElementCounter;
+    private TreeSet<DataNode> errorHeap;
+
 
     /**
      * SiblingTree constructor - creates the sibling tree with a given space budget (size).
@@ -26,6 +28,7 @@ public class SiblingTree {
 
         frontlineBottom = null;
         frontlineTop = null;
+        errorHeap = new TreeSet<>();
     }
 
     public void climbup(double data1, double data2) {
@@ -66,16 +69,14 @@ public class SiblingTree {
                 }
             }
 
-            DataNode current = new DataNode(value, level, order);
-            current.leftChild = child;
-            if (sibling != null) {
-                current.previousSibling = sibling;
-                sibling.nextSibling = current;
-            }
+            DataNode current = new DataNode(value, level, order, child, sibling);   // create new DataNode with computed values and bidirectional references to child and sibling
 
-            // TODO: compute error values for current from children, fnode below f
 
-            // TODO: compute MA; put ci in min-heap H;
+            // TODO: compute error values for current from children, fnode below
+            current.computeErrorValues(prevFrontlineNode);
+
+            current.computeMA();        // compute the maximum absolute error of the new node
+            errorHeap.add(current);     // add the new node to the error Heap structure
 
             if (frontlineNode != null && frontlineNode.prev != null){
                 frontlineNode.prev = null;      // delete the previous fnode
