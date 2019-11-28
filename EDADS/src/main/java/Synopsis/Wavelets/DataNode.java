@@ -7,21 +7,21 @@ import java.io.Serializable;
  *
  */
 public class DataNode implements Serializable {
-    double data;    // coefficient value
-    double mostpositiveerrorleft;
-    double mostnegativeerrorleft;
-    double mostpositiveerrorright;
-    double mostnegativeerrorright;
-    double maxabserror;
-    int index;  // index of node in the full error-tree (after padding)
-    int level;  // level of node in sibling-tree
-    int orderinlevel;   // order of node in error-tree level
-    FrontlineNode front;    // Frontline node where this node is hanged
-    DataNode leftChild;
-    DataNode parent;
-    Utils.relationship reltoparent;     // relationship of this node to its parent node
-    DataNode nextSibling;
-    DataNode previousSibling;
+    public double data;    // coefficient value
+    public double mostpositiveerrorleft;
+    public double mostnegativeerrorleft;
+    public double mostpositiveerrorright;
+    public double mostnegativeerrorright;
+    public double maxabserror;
+    public int index;  // index of node in the full error-tree (after padding)
+    public int level;  // level of node in sibling-tree
+    public int orderinlevel;   // order of node in error-tree level
+    public FrontlineNode front;    // Frontline node where this node is hanged
+    public DataNode leftChild;
+    public DataNode parent;
+    public Utils.relationship reltoparent;     // relationship of this node to its parent node
+    public DataNode nextSibling;
+    public DataNode previousSibling;
 
     public DataNode(double data, int level, int orderinlevel) {
         this.data = data;
@@ -35,6 +35,24 @@ public class DataNode implements Serializable {
 
     @Override
     public String toString() {
-        return  "Value: "+data+"\nLeft child: "+leftChild.toString()+"\nSibling: "+nextSibling.toString();
+        String s = "Coeff. value: "+data;
+
+        if (leftChild != null){
+            s+=("\nLeft child: ["+leftChild.toString()+"]");
+        }
+        if (nextSibling != null){
+            s+=("\nSibling: ["+nextSibling.toString()+"]");
+        }
+        return s;
+    }
+
+    public void setFrontLineForDescendants(FrontlineNode frontlineNode){
+        front = frontlineNode;
+        if (leftChild != null){
+            leftChild.setFrontLineForDescendants(frontlineNode);
+        }
+        if (nextSibling != null){
+            nextSibling.setFrontLineForDescendants(frontlineNode);
+        }
     }
 }
