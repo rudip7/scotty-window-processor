@@ -42,7 +42,7 @@ public class ParallelThroughputStatistics {
 
 	@Override
 	public String toString() {
-		return "\nThroughput Mean: " + mean();
+		return "Throughput Mean: " + mean();
 	}
 
 	public void pause(final boolean pause) {

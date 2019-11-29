@@ -6,10 +6,7 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import java.io.*;
 
 public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 
@@ -21,6 +18,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
     //	private int elementSize;
     private long logfreq;
     private boolean parallelismSet = false;
+//    private PrintWriter resultWriter;
 
     public ParallelThroughputLogger(long logfreq) {
 //		this.elementSize = elementSize;
@@ -28,6 +26,14 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
         this.totalReceived = 0;
         this.lastTotalReceived = 0;
         this.lastLogTimeMs = -1;
+//        resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath+"/result_" + config.name + ".txt"), true));
+
+    }
+
+    @Override
+    public void close() throws Exception {
+        LOG.info(ParallelThroughputStatistics.getInstance().toString());
+//        System.out.println(ParallelThroughputStatistics.getInstance().toString());
     }
 
     @Override

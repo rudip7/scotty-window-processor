@@ -30,8 +30,7 @@ under the License.
 	<version>0.1</version>
 	<packaging>jar</packaging>
 
-	<name>Flink Quickstart Job</name>
-	<url>http://www.myorganization.org</url>
+	<name>EDADS Benchmark Job</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -176,7 +175,7 @@ under the License.
 							</filters>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>wikiedits.StreamingJob</mainClass>
+									<mainClass>Benchmark.BenchmarkRunner</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
