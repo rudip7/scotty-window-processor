@@ -17,11 +17,13 @@ public class FrontlineNode {
 
     public FrontlineNode(int level) {
         this.level = level;
+        errorhanging = false;
     }
 
     public FrontlineNode(double value, int level) {
         this.value = value;
         this.level = level;
+        errorhanging = false;
     }
 
     @Override

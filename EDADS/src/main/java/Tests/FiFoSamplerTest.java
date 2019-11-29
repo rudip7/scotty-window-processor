@@ -1,14 +1,12 @@
 package Tests;
 import Synopsis.Sampling.FiFoSampler;
 import Synopsis.Sampling.SampleElement;
-import org.junit.Assert;
 import org.junit.Test;
-
 import java.util.*;
 import java.io.File;
 import java.io.FileNotFoundException;
-
 import org.junit.jupiter.api.Assertions;
+
 /**
  * @author Zahra Salmani
  */
@@ -78,46 +76,80 @@ public class FiFoSamplerTest {
         Assertions.assertTrue(sampleTreeSetComprator(fullExpectedSample,fullSample));
 
      }
-
     @Test
-    public void mergeTest() throws Exception {
-        FiFoSampler fifoSampler = new FiFoSampler(10);
-        FiFoSampler otherWithSize = new FiFoSampler(12);
+    public void mergeWithEmptyTest() throws Exception {
+        FiFoSampler fifoSampler = new FiFoSampler(10);//main fifo sampler other will be merged to.
+        FiFoSampler otherWithSize = new FiFoSampler(12);// other sampler with different size should throws exception
         Assertions.assertThrows(IllegalArgumentException.class,()->fifoSampler.merge(otherWithSize));
 
-        FiFoSampler other = new FiFoSampler(10);
+        FiFoSampler otherMergedInEmpty = new FiFoSampler(10);// when main sampler is Empty and the other is full
+
+        //update other fifosampler with sample elements and keep main sampler empty
         SampleElement[] Sample1= new SampleElement[]{new SampleElement("87",1), new SampleElement("198",5),
                 new SampleElement("106",11),
                 new SampleElement("34",12), new SampleElement("6", 17),
                 new SampleElement("153", 20),new SampleElement("168",23),
-                new SampleElement("90",24), new SampleElement("55", 28),new SampleElement("59",30)};
+                new SampleElement("90",24), new SampleElement("55", 28),new SampleElement("39",32)};
+
+        for (SampleElement el : Sample1) {
+            otherMergedInEmpty.update(el);
+        }
+
+        TreeSet<SampleElement> mergeMainEmptyExpectedTree = (TreeSet<SampleElement>)otherMergedInEmpty.getSample().clone();//
+        TreeSet<SampleElement> mergemainEmptyTree = fifoSampler.merge(otherMergedInEmpty).getSample();
+        Assertions.assertTrue(sampleTreeSetComprator(mergeMainEmptyExpectedTree,mergemainEmptyTree));
+        //update main fifosampler with sample elements
+        for (SampleElement el : Sample1) {
+            fifoSampler.update(el);
+        }
+
+        FiFoSampler other = new FiFoSampler(10);//other Fifo sampler
+        //merge non-empty fifosampler with a empty other sample, should not effect it
+        TreeSet<SampleElement> mergeEmptyExpectedTree = (TreeSet<SampleElement>)fifoSampler.getSample().clone();//
+        TreeSet<SampleElement> mergeEmptyTree = fifoSampler.merge(other).getSample();
+        Assertions.assertTrue(sampleTreeSetComprator(mergeEmptyExpectedTree,mergeEmptyTree));
+
+    }
+
+    @Test
+    public void mergeTest() throws Exception {
+        FiFoSampler fifoSampler = new FiFoSampler(10);//main fifo sampler other will be merged to.
+
+        //update fifosampler with sample elements
+        SampleElement[] Sample1= new SampleElement[]{new SampleElement("87",1), new SampleElement("198",5),
+                new SampleElement("106",11),
+                new SampleElement("34",12), new SampleElement("6", 17),
+                new SampleElement("153", 20),new SampleElement("168",23),
+                new SampleElement("90",24), new SampleElement("55", 28),new SampleElement("39",32)};
 
         for (SampleElement el : Sample1) {
             fifoSampler.update(el);
         }
 
-        SampleElement[] Sample2= new SampleElement[]{new SampleElement("87",3), new SampleElement("198",6),
-                new SampleElement("106",8),
-                new SampleElement("34",13), new SampleElement("6", 19),
-                new SampleElement("153", 22),new SampleElement("168",25),
-                new SampleElement("90",29), new SampleElement("55", 31),new SampleElement("59",32)};
+        FiFoSampler other = new FiFoSampler(10);//other Fifo sampler
+        //update other sampler with list of new samplers
+        SampleElement[] Sample2= new SampleElement[]{new SampleElement("80",3), new SampleElement("98",6),
+                new SampleElement("16",8),
+                new SampleElement("34",13), new SampleElement("15", 19),
+                new SampleElement("183", 22),new SampleElement("1668",25),
+                new SampleElement("91",29), new SampleElement("55", 31),new SampleElement("59",32)};
 
         for (SampleElement el : Sample2) {
             other.update(el);
         }
 
-        SampleElement[] mergeExpectedSample= new SampleElement[]{new SampleElement("87",3), new SampleElement("87",3),
-                new SampleElement("198",5),
-                new SampleElement("198",6), new SampleElement("106", 8),
-                new SampleElement("106", 11),new SampleElement("34",12),
-                new SampleElement("34",13), new SampleElement("6", 17),new SampleElement("6",19)};
+
+        //create expected sample of merge result
+        SampleElement[] mergeExpectedSample= new SampleElement[]{new SampleElement("153", 20),new SampleElement("183", 22),
+                new SampleElement("168",23),new SampleElement("90",24),new SampleElement("1668",25),
+                new SampleElement("55", 28),new SampleElement("91",29),new SampleElement("55", 31),
+                new SampleElement("39",32),new SampleElement("59",32)};
         TreeSet<SampleElement> mergeExpectedTree = new TreeSet<>();
         for (SampleElement el : mergeExpectedSample) {
             mergeExpectedTree.add(el);
         }
         TreeSet<SampleElement> mergeTree = fifoSampler.merge(other).getSample();
-        System.out.println(mergeExpectedTree);
-        System.out.println(mergeTree);
+        //compare actual and expected merge results
         Assertions.assertTrue(sampleTreeSetComprator(mergeTree,mergeExpectedTree));
 
     }
@@ -130,6 +162,7 @@ public class FiFoSamplerTest {
        if(tree1.size()!=tree2.size())
        {
            Result=false;
+           System.out.println("size");
        }
        while(!tree1.isEmpty()&&!tree2.isEmpty()){
 

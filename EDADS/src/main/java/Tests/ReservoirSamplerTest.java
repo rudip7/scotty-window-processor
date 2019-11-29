@@ -1,7 +1,7 @@
 package Tests;
 import  Synopsis.Sampling.ReservoirSampler;
-/*import org.hamcrest.core.IsEqual;
-import org.hamcrest.core.IsNot;*/
+import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsNot;
 import org.junit.Assert;
 import org.junit.Test;
 import java.util.Scanner;
@@ -21,7 +21,6 @@ public class ReservoirSamplerTest {
         String fileName= "data/testdata.csv";
         File file= new File(fileName);
 
-        // this gives you a 2-dimensional array of strings
         ArrayList<String> lines = new ArrayList<>();
         Scanner inputStream;
 
@@ -29,14 +28,12 @@ public class ReservoirSamplerTest {
             inputStream = new Scanner(file);
             while(inputStream.hasNext()){
                 String line= inputStream.next();
-                // this adds the currently parsed line to the 2-dimensional string array
                 lines.add(line);
             }
             inputStream.close();
         }catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
         for (int i=0;i<10;i++) {
             reservoirSampler.update(lines.get(i));
         }
@@ -45,13 +42,11 @@ public class ReservoirSamplerTest {
         Object notfullsample = reservoirSampler.getSample();
         Assert.assertArrayEquals((Object[]) notfullsample,fixedSample);
 
-       /* for (int i=10;i<lines.size();i++) {
-            reservoirSampler.update(lines.get(i));
-        }
-        Object fullSample = reservoirSampler.getSample();
-        for(Object element : reservoirSampler.getSample()){
-            System.out.println(element);}
-        Assert.assertThat(fullSample, IsNot.not(IsEqual.equalTo(fixedSample)));//not(equalTo(...))*/
+//        for (int i=10;i<lines.size();i++) {
+//            reservoirSampler.update(lines.get(i));
+//        }
+//        Object fullSample = reservoirSampler.getSample();
+//        Assert.assertThat(fullSample, new IsNot(new IsEqual(fixedSample)));//not(equalTo(...))
     }
     @Test(expected = Exception.class)
     public void illegalmergesamplesizeTest() throws Exception {
@@ -81,18 +76,22 @@ public class ReservoirSamplerTest {
             if(element.equals(1)){numberOne++;}
             if(element.equals(0)){numberZero++;}
         }
-        //System.out.println(numberOne);
-        //System.out.println(numberZero);
-        fractionOne= (double)samplesize*((double)processedOne/(processedOne+processedZero));
-        double errorRateOne=(Math.abs(fractionOne-numberOne)/fractionOne)*100;
+
+//        fractionOne= (double)samplesize*((double)processedOne/(processedOne+processedZero));
+//        double errorRateOne=(Math.abs(fractionOne-numberOne)/fractionOne)*100;
+//        fractionZero= samplesize-fractionOne;
+//        double errorRateZero=(Math.abs(fractionZero-numberZero)/fractionZero)*100;
+
+        fractionOne= (double)processedOne/(processedOne+processedZero);
         fractionZero= samplesize-fractionOne;
-        double errorRateZero=(Math.abs(fractionZero-numberZero)/fractionZero)*100;
-        //System.out.println(fractionOne);
-        //System.out.println(fractionZero);
-        //System.out.println(errorRateOne);
-        //System.out.println(errorRateZero);
-        Assert.assertTrue(errorRateOne <= 5);
-        Assert.assertTrue(errorRateZero <= 5);
+
+        double mergeOneFraction = (double)numberOne/samplesize;
+        double mergeZeroFraction = 1-mergeOneFraction;
+        double errorRateZero=Math.abs(fractionZero-mergeZeroFraction)/fractionZero;
+        double errorRateOne=Math.abs(fractionOne-mergeOneFraction)/fractionOne;
+        Assert.assertTrue(errorRateOne <=5);
+        Assert.assertTrue(errorRateZero<=5);
+
     }
 }
 

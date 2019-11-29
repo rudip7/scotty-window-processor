@@ -23,7 +23,7 @@ import java.util.BitSet;
  *
  * @author joschavonhein
  */
-public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
+public class FastAGMS<T> implements InvertibleSynopsis<T>, Serializable {
 
     private int[][] array;
     private int width;
@@ -40,7 +40,7 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
         for (int i = 0; i < height; i++) {
             arrayString += Arrays.toString(array[i]) + "\n";
         }
-        return "FastAMS{" +
+        return "FastAGMS{" +
                 ", width=" + width +
                 ", height=" + height +
                 ", n=" + n +
@@ -49,13 +49,13 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
     }
 
     /**
-     * Constructs a FastAMS Sketch Object.
+     * Constructs a FastAGMS Sketch Object.
      *
      * @param width     amount of buckets in each row - it is recommended to use powers of 2
      * @param height    amount of hash functions / rows in the sketch array
      * @param seed      seed for the RandomNumber Generator
      */
-    public FastAMS(Integer width, Integer height, Long seed) {
+    public FastAGMS(Integer width, Integer height, Long seed) {
         this.seed = seed;
         this.width = width;
         this.height = height;
@@ -69,7 +69,7 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
      * @param width
      * @param height
      */
-    public FastAMS(Integer width, Integer height){
+    public FastAGMS(Integer width, Integer height){
         XORShiftRandom random = new XORShiftRandom();
         long seed = random.nextLong();
         this.seed = seed;
@@ -127,9 +127,9 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
 
     @Override
     public InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove) {
-        if (toRemove instanceof FastAMS){
-            if (seed == ((FastAMS<Object>) toRemove).seed && height == ((FastAMS<Object>) toRemove).getHeight() && width == ((FastAMS<Object>) toRemove).getWidth()){
-                int[][] toRemoveArray = ((FastAMS<Object>) toRemove).getArray();
+        if (toRemove instanceof FastAGMS){
+            if (seed == ((FastAGMS<Object>) toRemove).seed && height == ((FastAGMS<Object>) toRemove).getHeight() && width == ((FastAGMS<Object>) toRemove).getWidth()){
+                int[][] toRemoveArray = ((FastAGMS<Object>) toRemove).getArray();
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
                         array[i][j] -= toRemoveArray[i][j]; // subtract the value in the array of the sketch to be removed
@@ -171,11 +171,11 @@ public class FastAMS<T> implements InvertibleSynopsis<T>, Serializable {
     }
 
     @Override
-    public FastAMS<T> merge(MergeableSynopsis other){
-        if (other instanceof FastAMS){
-            FastAMS o = (FastAMS) other;
+    public FastAGMS<T> merge(MergeableSynopsis other){
+        if (other instanceof FastAGMS){
+            FastAGMS o = (FastAGMS) other;
             if (width == o.getWidth() && height == o.getHeight() && seed == o.getSeed()){
-                int[][] o_array = ((FastAMS) other).getArray();
+                int[][] o_array = ((FastAGMS) other).getArray();
                 for (int i = 0; i < height; i++) {
                     for (int j = 0; j < width; j++) {
                         array[i][j] += o_array[i][j];
