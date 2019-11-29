@@ -18,21 +18,34 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
     //	private int elementSize;
     private long logfreq;
     private boolean parallelismSet = false;
-//    private PrintWriter resultWriter;
+    private String outputPath;
+    private String configuration;
 
-    public ParallelThroughputLogger(long logfreq) {
+    public ParallelThroughputLogger(long logfreq, String outputPath, String configuration) {
 //		this.elementSize = elementSize;
         this.logfreq = logfreq;
         this.totalReceived = 0;
         this.lastTotalReceived = 0;
         this.lastLogTimeMs = -1;
-//        resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath+"/result_" + config.name + ".txt"), true));
-
+        this.configuration = configuration;
+        this.outputPath = outputPath;
+        
     }
 
     @Override
     public void close() throws Exception {
+        PrintWriter resultWriter;
+        try {
+            resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException("File not found: "+outputPath);
+        }
         LOG.info(ParallelThroughputStatistics.getInstance().toString());
+        resultWriter.append(configuration +
+                ParallelThroughputStatistics.getInstance().mean() + "\t");
+        resultWriter.append("\n");
+        resultWriter.flush();
+        resultWriter.close();
 //        System.out.println(ParallelThroughputStatistics.getInstance().toString());
     }
 
