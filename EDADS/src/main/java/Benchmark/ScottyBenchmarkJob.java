@@ -4,6 +4,7 @@ import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
+import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -27,7 +28,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class ScottyBenchmarkJob<S extends MergeableSynopsis> {
 
-	public ScottyBenchmarkJob(List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
+	public ScottyBenchmarkJob(String outputPath, String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
 							  final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
 
 
@@ -49,7 +50,7 @@ public class ScottyBenchmarkJob<S extends MergeableSynopsis> {
 //		messageStream.flatMap(new ParallelThroughputLogger<>(1000));
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
-				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000));
+				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
 
 		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
 

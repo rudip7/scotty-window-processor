@@ -6,10 +6,7 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import java.io.*;
 
 public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 
@@ -21,13 +18,35 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
     //	private int elementSize;
     private long logfreq;
     private boolean parallelismSet = false;
+    private String outputPath;
+    private String configuration;
 
-    public ParallelThroughputLogger(long logfreq) {
+    public ParallelThroughputLogger(long logfreq, String outputPath, String configuration) {
 //		this.elementSize = elementSize;
         this.logfreq = logfreq;
         this.totalReceived = 0;
         this.lastTotalReceived = 0;
         this.lastLogTimeMs = -1;
+        this.configuration = configuration;
+        this.outputPath = outputPath;
+        
+    }
+
+    @Override
+    public void close() throws Exception {
+        PrintWriter resultWriter;
+        try {
+            resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
+        } catch (FileNotFoundException e) {
+            throw new IllegalArgumentException("File not found: "+outputPath);
+        }
+        LOG.info(ParallelThroughputStatistics.getInstance().toString());
+        resultWriter.append(configuration +
+                ParallelThroughputStatistics.getInstance().mean() + "\t");
+        resultWriter.append("\n");
+        resultWriter.flush();
+        resultWriter.close();
+//        System.out.println(ParallelThroughputStatistics.getInstance().toString());
     }
 
     @Override

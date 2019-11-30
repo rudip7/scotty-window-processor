@@ -29,7 +29,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class FlinkBenchmarkJob<S extends MergeableSynopsis> {
 
-	public FlinkBenchmarkJob(List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
+	public FlinkBenchmarkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
                              final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
 
 
@@ -43,7 +43,7 @@ public class FlinkBenchmarkJob<S extends MergeableSynopsis> {
 				.addSource(new LoadGeneratorSource(runtime, throughput,  gaps));
 
 //		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
-		messageStream.flatMap(new ParallelThroughputLogger<>(1000));
+		messageStream.flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
