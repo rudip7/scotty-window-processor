@@ -2,7 +2,7 @@ package Synopsis.Wavelets;
 
 import Synopsis.NonMergeableSynopsis;
 
-public class DistributedWaveletsManager<Input> extends NonMergeableSynopsis<Input, Wavelets<Input>> {
+public class DistributedWaveletsManager<Input> extends NonMergeableSynopsis<Input, WaveletSynopsis<Input>> {
 
     @Override
     public int getSynopsisIndex(int streamIndex) {

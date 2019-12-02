@@ -1,26 +1,32 @@
 package Tests;
 
 
-import Synopsis.Wavelets.SiblingTree;
+import Synopsis.Wavelets.WaveletSynopsis;
 
 public class waveletTest {
     public static void main(String[] args) throws Exception {
 
-        SiblingTree siblingTree = new SiblingTree(20);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(9,3);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(9, -5);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(5, 13);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(13, 17);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(14, -2);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(9, 7);
-        System.out.println(siblingTree.toString());
-        siblingTree.climbup(7, 3);
-        System.out.println(siblingTree.toString());
+        WaveletSynopsis waveletSynopsis = new WaveletSynopsis(6);
+        waveletSynopsis.update(9);
+        waveletSynopsis.update(3);
+        System.out.println(waveletSynopsis);
+        waveletSynopsis.update(9);
+        waveletSynopsis.update(-5);
+        System.out.println(waveletSynopsis);
+        waveletSynopsis.update(5);
+        waveletSynopsis.update(13);
+        System.out.println(waveletSynopsis);
+        waveletSynopsis.update(13);
+        waveletSynopsis.update(17);
+        System.out.println(waveletSynopsis);
+        waveletSynopsis.update(14);
+        waveletSynopsis.update(-2);
+        System.out.println(waveletSynopsis);
+        waveletSynopsis.update(9);
+        waveletSynopsis.update(7);
+        System.out.println(waveletSynopsis);
+        waveletSynopsis.update(7);
+        waveletSynopsis.update(3);
+        System.out.println(waveletSynopsis);
     }
 }

@@ -30,4 +30,9 @@ public class FrontlineNode {
     public String toString() {
         return ("Level " + this.level + " ---> " + this.value);
     }
+
+    public void mergeError(double minError, double maxError){
+        positiveerror = Math.max(maxError, positiveerror);
+        negativeerror = Math.min(minError, negativeerror);
+    }
 }
