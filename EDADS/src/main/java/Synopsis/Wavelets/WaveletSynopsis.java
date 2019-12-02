@@ -1,9 +1,11 @@
 package Synopsis.Wavelets;
 
 
+import Synopsis.Synopsis;
+
 import java.util.PriorityQueue;
 
-public class SiblingTree {
+public class WaveletSynopsis<T> implements Synopsis<T> {
 
     private int nodecounter = 0;
     private int size;
@@ -12,15 +14,16 @@ public class SiblingTree {
     private DataNode rootnode;  // only set after the whole data stream is read (in padding)
     private int streamElementCounter;
     private PriorityQueue<DataNode> errorHeap;
+    private double data1;
 
 
     /**
-     * SiblingTree constructor - creates the sibling tree with a given space budget (size).
+     * WaveletSynopsis constructor - creates the sibling tree with a given space budget (size).
      *
-     * @param size denotes the size budget of the SiblingTree structure which equals the maximum amount of Coefficients
-     *             the SiblingTree stores at all times.
+     * @param size denotes the size budget of the WaveletSynopsis structure which equals the maximum amount of Coefficients
+     *             the WaveletSynopsis stores at all times.
      */
-    public SiblingTree(int size) {
+    public WaveletSynopsis(int size) {
         this.size = size;
         streamElementCounter = 0;
         nodecounter = 0;
@@ -30,11 +33,28 @@ public class SiblingTree {
         errorHeap = new PriorityQueue<>();
     }
 
-    public void climbup(double data1, double data2) {
+    @Override
+    public void update(T element) {
+        if (element instanceof Number){
+            streamElementCounter++;
+            if (streamElementCounter % 2 == 0){
+                double data2 = ((Number) element).doubleValue();
+                climbup(data1, data2);
+                if (streamElementCounter > size){
+                    discard();  // remove the two DataNodes with smallest MA from the Heap
+                }
+            }else {
+                data1 = ((Number) element).doubleValue();
+            }
+        }else {
+            throw new IllegalArgumentException("input elements have to be instance of Number!");
+        }
+    }
+
+    private void climbup(double data1, double data2) {
 
         FrontlineNode frontlineNode = frontlineBottom;
         FrontlineNode prevFrontlineNode = null;
-        streamElementCounter += 2;
         nodecounter += 2; // every climbub operation increases the amount of (Data and Frontline) nodes by 2
 
         int order = streamElementCounter;
@@ -112,56 +132,60 @@ public class SiblingTree {
     }
 
     /**
-     * function which discards the DataNode from the Heap which incurs the smallest absolute error
+     * function which discards the two datanodes which incur the least absolute error
      */
-    public void discard(){
-        DataNode discarded = errorHeap.poll();
+    private void discard(){
+        for (int i = 0; i < 2; i++) {
+            DataNode discarded = errorHeap.poll();
 
-        propagateError(discarded);
+            propagateError(discarded);
 
-        if (discarded.leftMostChild != null){   // handle children / siblings
-            DataNode child = discarded.leftMostChild;
+            if (discarded.leftMostChild != null){   // handle children / siblings
+                DataNode child = discarded.leftMostChild;
 
-            if (discarded.front != null){       // hang child on frontline in place of discarded node
-                child.front = discarded.front;
-                discarded.front.hungChild = child;
-            }
-
-            if (discarded.previousSibling != null){     // connect child as right sibling of previous sibling of the discarded node
-                discarded.previousSibling.nextSibling = child;
-                child.previousSibling = discarded.previousSibling;
-            }
-            if (discarded.nextSibling != null){     // connect last sibling of child as left sibling of discarded.next
-                while (child.nextSibling != null){
-                    child = child.nextSibling;
+                if (discarded.front != null){       // hang child on frontline in place of discarded node
+                    child.front = discarded.front;
+                    discarded.front.hungChild = child;
                 }
-                child.nextSibling = discarded.nextSibling;
-                discarded.nextSibling.previousSibling = child;
-            }
-        }else {     // no child
-            if (discarded.front != null){
+
+                if (discarded.previousSibling != null){     // connect child as right sibling of previous sibling of the discarded node
+                    discarded.previousSibling.nextSibling = child;
+                    child.previousSibling = discarded.previousSibling;
+                }
+                if (discarded.nextSibling != null){     // connect last sibling of child as left sibling of discarded.next
+                    while (child.nextSibling != null){
+                        child = child.nextSibling;
+                    }
+                    child.nextSibling = discarded.nextSibling;
+                    discarded.nextSibling.previousSibling = child;
+                }
+            }else {     // no child
+                if (discarded.front != null){
+                    if (discarded.nextSibling != null){
+                        discarded.nextSibling.front = discarded.front;
+                    }
+                    discarded.front.hungChild = discarded.nextSibling;
+                }
+                if (discarded.previousSibling != null){
+                    discarded.previousSibling.nextSibling = discarded.nextSibling;
+                }
                 if (discarded.nextSibling != null){
-                    discarded.nextSibling.front = discarded.front;
+                    discarded.nextSibling.previousSibling = discarded.previousSibling;
                 }
-                discarded.front.hungChild = discarded.nextSibling;
             }
-            if (discarded.previousSibling != null){
-                discarded.previousSibling.nextSibling = discarded.nextSibling;
-            }
-            if (discarded.nextSibling != null){
-                discarded.nextSibling.previousSibling = discarded.previousSibling;
-            }
-        }
-        if (discarded.parent != null){  // handle parent
-            if (discarded.leftMostChild != null){
-                discarded.leftMostChild.parent = discarded.parent;
-                discarded.parent.leftMostChild = discarded.leftMostChild;
-            }else {
-                if (discarded.nextSibling != null){
-                    discarded.nextSibling.parent = discarded.parent;
+            if (discarded.parent != null && discarded.parent.leftMostChild == discarded){  // handle parent if discarded is leftmost child of parent
+                if (discarded.leftMostChild != null){
+                    discarded.leftMostChild.parent = discarded.parent;
+                    discarded.parent.leftMostChild = discarded.leftMostChild;
+                }else {
+                    if (discarded.nextSibling != null){
+                        discarded.nextSibling.parent = discarded.parent;
+                    }
+                    discarded.parent.leftMostChild = discarded.nextSibling;
                 }
-                discarded.parent.leftMostChild = discarded.nextSibling;
             }
+
+            nodecounter--;
         }
     }
 
@@ -204,6 +228,11 @@ public class SiblingTree {
         boolean propagateUpNecessary = true;
         while(propagateUpNecessary && parent != null){
             propagateUpNecessary = parent.computeErrorValues(null);
+            if (propagateUpNecessary){
+                errorHeap.remove(parent);
+                parent.computeMA();
+                errorHeap.add(parent);
+            }
             parent = parent.parent;
         }
     }
@@ -239,7 +268,7 @@ public class SiblingTree {
 
     @Override
     public String toString() {
-        String s = "";
+        String s = "streamElementCounter: " + streamElementCounter + "\n";
         if (frontlineBottom == null) {
             return "The Sibling Tree is empty.";
         } else {
