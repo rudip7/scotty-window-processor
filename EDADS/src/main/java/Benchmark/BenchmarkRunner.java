@@ -44,7 +44,7 @@ public class BenchmarkRunner {
         outputPath += "/result_" + config.name + ".txt";
 
 
-//        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath+"/result_" + config.name + ".txt"), true));
+        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
 
         Configuration conf = new Configuration();
 //        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
@@ -75,11 +75,10 @@ public class BenchmarkRunner {
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
 
-//                        resultWriter.append(windows + " \t" + syn + " \t" +
-//                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                        resultWriter.append("------------------------------------------------------------------------\n\n");
 //                        resultWriter.append("\n");
-//                        resultWriter.flush();
-                        ParallelThroughputStatistics.getInstance().clean();
+                        resultWriter.flush();
+//                        ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
                     }
@@ -99,11 +98,10 @@ public class BenchmarkRunner {
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
 
-//                        resultWriter.append(windows + " \t" + syn + " \t" +
-//                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                        resultWriter.append("------------------------------------------------------------------------\n\n");
 //                        resultWriter.append("\n");
-//                        resultWriter.flush();
-                        ParallelThroughputStatistics.getInstance().clean();
+                        resultWriter.flush();
+//                        ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
                     }
@@ -112,7 +110,7 @@ public class BenchmarkRunner {
         }
 
 
-
+        resultWriter.close();
     }
 
     private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn){

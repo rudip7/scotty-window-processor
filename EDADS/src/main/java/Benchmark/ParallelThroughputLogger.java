@@ -20,6 +20,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
     private boolean parallelismSet = false;
     private String outputPath;
     private String configuration;
+    private ParallelThroughputStatistics throughputStatistics;
 
     public ParallelThroughputLogger(long logfreq, String outputPath, String configuration) {
 //		this.elementSize = elementSize;
@@ -29,6 +30,8 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
         this.lastLogTimeMs = -1;
         this.configuration = configuration;
         this.outputPath = outputPath;
+
+        this.throughputStatistics = new ParallelThroughputStatistics();
         
     }
 
@@ -40,9 +43,9 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
         } catch (FileNotFoundException e) {
             throw new IllegalArgumentException("File not found: "+outputPath);
         }
-        LOG.info(ParallelThroughputStatistics.getInstance().toString());
+        LOG.info(throughputStatistics.toString());
         resultWriter.append(configuration +
-                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                throughputStatistics.mean() + "\t");
         resultWriter.append("\n");
         resultWriter.flush();
         resultWriter.close();
@@ -52,10 +55,10 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
     @Override
     public void flatMap(T element, Collector<T> collector) throws Exception {
         collector.collect(element);
-        if (!parallelismSet) {
-            ParallelThroughputStatistics.setParallelism(this.getRuntimeContext().getNumberOfParallelSubtasks());
-            parallelismSet = true;
-        }
+//        if (!parallelismSet) {
+//            ParallelThroughputStatistics.setParallelism(this.getRuntimeContext().getNumberOfParallelSubtasks());
+//            parallelismSet = true;
+//        }
         totalReceived = totalReceived + 1;
         long now = System.currentTimeMillis();
         if (lastLogTimeMs == -1) {
@@ -69,7 +72,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
             LOG.info("During the last {} ms, we received {} elements. That's {} elements/second/core. ",
                     timeDiff, elementDiff, elementDiff * ex);
 
-            ParallelThroughputStatistics.getInstance().addThrouputResult(elementDiff * ex);
+            throughputStatistics.addThrouputResult(elementDiff * ex);
             //System.out.println(ThroughputStatistics.getInstance().toString());
             // reinit
             lastLogTimeMs = now;
