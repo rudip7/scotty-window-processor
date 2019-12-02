@@ -44,8 +44,9 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
             throw new IllegalArgumentException("File not found: "+outputPath);
         }
         LOG.info(throughputStatistics.toString());
-        resultWriter.append(configuration +
-                throughputStatistics.mean() + "\t");
+//        resultWriter.append(configuration +
+//                throughputStatistics.mean() + "\t");
+        resultWriter.append(throughputStatistics.mean() + "\t");
         resultWriter.append("\n");
         resultWriter.flush();
         resultWriter.close();

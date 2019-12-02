@@ -74,7 +74,7 @@ public class BenchmarkRunner {
 
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
-
+                        sumResult(configuration, outputPath, resultWriter, env.getParallelism());
                         resultWriter.append("------------------------------------------------------------------------\n\n");
 //                        resultWriter.append("\n");
                         resultWriter.flush();
@@ -97,7 +97,7 @@ public class BenchmarkRunner {
 
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
-
+                        sumResult(configuration, outputPath, resultWriter, env.getParallelism());
                         resultWriter.append("------------------------------------------------------------------------\n\n");
 //                        resultWriter.append("\n");
                         resultWriter.flush();
@@ -111,6 +111,44 @@ public class BenchmarkRunner {
 
 
         resultWriter.close();
+    }
+
+    private static void sumResult(String configuration, String outputPath, PrintWriter resultWriter, int parallelism) {
+        FileReader fr = null;
+        try {
+            fr = new FileReader(outputPath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        BufferedReader br = new BufferedReader(fr);
+        List<String> tmp = new ArrayList<String>();
+        String ch = null;
+        while (true){
+            try {
+                ch = br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (ch == null){
+                break;
+            }
+            tmp.add(ch);
+        }
+
+        double totalThroughput = 0.0;
+        System.out.println("\nThroughputs: ");
+        for(int i=tmp.size()-1;i>=tmp.size()-1-parallelism;i--) {
+            double readDouble = Double.parseDouble(tmp.get(i));
+            System.out.println(readDouble);
+            totalThroughput += Double.parseDouble(tmp.get(i));
+        }
+        try {
+            fr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(configuration+totalThroughput+"\n\n");
+        resultWriter.append(configuration+totalThroughput+"\n");
     }
 
     private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn){
