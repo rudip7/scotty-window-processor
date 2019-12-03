@@ -6,7 +6,6 @@ import java.io.Serializable;
 
 /**
  * Class which represents an error-tree node in the sibling tree.
- *
  */
 public class DataNode implements Serializable, Comparable<DataNode> {
     double data;    // coefficient value

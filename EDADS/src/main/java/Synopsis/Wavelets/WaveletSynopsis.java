@@ -11,7 +11,7 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
     private int size;
     private FrontlineNode frontlineBottom;
     private FrontlineNode frontlineTop;
-    private DataNode rootnode;  // only set after the whole data stream is read (in padding)
+    private FrontlineNode rootnode;  // only set after the whole data stream is read (in padding)
     private int streamElementCounter;
     private PriorityQueue<DataNode> errorHeap;
     private double data1;
@@ -51,6 +51,88 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
         }
     }
 
+    /**
+     * perform a simple point query based on the given index
+     * @param index
+     * @return      value of the stream element at given index
+     */
+    public double pointQuery(int index){
+
+        return 0;
+    }
+
+    /**
+     * performs a range sum query on the final rooted error-tree.
+     *
+     * @param leftIndex
+     * @param rightIndex
+     * @return  approximated sum of values between leftIndex and rightIndex
+     */
+    public double rangeSumQuery(int leftIndex, int rightIndex){
+        return 0;
+    }
+
+    /**
+     * method which turns uses average value and level information in the frontline to create additional error-tree nodes
+     * that turn the current structure into a rooted (sparse) sibling tree, which may be used to reconstruct any data value.
+     */
+    public void padding(){
+        if (frontlineBottom == frontlineTop){   // no need for padding -> sibling tree is already rooted
+            rootnode = frontlineTop;
+        }else {
+            int maxLevel = frontlineTop.level + 1;
+            double average = 0;
+            DataNode previousCoefficient = null;
+            boolean firstIteration = true;
+            while (frontlineBottom.next != null){
+                DataNode lowerHanging = frontlineBottom.hungChild;
+                DataNode upperHanging = frontlineBottom.next.hungChild;
+                average = firstIteration ? (frontlineBottom.value + frontlineBottom.next.value) / 2 : (average + frontlineBottom.next.value) / 2;
+                double coefficientValue = frontlineBottom.next.value - average;
+                int level = frontlineBottom.next.level + 1;
+                int orderInLevel = (int) Math.pow(2,maxLevel - level);
+                DataNode newCoefficient = new DataNode(coefficientValue, level, orderInLevel, upperHanging, null);
+
+                if (upperHanging != null){  // connect left subtree of new coefficient with right subtree
+                    upperHanging.front = null;
+                    if (previousCoefficient != null){
+                        upperHanging.nextSibling = previousCoefficient;
+                        previousCoefficient.previousSibling = upperHanging;
+                    }else if (lowerHanging != null){
+                        upperHanging.nextSibling = lowerHanging;
+                        lowerHanging.previousSibling = upperHanging;
+                    }
+                }else { // left subtree of newCoefficient completely empty (coefficients all deleted)
+                    if (previousCoefficient != null){// if previous coefficient exists set him as child
+                        previousCoefficient.setParent(newCoefficient);
+                        newCoefficient.leftMostChild = previousCoefficient;
+                    }else if (lowerHanging != null){// otherwise: set lowerHanging as child
+                        lowerHanging.setParent(newCoefficient);
+                        newCoefficient.leftMostChild = lowerHanging;
+                    }
+                }
+                if (lowerHanging != null) lowerHanging.front = null;
+
+                previousCoefficient = newCoefficient;
+                frontlineBottom = frontlineBottom.next;
+                frontlineBottom.prev = null;
+                firstIteration = false;
+            }
+            rootnode = new FrontlineNode(average, maxLevel);
+            rootnode.hungChild = previousCoefficient;
+            previousCoefficient.front = rootnode;
+            previousCoefficient.leftMostChild.front = null;
+        }
+    }
+    
+
+    /**
+     * Extends the sibling tree structure based on two incoming data elements.
+     * Always creates two additional Nodes.
+     *
+     * @param data1
+     * @param data2
+     */
     private void climbup(double data1, double data2) {
 
         FrontlineNode frontlineNode = frontlineBottom;
@@ -269,10 +351,10 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
     @Override
     public String toString() {
         String s = "streamElementCounter: " + streamElementCounter + "\n";
-        if (frontlineBottom == null) {
+        if (frontlineBottom == null && rootnode == null) {
             return "The Sibling Tree is empty.";
         } else {
-            FrontlineNode current = frontlineTop;
+            FrontlineNode current = rootnode == null ? frontlineTop : rootnode;
             while (current != null) {
                 s += (current.toString() + ":\n");
                 if (current.hungChild != null) {

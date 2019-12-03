@@ -28,5 +28,8 @@ public class waveletTest {
         waveletSynopsis.update(7);
         waveletSynopsis.update(3);
         System.out.println(waveletSynopsis);
+
+        waveletSynopsis.padding();
+        System.out.println(waveletSynopsis);
     }
 }
