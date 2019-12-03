@@ -59,7 +59,7 @@ public class LoadGeneratorSource extends RichSourceFunction<Tuple3<Integer, Inte
     public void run(final SourceContext<Tuple3<Integer, Integer, Long>> ctx) throws Exception {
         long startTime = System.currentTimeMillis();
 
-        ThroughputStatistics.getInstance().pause(false);
+//        ThroughputStatistics.getInstance().pause(false);
 
         long endTime = startTime + runtime;
         while (running) {
@@ -69,7 +69,6 @@ public class LoadGeneratorSource extends RichSourceFunction<Tuple3<Integer, Inte
                 emitValue(readNextTuple(), ctx);
             }
 
-            //Why active waiting?
             while (System.currentTimeMillis() < startTs + 1000) {
                 // active waiting
             }

@@ -9,21 +9,21 @@ import java.io.Serializable;
  *
  */
 public class DataNode implements Serializable, Comparable<DataNode> {
-    public double data;    // coefficient value
-    public double maxerrorleft = 0;     // maximum error left subtree
-    public double minerrorleft = 0;     // minimum error left subtree
-    public double maxerrorright = 0;     // maximum error right subtree
-    public double minerrorright = 0;     // minimum error right subtree
-    public double maxabserror;
-    public int index;  // index of node in the full error-tree (after padding)
-    public int level;  // level of node in sibling-tree
-    public int orderinlevel;   // order of node in error-tree level
-    public FrontlineNode front;    // Frontline node where this node is hanged
-    public DataNode leftMostChild;  // this nodes leftmost child - usually on this nodes left subtree but can in cases of multiple deletions also be on the right subtree
-    public DataNode parent;
-    public Utils.relationship reltoparent;     // relationship of this node to its parent node
-    public DataNode nextSibling;
-    public DataNode previousSibling;
+    double data;    // coefficient value
+    double maxerrorleft = 0;     // maximum error left subtree
+    double minerrorleft = 0;     // minimum error left subtree
+    double maxerrorright = 0;     // maximum error right subtree
+    double minerrorright = 0;     // minimum error right subtree
+    double maxabserror;
+    int index;  // index of node in the full error-tree (after padding)
+    int level;  // level of node in sibling-tree
+    int orderinlevel;   // order of node in error-tree level
+    FrontlineNode front;    // Frontline node where this node is hanged
+    DataNode leftMostChild;  // this nodes leftmost child - usually on this nodes left subtree but can in cases of multiple deletions also be on the right subtree
+    DataNode parent;
+    Utils.relationship reltoparent;     // relationship of this node to its parent node
+    DataNode nextSibling;
+    DataNode previousSibling;
 
     public DataNode(double data, int level, int orderinlevel, DataNode leftChild, DataNode previousSibling) {
         this.data = data;
@@ -101,7 +101,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
 
     @Override
     public String toString() {
-        String s = "Coeff. value: "+data;
+        String s = "Coeff. value: "+data + " ["+ maxerrorleft +"," + minerrorleft + "," + maxerrorright + "," + minerrorright +"]";
 
         if (leftMostChild != null){
             s+=("\nLeft child: ["+ leftMostChild.toString()+"]");
