@@ -116,36 +116,64 @@ public class DDSketchTest {
         Assertions.assertTrue(Math.abs(ddSketch.getValueAtQuantile(1.0)-239)<=(relativeAccuracy*239));
     }
 
+    @Test
+    public void invertTest(){
+        double relativeAccuracy= 0.01;
+        //Test different illegal merge Scenarios
+        DDSketch ddSketchObject=new DDSketch(relativeAccuracy,2000);
+        DDSketch illegalDDSketch1=new DDSketch(0.5,2000);
+        DDSketch illegalDDSketch2=new DDSketch(relativeAccuracy,1000);
+        CountMinSketch countMinSketch= new CountMinSketch(12,10,7136673L);
+        Assertions.assertThrows(Exception.class,()->ddSketchObject.invert(countMinSketch));
+        Assertions.assertThrows(Exception.class,()->ddSketchObject.invert(illegalDDSketch1));
+        Assertions.assertThrows(Exception.class,()->ddSketchObject.invert(illegalDDSketch2));
 
-//    @Test
-//    public void invertTest(){
-//        double relativeAccuracy= 0.01;
-//        //Test different illegal merge Scenarios
-//        DDSketch ddSketchobject=new DDSketch(relativeAccuracy,2000);
-//        DDSketch illegalDDSketch1=new DDSketch(0.5,2000);
-//        DDSketch illegalDDSketch2=new DDSketch(relativeAccuracy,1000);
-//        CountMinSketch countMinSketch= new CountMinSketch(12,10,7136673L);
-//        Assertions.assertThrows(Exception.class,()->ddSketchobject.invert(countMinSketch));
-//        Assertions.assertThrows(Exception.class,()->ddSketchobject.invert(illegalDDSketch1));
-//        Assertions.assertThrows(Exception.class,()->ddSketchobject.invert(illegalDDSketch2));
-//
-//        // Test invert an empty DDsketch
-//        DDSketch ddSketch=updateFromFile(ddSketchobject,"data/dataset.csv");
-//        int oldGlobalCount=ddSketch.getGlobalCount();
-//        int oldZeroCount=ddSketch.getZeroCount();
-//        TreeMap<Integer, Integer> ddsketchCount=new TreeMap<>();
-//        ddsketchCount.putAll(ddSketch.getCounts());
-//        DDSketch otherobj=new DDSketch(relativeAccuracy,2000);
-//        Assertions.assertEquals( ddsketchCount,ddSketch.merge(otherobj).getCounts());
-//
-//        //Test merging with non empty ddsketch
-//        DDSketch other=updateFromFile(otherobj,"data/data.csv");
-//        TreeMap<Integer, Integer> otherCount=other.getCounts();
-//        TreeMap<Integer, Integer> invertCount =ddSketch.invert(other).getCounts();
-//        Set result = new HashSet(ddsketchCount.keySet());
+        // Test invert an empty DDSketch
+        DDSketch ddSketch=updateFromFile(ddSketchObject,"data/dataset.csv");
+        int oldGlobalCount=ddSketch.getGlobalCount();
+        int oldZeroCount=ddSketch.getZeroCount();
+        TreeMap<Integer, Integer> ddSketchCount=new TreeMap<>();
+        ddSketchCount.putAll(ddSketch.getCounts());
+        DDSketch otherObj=new DDSketch(relativeAccuracy,2000);
+        Assertions.assertEquals( ddSketchCount,ddSketch.invert(otherObj).getCounts());
+        Assertions.assertEquals(oldGlobalCount,ddSketch.getGlobalCount());
+        Assertions.assertEquals(oldZeroCount,ddSketch.getZeroCount());
+
+        //Test subtracting  a the same ddSketch
+        DDSketch other=updateFromFile(otherObj,"data/dataset.csv");
+        TreeMap<Integer, Integer> invertTheSameCount =ddSketch.invert(other).getCounts();
+        Assertions.assertTrue(invertTheSameCount.isEmpty());
+
+        //Test subtracting different element
+        int[]  indexarray= new int[]{0, 34, 54, 69, 80, 89, 97, 103, 109, 115, 119, 124, 128, 131, 135, 138, 141,
+                144, 147, 149, 152, 154, 156, 158, 160, 162, 164, 166, 168, 170, 171, 173, 174, 176, 177, 179, 180,
+                181, 183, 184, 185, 186, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202,
+                203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 239, 240, 241, 242, 243,
+                244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263,
+                264, 265, 266, 267, 268, 269, 270, 271, 272, 273};
+
+        int[] countarray= new int[]{18, 19, 10, 18, 12, 14, 16, 24, 17, 16, 18, 15, 15, 26, 13, 18, 22,
+                13, 15, 17, 16, 11, 10, 16, 15, 15, 16, 10, 22, 11, 10, 14, 18, 9, 16, 18, 19, 15, 25,
+                15, 21, 17, 13, 19, 9, 8, 21, 20, 10, 10, 21, 19, 18, 24, 15, 11, 10, 41, 19, 12, 20, 31,
+                17, 16, 35, 14, 17, 41, 9, 18, 12, 27, 8, 5, 17, 39, 29, 63, 56, 37, 66, 56, 60, 44, 49, 48,
+                40, 60, 60, 69, 59, 47, 59, 44, 68, 54, 51, 69, 65, 78, 71, 82, 57, 76, 87, 83, 71};
+
+        TreeMap<Integer, Integer> refrenceCount = new TreeMap<>();
+        for(int i=0;i<indexarray.length;i++){
+            refrenceCount.put(indexarray[i],countarray[i]);
+        }
+
+        DDSketch ddSketchWithDifferentObj=new DDSketch(relativeAccuracy,2000);
+        DDSketch ddSketchWithDifferent=updateFromFile(ddSketchWithDifferentObj,"data/dataset.csv");
+        DDSketch differentOtherObj=new DDSketch(relativeAccuracy,2000);
+        DDSketch differentOtherobj=updateFromFile(differentOtherObj,"data/data.csv");
+        TreeMap<Integer, Integer> differentOtherCounts =ddSketchWithDifferent.invert(differentOtherobj).getCounts();
+        Assertions.assertEquals(differentOtherCounts,refrenceCount);
+
+//        Set result = new HashSet(ddSketchCount.keySet());
 //        result.addAll(otherCount.keySet());
-//        Assertions.assertEquals(mergeCount.keySet(),result); //whether mergeresult contains both sketches keys
-//        for(Map.Entry<Integer,Integer> element:mergeCount.entrySet()){
+//        Assertions.assertEquals(invertCount.keySet(),result); //whether mergeresult contains both sketches keys
+//        for(Map.Entry<Integer,Integer> element:invertCount.entrySet()){
 //            if(otherCount.containsKey(element.getKey())){
 //                Assertions.assertTrue(element.getValue()==ddsketchCount.get(element.getKey())+otherCount.get(element.getKey()));
 //            }
@@ -155,8 +183,8 @@ public class DDSketchTest {
 //        }
 //        Assertions.assertEquals(ddSketch.getGlobalCount(),oldGlobalCount+other.getGlobalCount());
 //        Assertions.assertEquals(ddSketch.getZeroCount(),oldZeroCount+other.getZeroCount());
-//
-//    }
+
+    }
 //    @Test
 //    public void decrementTest(){
 //
@@ -180,6 +208,7 @@ public class DDSketchTest {
         int oldZeroCount=ddSketch.getZeroCount();
         TreeMap<Integer, Integer> ddsketchCount=new TreeMap<>();
         ddsketchCount.putAll(ddSketch.getCounts());
+
         DDSketch otherobj=new DDSketch(relativeAccuracy,2000);
         Assertions.assertEquals( ddsketchCount,ddSketch.merge(otherobj).getCounts());
 

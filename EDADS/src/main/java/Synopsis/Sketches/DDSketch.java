@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of DDSketch to estimate every p-Quantile with relative error Bounds and fixed
@@ -238,7 +239,7 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
     }
 
     @Override
-    public InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove) {
+    public DDSketch<T> invert(InvertibleSynopsis<T> toRemove) {
         if (toRemove instanceof DDSketch) {
             DDSketch otherDD = (DDSketch) toRemove;
             if (this.relativeAccuracy == otherDD.relativeAccuracy && this.maxNumBins == otherDD.maxNumBins) {
@@ -248,14 +249,31 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
                 ((TreeMap<Integer, Integer>) otherDD.getCounts()).forEach(
                         (key, value) -> counts.merge(key, value, (a, b) -> a - b)
                 );
-                int newGlobalCount = 0;
-                for(Map.Entry<Integer,Integer> entry : counts.entrySet()) {
-                    if (entry.getValue() <= 0){
-                        counts.remove(entry.getKey());
-                    } else{
-                        globalCount += entry.getValue();
-                    }
-                }
+               int newGlobalCount = 0;
+
+               Map<Integer, Integer> collect = counts.entrySet().stream()
+                        .filter(x -> x.getValue() >0)
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (oldValue,
+                                 newValue)
+                                        -> newValue,
+                                TreeMap::new));
+
+             counts.clear();
+             counts.putAll(collect);
+
+//                System.out.println(collect);
+
+//                    for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+//
+//                        if (entry.getValue() <= 0) {
+//                            counts.remove(entry.getKey());
+//                        } else {
+//                            newGlobalCount += entry.getValue();
+//                        }
+//                    }
+
 
                 this.globalCount = newGlobalCount;
                 if (this.zeroCount > otherDD.zeroCount){
