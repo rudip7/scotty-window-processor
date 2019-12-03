@@ -44,7 +44,7 @@ public class BenchmarkRunner {
         outputPath += "/result_" + config.name + ".txt";
 
 
-//        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath+"/result_" + config.name + ".txt"), true));
+        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
 
         Configuration conf = new Configuration();
 //        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
@@ -74,12 +74,11 @@ public class BenchmarkRunner {
 
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
-
-//                        resultWriter.append(windows + " \t" + syn + " \t" +
-//                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                        sumResult(configuration, outputPath, resultWriter, env.getParallelism());
+                        resultWriter.append("------------------------------------------------------------------------\n\n");
 //                        resultWriter.append("\n");
-//                        resultWriter.flush();
-                        ParallelThroughputStatistics.getInstance().clean();
+                        resultWriter.flush();
+//                        ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
                     }
@@ -98,12 +97,11 @@ public class BenchmarkRunner {
 
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
-
-//                        resultWriter.append(windows + " \t" + syn + " \t" +
-//                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+                        sumResult(configuration, outputPath, resultWriter, env.getParallelism());
+                        resultWriter.append("------------------------------------------------------------------------\n\n");
 //                        resultWriter.append("\n");
-//                        resultWriter.flush();
-                        ParallelThroughputStatistics.getInstance().clean();
+                        resultWriter.flush();
+//                        ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
                     }
@@ -112,7 +110,45 @@ public class BenchmarkRunner {
         }
 
 
+        resultWriter.close();
+    }
 
+    private static void sumResult(String configuration, String outputPath, PrintWriter resultWriter, int parallelism) {
+        FileReader fr = null;
+        try {
+            fr = new FileReader(outputPath);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        BufferedReader br = new BufferedReader(fr);
+        List<String> tmp = new ArrayList<String>();
+        String ch = null;
+        while (true){
+            try {
+                ch = br.readLine();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (ch == null){
+                break;
+            }
+            tmp.add(ch);
+        }
+
+        double totalThroughput = 0.0;
+        System.out.println("\nThroughputs: ");
+        for(int i=tmp.size()-1;i>=tmp.size()-1-parallelism;i--) {
+            double readDouble = Double.parseDouble(tmp.get(i));
+            System.out.println(readDouble);
+            totalThroughput += Double.parseDouble(tmp.get(i));
+        }
+        try {
+            fr.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        System.out.println(configuration+totalThroughput+"\n\n");
+        resultWriter.append(configuration+totalThroughput+"\n");
     }
 
     private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn){
