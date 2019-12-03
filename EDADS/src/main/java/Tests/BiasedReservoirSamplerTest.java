@@ -99,7 +99,7 @@ public class BiasedReservoirSamplerTest {
             reservoirMergeNotFull.update(el);
         }
         ArrayList<SampleElement> sampleOtherFirst =  new ArrayList(Arrays.asList( new SampleElement(45, 7),
-                new SampleElement(34, 9)));
+                new SampleElement(34, 9),new SampleElement(45, 47)));
         for (SampleElement el : sampleOtherFirst){
             otherNotFull.update(el);
         }
@@ -109,9 +109,9 @@ public class BiasedReservoirSamplerTest {
                 new SampleElement(34, 9),new SampleElement(103, 10),
                 new SampleElement(52, 13), new SampleElement(188, 17),
                 new SampleElement(19, 25), new SampleElement(48, 29),
-                new SampleElement(161, 35),new SampleElement(25, 65)));
+                new SampleElement(161, 35),new SampleElement(45, 47)
+                ,new SampleElement(25, 65)));
 
-System.out.println(mergeNotFullSample);
         //check merge with empty did not effect sample
         Assert.assertTrue(notFullSample.equals(mergeNotFullSample));
         Assertions.assertEquals(mergeNotFull.getMerged(),2);
@@ -122,7 +122,7 @@ System.out.println(mergeNotFullSample);
             reservoir.update(el);
         }
 
-        ArrayList<SampleElement> sampleOtherSecond =  new ArrayList(Arrays.asList( Arrays.asList( new SampleElement(45, 7),
+        ArrayList<SampleElement> sampleOtherSecond =  new ArrayList(Arrays.asList(  new SampleElement(45, 7),
                 new SampleElement(34, 9),new SampleElement(12, 37),
                 new SampleElement(25, 45), new SampleElement(18, 67),
                 new SampleElement(189, 70), new SampleElement(40, 88),

@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tub.dima.scotty.core.TimeMeasure;
 import de.tub.dima.scotty.core.windowType.*;
+import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -27,19 +28,28 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 public class BenchmarkRunner {
 
     private static String configPath;
+    private static String outputPath;
 
     public static void main(String[] args) throws Exception {
 
-        //configPath = args[0];
-        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
+        configPath = args[0];
+        System.out.println("Configurations: "+configPath);
+
+        outputPath = args[1];
+        System.out.println("Output: "+outputPath);
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
 
         BenchmarkConfig config = loadConfig();
+        outputPath += "/result_" + config.name + ".txt";
 
-        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File("EDADS/Results/result_" + config.name + ".txt"), true));
+
+//        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath+"/result_" + config.name + ".txt"), true));
 
         Configuration conf = new Configuration();
-        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+//        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
+//        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         List<Tuple2<Long, Long>> gaps = Collections.emptyList();
         if (config.sessionConfig != null)
@@ -55,19 +65,20 @@ public class BenchmarkRunner {
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
                         System.out.println("\n\n\n\n\n\n\n");
-
-                        System.out.println("Start Benchmark with windows " + config.windowConfigurations);
+                        String configuration = windows + " \t" + syn + " \t";
+                        System.out.println("Start Benchmark with windows: " + config.windowConfigurations);
+                        System.out.println("Desired throughput: " + config.throughput);
                         System.out.println("\n\n\n\n\n\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        new ScottyBenchmarkJob(getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        new ScottyBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
 
-                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
+//                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
 
-                        resultWriter.append(windows + " \t" + syn + " \t" +
-                                ParallelThroughputStatistics.getInstance().mean() + "\t");
-                        resultWriter.append("\n");
-                        resultWriter.flush();
+//                        resultWriter.append(windows + " \t" + syn + " \t" +
+//                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+//                        resultWriter.append("\n");
+//                        resultWriter.flush();
                         ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
@@ -79,19 +90,19 @@ public class BenchmarkRunner {
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
                         System.out.println("\n\n\n\n\n\n\n");
-
+                        String configuration = windows + " \t" + syn + " \t";
                         System.out.println("Start Benchmark with windows " + config.windowConfigurations);
                         System.out.println("\n\n\n\n\n\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        new FlinkBenchmarkJob(getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        new FlinkBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
 
-                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
+//                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
 
-                        resultWriter.append(windows + " \t" + syn + " \t" +
-                                ParallelThroughputStatistics.getInstance().mean() + "\t");
-                        resultWriter.append("\n");
-                        resultWriter.flush();
+//                        resultWriter.append(windows + " \t" + syn + " \t" +
+//                                ParallelThroughputStatistics.getInstance().mean() + "\t");
+//                        resultWriter.append("\n");
+//                        resultWriter.flush();
                         ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
@@ -101,7 +112,7 @@ public class BenchmarkRunner {
         }
 
 
-        resultWriter.close();
+
     }
 
     private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn){

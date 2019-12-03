@@ -62,6 +62,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         if (bars.isEmpty()){
             bars.put(next, input.f1);
             rightBoundary = next;
+
         }else {
             int key;
             if (bars.floorKey(next) != null) {

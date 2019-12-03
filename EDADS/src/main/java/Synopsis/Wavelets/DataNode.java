@@ -44,7 +44,18 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         index = (int) (Math.pow(2, maxLevel-level)) + orderinlevel - 1;
     }
 
-    public void computeErrorValues(FrontlineNode prevFrontlineNode){
+    /**
+     * Computes the ErrorValues of this node from all it's direct descendants.
+     *
+     * @param prevFrontlineNode
+     * @return   true if error values changed
+     */
+    public boolean computeErrorValues(FrontlineNode prevFrontlineNode){
+
+        double oldmaxleft = maxerrorleft;
+        double oldminleft = minerrorleft;
+        double oldmaxright = maxerrorright;
+        double oldminright = minerrorright;
 
         DataNode currentChild = leftMostChild;
 
@@ -67,6 +78,12 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         if (prevFrontlineNode != null && prevFrontlineNode.errorhanging){
             maxerrorleft = Math.max(maxerrorleft, prevFrontlineNode.positiveerror);
             minerrorleft = Math.min(minerrorleft, prevFrontlineNode.negativeerror);
+        }
+
+        if (oldmaxleft == maxerrorleft && oldminleft == minerrorleft && oldmaxright == maxerrorright && oldminright == minerrorright){
+            return false;
+        }else {
+            return true;
         }
     }
 
@@ -95,16 +112,6 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         return s;
     }
 
-    public void setFrontLineForDescendants(FrontlineNode frontlineNode){
-        front = frontlineNode;
-        if (leftMostChild != null){
-            leftMostChild.setFrontLineForDescendants(frontlineNode);
-        }
-        if (nextSibling != null){
-            nextSibling.setFrontLineForDescendants(frontlineNode);
-        }
-    }
-
     /**
      * sets the parent and also computes it's relation to it
      * @param parent
@@ -112,15 +119,27 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     public void setParent(DataNode parent){
         this.parent = parent;
         if (parent != null){
-            if (parent.level > this.level){
-                if ((2 * orderinlevel - 1) < ((2 * parent.orderinlevel -1) * Math.pow(2, parent.level - this.level))){
-                    reltoparent = Utils.relationship.leftChild;
-                }else {
-                    reltoparent = Utils.relationship.rightChild;
-                }
+            if (parent.level > level){
+                reltoparent = ancestorRelationship(parent);
             }
         }else {
             reltoparent = Utils.relationship.none;
+        }
+        if (nextSibling != null){
+            nextSibling.setParent(parent);
+        }
+    }
+
+    /**
+     * Method to compute whether this node is in the left or right subtree of given ancestor
+     * @param       ancestor
+     * @return      the relationship of this node to the given ancestor
+     */
+    public Utils.relationship ancestorRelationship(DataNode ancestor){
+        if ((2 * orderinlevel - 1) < ((2 * ancestor.orderinlevel -1) * Math.pow(2, ancestor.level - this.level))){
+            return Utils.relationship.leftChild;
+        }else {
+            return Utils.relationship.rightChild;
         }
     }
 
@@ -163,6 +182,5 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         }
         return false;
     }
-
 
 }
