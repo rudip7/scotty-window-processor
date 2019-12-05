@@ -31,5 +31,10 @@ public class waveletTest {
 
         waveletSynopsis.padding();
         System.out.println(waveletSynopsis);
+
+        for (int i = 0; i < 14; i++) {
+            System.out.println(waveletSynopsis.pointQuery(i));
+        }
+
     }
 }

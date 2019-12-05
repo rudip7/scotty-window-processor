@@ -98,9 +98,23 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         return maxabserror;
     }
 
+    public int indexInSubtree(int queryIndex, int maxLevel){
+        int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
+        int treeSize = (int) Math.pow(2, maxLevel);
+        int lowerBound = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
+        int upperBound = treeSize / coefficientsInLevel * orderinlevel; // exclusive
+        if (queryIndex >= lowerBound && queryIndex < (lowerBound + upperBound)/2){
+            return 1;   // index in left subtree
+        }else if(queryIndex >= (lowerBound + upperBound) / 2 && queryIndex < upperBound){
+            return -1;  // index in right subtree
+        }else {
+            return 0;   // index not contained in subtree
+        }
+    }
+
     @Override
     public String toString() {
-        String s = "Coeff. value: "+data + " ["+ maxerrorleft +"," + minerrorleft + "," + maxerrorright + "," + minerrorright +"]";
+        String s = "Coeff. value: "+data + " ["+ maxerrorleft +"," + minerrorleft + "," + maxerrorright + "," + minerrorright +"]  RelToParent: " + reltoparent.toString();
 
         if (leftMostChild != null){
             s+=("\nLeft child: ["+ leftMostChild.toString()+"]");

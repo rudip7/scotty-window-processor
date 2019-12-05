@@ -58,7 +58,41 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
      */
     public double pointQuery(int index){
 
-        return 0;
+        return pointQuery(index, rootnode.hungChild, rootnode.value);
+    }
+
+    /**
+     * private method which recursively traverses the tree to get the approximated value at the given index.
+     * This is done by going trough all siblings of current node and choose the one whose subtree contains the given index.
+     * By appropriately adding or subtracting the coefficient values the final result is computed.
+     *
+     * @param index
+     * @param parentAverage
+     * @return
+     */
+    private double pointQuery(int index, DataNode current, double parentAverage){
+
+        double currentAverage = parentAverage;
+
+        while (current.indexInSubtree(index, rootnode.level) == 0){ // loop through all siblings until index is within subtree of node
+            current = current.nextSibling;
+            if (current == null){
+                return currentAverage; // approximate value defined by parent coefficient
+            }
+        }
+
+        // current DataNode influences approximation
+        if (current.indexInSubtree(index, rootnode.level) == 1){
+            currentAverage += current.data;
+        }else {
+            currentAverage -= current.data;
+        }
+
+        if (current.leftMostChild == null){ // if no descendants exist return the current Average
+            return currentAverage;
+        }
+
+        return pointQuery(index, current.leftMostChild, currentAverage); // recursively traverse the tree downwards along the descendants
     }
 
     /**
@@ -98,6 +132,7 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
                     if (previousCoefficient != null){
                         upperHanging.nextSibling = previousCoefficient;
                         previousCoefficient.previousSibling = upperHanging;
+                        previousCoefficient.setParent(newCoefficient);
                     }else if (lowerHanging != null){
                         upperHanging.nextSibling = lowerHanging;
                         lowerHanging.previousSibling = upperHanging;
@@ -106,6 +141,7 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
                     if (previousCoefficient != null){// if previous coefficient exists set him as child
                         previousCoefficient.setParent(newCoefficient);
                         newCoefficient.leftMostChild = previousCoefficient;
+                        previousCoefficient.setParent(newCoefficient);
                     }else if (lowerHanging != null){// otherwise: set lowerHanging as child
                         lowerHanging.setParent(newCoefficient);
                         newCoefficient.leftMostChild = lowerHanging;
@@ -220,10 +256,17 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
         for (int i = 0; i < 2; i++) {
             DataNode discarded = errorHeap.poll();
 
+            // TODO: set parents for all deleted nodes children!
+
             propagateError(discarded);
 
             if (discarded.leftMostChild != null){   // handle children / siblings
                 DataNode child = discarded.leftMostChild;
+
+                while (child != null){ // set all childrens parent to the discarded nodes parent
+                    child.setParent(discarded.parent);
+                    child = child.nextSibling;
+                }child = discarded.leftMostChild;
 
                 if (discarded.front != null){       // hang child on frontline in place of discarded node
                     child.front = discarded.front;
@@ -234,6 +277,7 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
                     discarded.previousSibling.nextSibling = child;
                     child.previousSibling = discarded.previousSibling;
                 }
+
                 if (discarded.nextSibling != null){     // connect last sibling of child as left sibling of discarded.next
                     while (child.nextSibling != null){
                         child = child.nextSibling;
