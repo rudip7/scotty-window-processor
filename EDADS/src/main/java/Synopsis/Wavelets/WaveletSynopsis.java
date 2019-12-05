@@ -103,7 +103,40 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
      * @return  approximated sum of values between leftIndex and rightIndex
      */
     public double rangeSumQuery(int leftIndex, int rightIndex){
-        return 0;
+
+        double rangeSum = (rightIndex - leftIndex + 1) * rootnode.value;
+
+        return rangeQueryTraversal(leftIndex, rightIndex, rootnode.hungChild, rangeSum);
+    }
+
+    private double rangeQueryTraversal(int leftIndex, int rightIndex, DataNode current, double ancestorContribution){
+
+        DataNode onLeftPath = current;
+        DataNode onRightPath = current;
+
+        while (onLeftPath.indexInSubtree(leftIndex, rootnode.level) == 0){
+            onLeftPath = onLeftPath.nextSibling;
+            if (onLeftPath == null){
+                return ancestorContribution;   // finish recursive call ->
+            }
+        }
+
+        while (onRightPath.indexInSubtree(rightIndex, rootnode.level) == 0){
+            onRightPath = onRightPath.nextSibling;
+            if (onRightPath == null){
+                return ancestorContribution;
+            }
+        }
+
+        double leftPathContribution = (onLeftPath.countLeftLeaves(leftIndex, rightIndex, rootnode.level) - onLeftPath.countRightLeaves(leftIndex, rightIndex, rootnode.level)) * onLeftPath.data;
+        double rightPathContribution = onLeftPath == onRightPath ? 0 : (onRightPath.countLeftLeaves(leftIndex, rightIndex, rootnode.level) - onRightPath.countRightLeaves(leftIndex, rightIndex, rootnode.level)) * onRightPath.data;
+        double currentValue = ancestorContribution + leftPathContribution + rightPathContribution;
+
+        if (current.leftMostChild == null){
+            return currentValue;
+        }else {
+            return rangeQueryTraversal(leftIndex, rightIndex, current.leftMostChild, currentValue);
+        }
     }
 
     /**

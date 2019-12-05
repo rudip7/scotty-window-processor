@@ -17,12 +17,12 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     int index;  // index of node in the full error-tree (after padding)
     int level;  // level of node in sibling-tree
     int orderinlevel;   // order of node in error-tree level
-    FrontlineNode front;    // Frontline node where this node is hanged
+    FrontlineNode front;    // Frontline node where this node is hanged - only set for the directly hanged DataNode (1 per frontline node)
     DataNode leftMostChild;  // this nodes leftmost child - usually on this nodes left subtree but can in cases of multiple deletions also be on the right subtree
-    DataNode parent;
+    DataNode parent;    // pointer to the parent DataNode
     Utils.relationship reltoparent;     // relationship of this node to its parent node
-    DataNode nextSibling;
-    DataNode previousSibling;
+    DataNode nextSibling;   // next (right) sibling
+    DataNode previousSibling;   // previous (left) sibling
 
     public DataNode(double data, int level, int orderinlevel, DataNode leftChild, DataNode previousSibling) {
         this.data = data;
@@ -110,6 +110,47 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         }else {
             return 0;   // index not contained in subtree
         }
+    }
+
+    /**
+     * methods used to calculate the amount of leftleaves this node has which is in the range from leftIndex to rightIndex
+     * Used to calculate the range sum query
+     *
+     * @param leftIndex
+     * @param rightIndex
+     * @param maxLevel
+     * @return
+     */
+    public int countLeftLeaves(int leftIndex,int rightIndex, int maxLevel){
+        int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
+        int treeSize = (int) Math.pow(2, maxLevel);
+        int indexStartLeftSubtree = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
+        int indexStartRightSubtree = ((treeSize / coefficientsInLevel * orderinlevel) + indexStartLeftSubtree) / 2; // exclusive
+        int rightBorder = Math.min(rightIndex, indexStartRightSubtree);
+        int leftBorder = Math.max(indexStartLeftSubtree, leftIndex);
+
+        return Math.max((rightBorder - leftBorder + 1), 0);
+    }
+
+    /**
+     * methods used to calculate the amount of rightleaves this node has which is in the range from leftIndex to rightIndex
+     * Used to calculate the range sum query
+     *
+     * @param leftIndex
+     * @param rightIndex
+     * @param maxLevel
+     * @return
+     */
+    public int countRightLeaves(int leftIndex, int rightIndex, int maxLevel){
+        int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
+        int treeSize = (int) Math.pow(2, maxLevel);
+        int indexStartLeftSubtree = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
+        int indexStartRightSubtree = ((treeSize / coefficientsInLevel * orderinlevel) + indexStartLeftSubtree) / 2; // exclusive
+        int indexEndRightSubtree = treeSize / coefficientsInLevel * orderinlevel; // exclusive
+        int rightBorder = Math.min(rightIndex, indexEndRightSubtree);
+        int leftBorder = Math.max(indexStartRightSubtree, leftIndex);
+
+        return Math.max(rightBorder - leftBorder + 1, 0);
     }
 
     @Override
