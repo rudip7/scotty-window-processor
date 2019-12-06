@@ -88,7 +88,6 @@ public class EquiDepthHistogram {
                 if (upperBound <= leftBoundaries[i + 1] ) {
                     upperBucket = i;
                     last = true;
-                    //System.out.println("");
                 }
             }
         }

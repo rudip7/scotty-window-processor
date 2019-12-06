@@ -79,6 +79,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 key = next;
                 bars.put(key, binFrequency); // create new bin with new left boundary
             }
+            int exceeded=0;
             while (binFrequency > maxSize){ // split bins while
                 /**
                  * Split Bin
@@ -90,10 +91,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 }else{
                     nextRightBound = bars.higherKey(key);
                 }
+
                 int nextLeftBound = (nextRightBound+key) / 2;
                 if (nextLeftBound != key){ // edge case in which boundaries are too close to each other -> don't split
                     bars.replace(key, binFrequency);
                     bars.put(nextLeftBound, binFrequency);
+                    exceeded++;
                 }
                 /**
                  * Merge the two smallest adjacent bars
@@ -112,7 +115,11 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                     bars.replace(index, currentMin);
                 }
             }
+            if(exceeded>0){
+            System.out.println(exceeded);
+                System.out.println(",");}
         }
+
     }
 
     @Override
