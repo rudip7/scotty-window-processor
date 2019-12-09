@@ -116,8 +116,8 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      * methods used to calculate the amount of leftleaves this node has which is in the range from leftIndex to rightIndex
      * Used to calculate the range sum query
      *
-     * @param leftIndex
-     * @param rightIndex
+     * @param leftIndex     inclusive
+     * @param rightIndex    inclusive
      * @param maxLevel
      * @return
      */
@@ -126,18 +126,18 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         int treeSize = (int) Math.pow(2, maxLevel);
         int indexStartLeftSubtree = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
         int indexStartRightSubtree = ((treeSize / coefficientsInLevel * orderinlevel) + indexStartLeftSubtree) / 2; // exclusive
-        int rightBorder = Math.min(rightIndex, indexStartRightSubtree);
+        int rightBorder = Math.min(rightIndex + 1, indexStartRightSubtree); // rightIndex + 1 to make the index exclusive
         int leftBorder = Math.max(indexStartLeftSubtree, leftIndex);
 
-        return Math.max((rightBorder - leftBorder + 1), 0);
+        return Math.max((rightBorder - leftBorder), 0);
     }
 
     /**
      * methods used to calculate the amount of rightleaves this node has which is in the range from leftIndex to rightIndex
      * Used to calculate the range sum query
      *
-     * @param leftIndex
-     * @param rightIndex
+     * @param leftIndex     inclusive
+     * @param rightIndex    inclusive
      * @param maxLevel
      * @return
      */
@@ -147,10 +147,10 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         int indexStartLeftSubtree = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
         int indexStartRightSubtree = ((treeSize / coefficientsInLevel * orderinlevel) + indexStartLeftSubtree) / 2; // exclusive
         int indexEndRightSubtree = treeSize / coefficientsInLevel * orderinlevel; // exclusive
-        int rightBorder = Math.min(rightIndex, indexEndRightSubtree);
+        int rightBorder = Math.min(rightIndex +1, indexEndRightSubtree);
         int leftBorder = Math.max(indexStartRightSubtree, leftIndex);
 
-        return Math.max(rightBorder - leftBorder + 1, 0);
+        return Math.max(rightBorder - leftBorder, 0);
     }
 
     @Override

@@ -37,9 +37,11 @@ public class waveletTest {
         }
 
         System.out.println("Begin Range Sum Queries");
+        double sum = 0;
 
         for (int i = 0; i < 14; i++) {
-            System.out.println("rangeSum(0:" + i + "): " + waveletSynopsis.rangeSumQuery(0,i));
+            sum += waveletSynopsis.pointQuery(i);
+            System.out.println("rangeSum(0:" + i + "): " + waveletSynopsis.rangeSumQuery(0,i) + "  --  " + sum + " (true value)");
         }
 
     }
