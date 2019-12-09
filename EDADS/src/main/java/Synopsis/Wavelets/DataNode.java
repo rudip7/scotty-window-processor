@@ -14,7 +14,6 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     double maxerrorright = 0;     // maximum error right subtree
     double minerrorright = 0;     // minimum error right subtree
     double maxabserror;
-    int index;  // index of node in the full error-tree (after padding)
     int level;  // level of node in sibling-tree
     int orderinlevel;   // order of node in error-tree level
     FrontlineNode front;    // Frontline node where this node is hanged - only set for the directly hanged DataNode (1 per frontline node)
@@ -39,15 +38,11 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         reltoparent = Utils.relationship.none;
     }
 
-    public void computeIndex(int maxLevel){
-        index = (int) (Math.pow(2, maxLevel-level)) + orderinlevel - 1;
-    }
-
     /**
      * Computes the ErrorValues of this node from all it's direct descendants.
      *
-     * @param prevFrontlineNode
-     * @return   true if error values changed
+     * @param   prevFrontlineNode
+     * @return  true if error values changed
      */
     public boolean computeErrorValues(FrontlineNode prevFrontlineNode){
 
