@@ -5,7 +5,6 @@ package Synopsis.Wavelets;
  */
 public class FrontlineNode {
 
-
     DataNode hungChild;     // pointer to DataNode hanging from this
     double value;
     FrontlineNode next;     // pointer to next (upper) fnode
@@ -14,11 +13,6 @@ public class FrontlineNode {
     double negativeerror;   // error quantities from deleted orphans
     boolean errorhanging;
     int level;
-
-    public FrontlineNode(int level) {
-        this.level = level;
-        errorhanging = false;
-    }
 
     public FrontlineNode(double value, int level) {
         this.value = value;

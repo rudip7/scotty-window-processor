@@ -14,7 +14,6 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     double maxerrorright = 0;     // maximum error right subtree
     double minerrorright = 0;     // minimum error right subtree
     double maxabserror;
-    int index;  // index of node in the full error-tree (after padding)
     int level;  // level of node in sibling-tree
     int orderinlevel;   // order of node in error-tree level
     FrontlineNode front;    // Frontline node where this node is hanged - only set for the directly hanged DataNode (1 per frontline node)
@@ -39,15 +38,11 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         reltoparent = Utils.relationship.none;
     }
 
-    public void computeIndex(int maxLevel){
-        index = (int) (Math.pow(2, maxLevel-level)) + orderinlevel - 1;
-    }
-
     /**
      * Computes the ErrorValues of this node from all it's direct descendants.
      *
-     * @param prevFrontlineNode
-     * @return   true if error values changed
+     * @param   prevFrontlineNode
+     * @return  true if error values changed
      */
     public boolean computeErrorValues(FrontlineNode prevFrontlineNode){
 
@@ -116,8 +111,8 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      * methods used to calculate the amount of leftleaves this node has which is in the range from leftIndex to rightIndex
      * Used to calculate the range sum query
      *
-     * @param leftIndex
-     * @param rightIndex
+     * @param leftIndex     inclusive
+     * @param rightIndex    inclusive
      * @param maxLevel
      * @return
      */
@@ -126,18 +121,18 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         int treeSize = (int) Math.pow(2, maxLevel);
         int indexStartLeftSubtree = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
         int indexStartRightSubtree = ((treeSize / coefficientsInLevel * orderinlevel) + indexStartLeftSubtree) / 2; // exclusive
-        int rightBorder = Math.min(rightIndex, indexStartRightSubtree);
+        int rightBorder = Math.min(rightIndex + 1, indexStartRightSubtree); // rightIndex + 1 to make the index exclusive
         int leftBorder = Math.max(indexStartLeftSubtree, leftIndex);
 
-        return Math.max((rightBorder - leftBorder + 1), 0);
+        return Math.max((rightBorder - leftBorder), 0);
     }
 
     /**
      * methods used to calculate the amount of rightleaves this node has which is in the range from leftIndex to rightIndex
      * Used to calculate the range sum query
      *
-     * @param leftIndex
-     * @param rightIndex
+     * @param leftIndex     inclusive
+     * @param rightIndex    inclusive
      * @param maxLevel
      * @return
      */
@@ -147,10 +142,10 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         int indexStartLeftSubtree = treeSize / coefficientsInLevel * (orderinlevel - 1); // inclusive
         int indexStartRightSubtree = ((treeSize / coefficientsInLevel * orderinlevel) + indexStartLeftSubtree) / 2; // exclusive
         int indexEndRightSubtree = treeSize / coefficientsInLevel * orderinlevel; // exclusive
-        int rightBorder = Math.min(rightIndex, indexEndRightSubtree);
+        int rightBorder = Math.min(rightIndex +1, indexEndRightSubtree);
         int leftBorder = Math.max(indexStartRightSubtree, leftIndex);
 
-        return Math.max(rightBorder - leftBorder + 1, 0);
+        return Math.max(rightBorder - leftBorder, 0);
     }
 
     @Override

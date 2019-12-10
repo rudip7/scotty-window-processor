@@ -7,7 +7,6 @@ import java.util.PriorityQueue;
 
 public class WaveletSynopsis<T> implements Synopsis<T> {
 
-    private int nodecounter = 0;
     private int size;
     private FrontlineNode frontlineBottom;
     private FrontlineNode frontlineTop;
@@ -26,7 +25,6 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
     public WaveletSynopsis(int size) {
         this.size = size;
         streamElementCounter = 0;
-        nodecounter = 0;
 
         frontlineBottom = null;
         frontlineTop = null;
@@ -117,26 +115,45 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
         while (onLeftPath.indexInSubtree(leftIndex, rootnode.level) == 0){
             onLeftPath = onLeftPath.nextSibling;
             if (onLeftPath == null){
-                return ancestorContribution;   // finish recursive call ->
+                break;   // finish recursive call ->
             }
         }
 
         while (onRightPath.indexInSubtree(rightIndex, rootnode.level) == 0){
             onRightPath = onRightPath.nextSibling;
             if (onRightPath == null){
-                return ancestorContribution;
+                break;
             }
         }
 
-        double leftPathContribution = (onLeftPath.countLeftLeaves(leftIndex, rightIndex, rootnode.level) - onLeftPath.countRightLeaves(leftIndex, rightIndex, rootnode.level)) * onLeftPath.data;
-        double rightPathContribution = onLeftPath == onRightPath ? 0 : (onRightPath.countLeftLeaves(leftIndex, rightIndex, rootnode.level) - onRightPath.countRightLeaves(leftIndex, rightIndex, rootnode.level)) * onRightPath.data;
+        double leftPathContribution = 0;
+        double rightPathContribution = 0;
+        if (onLeftPath != null){
+            leftPathContribution = (onLeftPath.countLeftLeaves(leftIndex, rightIndex, rootnode.level) - onLeftPath.countRightLeaves(leftIndex, rightIndex, rootnode.level)) * onLeftPath.data;
+        }
+        if (onRightPath != null && onRightPath != onLeftPath){
+            rightPathContribution = (onRightPath.countLeftLeaves(leftIndex, rightIndex, rootnode.level) - onRightPath.countRightLeaves(leftIndex, rightIndex, rootnode.level)) * onRightPath.data;
+        }
+
         double currentValue = ancestorContribution + leftPathContribution + rightPathContribution;
 
-        if (current.leftMostChild == null){
-            return currentValue;
+        if (onLeftPath != null && onRightPath != null && onLeftPath != onRightPath){    // left and right path split for the first time -> traverse both left and right path
+            if (onLeftPath.leftMostChild != null){
+                currentValue = rangeQueryTraversal(leftIndex, rightIndex, onLeftPath.leftMostChild, currentValue);
+            }
+            if (onRightPath.leftMostChild != null){
+                currentValue += rangeQueryTraversal(leftIndex, rightIndex, onRightPath.leftMostChild, 0);
+            }
         }else {
-            return rangeQueryTraversal(leftIndex, rightIndex, current.leftMostChild, currentValue);
+            if (onLeftPath != null && onLeftPath.leftMostChild != null){ // traverse the left path
+                currentValue = rangeQueryTraversal(leftIndex, rightIndex, onLeftPath.leftMostChild, currentValue);
+            }
+            if (onRightPath != null && onRightPath != onLeftPath && onRightPath.leftMostChild != null){ // traverse the right path if it deviates from the left path
+                currentValue = rangeQueryTraversal(leftIndex, rightIndex, onRightPath.leftMostChild, currentValue);
+            }
         }
+
+        return currentValue;
     }
 
     /**
@@ -206,7 +223,6 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
 
         FrontlineNode frontlineNode = frontlineBottom;
         FrontlineNode prevFrontlineNode = null;
-        nodecounter += 2; // every climbub operation increases the amount of (Data and Frontline) nodes by 2
 
         int order = streamElementCounter;
         double curentAverage = 0;
@@ -289,8 +305,6 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
         for (int i = 0; i < 2; i++) {
             DataNode discarded = errorHeap.poll();
 
-            // TODO: set parents for all deleted nodes children!
-
             propagateError(discarded);
 
             if (discarded.leftMostChild != null){   // handle children / siblings
@@ -343,8 +357,6 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
                     discarded.parent.leftMostChild = discarded.nextSibling;
                 }
             }
-
-            nodecounter--;
         }
     }
 
