@@ -56,7 +56,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
      */
     public void update(Tuple2<Integer, Float> input){
         totalFrequencies += input.f1;
-        double maxSize = MAXCOEF * totalFrequencies / maxNumBars; // maximum value a bar can have before it should split
+        double maxSize = (MAXCOEF * totalFrequencies) / maxNumBars; // maximum value a bar can have before it should split
         float binFrequency;
         int next = input.f0;
         if (bars.isEmpty()){
@@ -72,14 +72,13 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 }
                 binFrequency = bars.get(key) + input.f1;
                 bars.replace(key, binFrequency);
-            } else{ // element is new leftmost boundary
+            }else{ // element is new leftmost boundary
                 key = bars.ceilingKey(next);
                 binFrequency = bars.get(key) + input.f1;
                 bars.remove(key);   // remove old bin
                 key = next;
                 bars.put(key, binFrequency); // create new bin with new left boundary
             }
-            int exceeded=0;
             while (binFrequency > maxSize){ // split bins while
                 /**
                  * Split Bin
@@ -96,7 +95,6 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 if (nextLeftBound != key){ // edge case in which boundaries are too close to each other -> don't split
                     bars.replace(key, binFrequency);
                     bars.put(nextLeftBound, binFrequency);
-                    exceeded++;
                 }
                 /**
                  * Merge the two smallest adjacent bars
@@ -115,9 +113,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                     bars.replace(index, currentMin);
                 }
             }
-            if(exceeded>0){
-            System.out.println(exceeded);
-                System.out.println(",");}
+
         }
 
     }
