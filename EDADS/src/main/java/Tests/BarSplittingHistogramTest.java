@@ -16,8 +16,8 @@ public class BarSplittingHistogramTest {
     public void updateTest()
     {
         int count=0;
-        BarSplittingHistogram BASHistogram= new BarSplittingHistogram(7,100);
-        File file= new File("data/data.csv");
+        BarSplittingHistogram BASHistogram= new BarSplittingHistogram(4,100);
+        File file= new File("data/dataset.csv");
         // this gives you a 2-dimensional array of strings
         Scanner inputStream;
         try{
@@ -40,25 +40,27 @@ public class BarSplittingHistogramTest {
 //                188,189,193,197,198,201,205,206,207,211,212,213,215,220,223,225,226,227,229,232,233,235,238};
 //
 
-        for(Map.Entry<Integer,Float> bar:bars.entrySet()){
+//        for(Map.Entry<Integer,Float> bar:bars.entrySet()){
 //            if(!Arrays.stream(valuesWithHighFrequency).anyMatch(i -> i == bar.getKey())){
-                if(bar.getValue()>17 ){
+//                if(bar.getValue()>=24.28 ){
                    // Assertions.assertTrue(((bar.getValue()-17))/17<0.58);
-                    System.out.println(bar.getKey());
-                }
+//                    System.out.printf("%d ---%f%n",bar.getKey(),bar.getValue());
+
+//                }
                 //else{
                    // Assertions.assertTrue(bar.getValue()<17);
 //                }
 
 
 //            }
-        }
+//        }
 
-//      double l= BASHistogram.buildEquiDepthHistogram().rangeQuery(8.038455465139537, 9.91700718565135);
+      double l= BASHistogram.buildEquiDepthHistogram().rangeQuery(8,25);
 //        double n= BASHistogram.buildEquiDepthHistogram().rangeQuery(154.89992181391713, 157.3875236294896);
 //        double m= BASHistogram.buildEquiDepthHistogram().rangeQuery(237.8,239);
-//        System.out.println(BASHistogram.buildEquiDepthHistogram());
-//        System.out.println("----------------");
+
+        System.out.println(BASHistogram.buildEquiDepthHistogram());
+        System.out.println(l);
 //        System.out.println(l);
 //        System.out.println(n);
 //        System.out.println(m);

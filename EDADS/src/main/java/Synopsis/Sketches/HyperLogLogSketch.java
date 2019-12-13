@@ -70,10 +70,11 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
      * @return the merged HyperLogLogSketch Datastructure
      */
     public HyperLogLogSketch merge(MergeableSynopsis synopsis){
+
         if (synopsis.getClass().isInstance(HyperLogLogSketch.class)){
             throw new IllegalArgumentException("MergeableSynopsis.Sketches can only be merged with other MergeableSynopsis.Sketches of the same Type \n" +
                     "otherHLL.getClass() = " + synopsis.getClass() + "\n" +
-                    "otherHLL.getClass().isInstance(HyperLogLogSketch.class = false");
+                    "otherHLL.getClass().isInstance(HyperLogLogSketch.class) = false");
         }
 
         HyperLogLogSketch otherHLL = (HyperLogLogSketch) synopsis;
