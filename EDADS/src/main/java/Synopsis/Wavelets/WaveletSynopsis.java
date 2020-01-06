@@ -3,9 +3,12 @@ package Synopsis.Wavelets;
 
 import Synopsis.Synopsis;
 
+import java.io.IOException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.util.PriorityQueue;
 
-public class WaveletSynopsis<T> implements Synopsis<T> {
+public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
 
     private int size;
     private FrontlineNode frontlineBottom;
@@ -476,4 +479,34 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
             return s;
         }
     }
+
+
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeInt(size);
+        out.writeObject(frontlineBottom);
+        out.writeObject(frontlineTop);
+        out.writeObject(rootnode);
+        out.writeInt(streamElementCounter);
+        out.writeObject(errorHeap);
+        out.writeDouble(data1);
+        out.writeObject(combinedWith);
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
+        size = in.readInt();
+        frontlineBottom = (FrontlineNode) in.readObject();
+        frontlineTop = (FrontlineNode) in.readObject();
+        rootnode = (FrontlineNode) in.readObject();
+        streamElementCounter = in.readInt();
+        errorHeap = (PriorityQueue<DataNode>) in.readObject();
+        data1 = in.readDouble();
+        combinedWith = (WaveletSynopsis<T>) in.readObject();
+    }
+
+
+    private void readObjectNoData() throws ObjectStreamException{
+        // no idea what to put here...
+    }
+
 }

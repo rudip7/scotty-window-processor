@@ -6,27 +6,19 @@ import java.util.ArrayList;
 
 public class DistributedWaveletsManager<Input> extends NonMergeableSynopsis<Input, WaveletSynopsis<Input>> {
 
-    private ArrayList<WaveletSynopsis<Input>> combinedSynopses;
+    private ArrayList<SliceWaveletsManager<Input>> combinedSynopses;
     int parallelism;
     int elementCounter = 0;
 
-    public DistributedWaveletsManager(int parallelism, int size, ArrayList<WaveletSynopsis<Input>> combinedSynopses) {
+    public DistributedWaveletsManager(int parallelism, int size, ArrayList<SliceWaveletsManager<Input>> combinedSynopses) {
         this.combinedSynopses = combinedSynopses;
         this.parallelism = parallelism;
-        combinedSynopses = new ArrayList<WaveletSynopsis<Input>>(parallelism);
-        for (int i = 0; i < parallelism; i++) {
-            combinedSynopses.add(new WaveletSynopsis<>(size));
-        }
     }
 
     @Override
     public int getSynopsisIndex(int streamIndex) {
 
         return streamIndex % parallelism;
-    }
-
-    public ArrayList<WaveletSynopsis<Input>> getCombinedSynopses() {
-        return combinedSynopses;
     }
 
     @Override

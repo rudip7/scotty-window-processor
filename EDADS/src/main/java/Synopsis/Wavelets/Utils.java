@@ -1,6 +1,8 @@
 package Synopsis.Wavelets;
 
-public class Utils {
+import java.io.Serializable;
+
+public class Utils implements Serializable {
     enum relationship {
         leftChild,
         rightChild,
