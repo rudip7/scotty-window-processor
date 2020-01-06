@@ -2,6 +2,8 @@ package Synopsis.Wavelets;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 /**
@@ -22,6 +24,45 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     Utils.relationship reltoparent;     // relationship of this node to its parent node
     DataNode nextSibling;   // next (right) sibling
     DataNode previousSibling;   // previous (left) sibling
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeDouble(data);
+        out.writeDouble(maxerrorleft);
+        out.writeDouble(minerrorleft);
+        out.writeDouble(maxerrorright);
+        out.writeDouble(minerrorright);
+        out.writeDouble(maxabserror);
+        out.writeInt(level);
+        out.writeInt(orderinlevel);
+        out.writeObject(front);
+        out.writeObject(leftMostChild);
+        out.writeObject(parent);
+        out.writeObject(reltoparent);
+        out.writeObject(nextSibling);
+        out.writeObject(previousSibling);
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
+        data = in.readDouble();
+        maxerrorleft = in.readDouble();
+        minerrorleft = in.readDouble();
+        maxerrorright = in.readDouble();
+        minerrorright = in.readDouble();
+        maxabserror = in.readDouble();
+        level = in.readInt();
+        orderinlevel = in.readInt();
+        front = (FrontlineNode) in.readObject();
+        leftMostChild = (DataNode) in.readObject();
+        parent = (DataNode) in.readObject();
+        reltoparent = (Utils.relationship) in.readObject();
+        nextSibling = (DataNode) in.readObject();
+        previousSibling = (DataNode) in.readObject();
+    }
+
+
+    private void readObjectNoData() throws ObjectStreamException {
+        // no idea what to put here...
+    }
 
     public DataNode(double data, int level, int orderinlevel, DataNode leftChild, DataNode previousSibling) {
         this.data = data;
