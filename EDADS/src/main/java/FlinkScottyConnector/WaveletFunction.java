@@ -68,7 +68,8 @@ public class WaveletFunction<Input> implements AggregateFunction<Tuple2<Integer,
 
     @Override
     public WaveletSynopsis combine(WaveletSynopsis partialAggregate1, WaveletSynopsis partialAggregate2) {
-        throw new IllegalArgumentException("Wavelet partial aggregates cannot be combined, because they are not mergeable.");
+        partialAggregate1.setCombinedWith(partialAggregate2);
+        return partialAggregate1;
     }
 
     @Override
@@ -85,9 +86,11 @@ public class WaveletFunction<Input> implements AggregateFunction<Tuple2<Integer,
     @Override
     public SliceWaveletsManager lower(WaveletSynopsis aggregate) {
         ArrayList<WaveletSynopsis> sliceAggregates = new ArrayList<>();
-        for (int i = 0; i < ; i++) {
-
+        WaveletSynopsis temp = aggregate;
+        while (temp != null){
+            sliceAggregates.add(temp);
+            temp = temp.getCombinedWith();
         }
-        return null;
+        return new SliceWaveletsManager(sliceAggregates);
     }
 }

@@ -452,6 +452,14 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
         }
     }
 
+    public void setCombinedWith(WaveletSynopsis<T> toCombineWith){
+        this.combinedWith = toCombineWith;
+    }
+
+    public WaveletSynopsis<T> getCombinedWith() {
+        return combinedWith;
+    }
+
     @Override
     public String toString() {
         String s = "streamElementCounter: " + streamElementCounter + "\n";
