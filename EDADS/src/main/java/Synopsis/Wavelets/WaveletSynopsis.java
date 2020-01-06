@@ -15,6 +15,11 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
     private PriorityQueue<DataNode> errorHeap;
     private double data1;
 
+    public int getStreamElementCounter() {
+        return streamElementCounter;
+    }
+//TODO: make sure padding includes data1 when elementCounter is odd! (otherwise last input will be forgotten)
+
 
     /**
      * WaveletSynopsis constructor - creates the sibling tree with a given space budget (size).
@@ -101,6 +106,10 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
      * @return  approximated sum of values between leftIndex and rightIndex
      */
     public double rangeSumQuery(int leftIndex, int rightIndex){
+
+        if (rightIndex < leftIndex){
+            return 0;   // rightIndex has to be greater than leftIndex
+        }
 
         double rangeSum = (rightIndex - leftIndex + 1) * rootnode.value;
 
