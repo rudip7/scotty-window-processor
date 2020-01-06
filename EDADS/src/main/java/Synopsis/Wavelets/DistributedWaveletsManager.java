@@ -2,10 +2,72 @@ package Synopsis.Wavelets;
 
 import Synopsis.NonMergeableSynopsis;
 
+import java.util.ArrayList;
+
 public class DistributedWaveletsManager<Input> extends NonMergeableSynopsis<Input, WaveletSynopsis<Input>> {
+
+    private ArrayList<WaveletSynopsis<Input>> combinedSynopses;
+    int parallelism;
+    int elementCounter = 0;
+
+    public DistributedWaveletsManager(int parallelism, int size, ArrayList<WaveletSynopsis<Input>> combinedSynopses) {
+        this.combinedSynopses = combinedSynopses;
+        this.parallelism = parallelism;
+        combinedSynopses = new ArrayList<WaveletSynopsis<Input>>(parallelism);
+        for (int i = 0; i < parallelism; i++) {
+            combinedSynopses.add(new WaveletSynopsis<>(size));
+        }
+    }
 
     @Override
     public int getSynopsisIndex(int streamIndex) {
-        return 0;
+
+        return streamIndex % parallelism;
+    }
+
+    public ArrayList<WaveletSynopsis<Input>> getCombinedSynopses() {
+        return combinedSynopses;
+    }
+
+    @Override
+    public void update(Input element) {
+        elementCounter++;
+        combinedSynopses.get(getSynopsisIndex(elementCounter)).update(element);
+    }
+
+    public int getLocalIndex(int index){
+        return index / parallelism;
+    }
+
+    public double pointQuery(int index){
+        return combinedSynopses.get(getSynopsisIndex(index)).pointQuery(getLocalIndex(index));
+    }
+
+    public double rangeSumQuery(int leftIndex, int rightIndex){
+        double rangeSum = 0;
+
+        int leftLocalIndex = getLocalIndex(leftIndex);
+        int rightLocalIndex = getLocalIndex(rightIndex);
+
+        for (int i = 0; i < parallelism; i++) {
+
+            int partitionLeftIndex = leftLocalIndex;
+            if (getGlobalIndex(leftLocalIndex, i) < leftIndex){
+                partitionLeftIndex += 1;
+            }
+
+            int partitionRightIndex = rightLocalIndex;
+            if (getGlobalIndex(rightLocalIndex, i) > rightIndex){
+                partitionRightIndex -=1;
+            }
+
+            rangeSum += combinedSynopses.get(i).rangeSumQuery(partitionLeftIndex, partitionRightIndex);
+        }
+
+        return rangeSum;
+    }
+
+    private int getGlobalIndex(int localIndex, int partition){
+        return partition + (localIndex * parallelism);
     }
 }
