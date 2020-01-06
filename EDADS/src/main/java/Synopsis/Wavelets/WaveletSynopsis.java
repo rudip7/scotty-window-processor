@@ -473,7 +473,6 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
     }
 
 
-
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(size);
         out.writeObject(frontlineBottom);

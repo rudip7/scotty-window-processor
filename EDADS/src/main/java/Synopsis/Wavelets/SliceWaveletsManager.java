@@ -3,6 +3,8 @@ package Synopsis.Wavelets;
 import Synopsis.NonMergeableSynopsis;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
 
 public class SliceWaveletsManager<Input> extends NonMergeableSynopsis<Input, DistributedWaveletsManager<Input>> {
 
@@ -29,12 +31,24 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsis<Input, Dis
     }
 
     public double pointQuery(int index){
-        //TODO
-        return 0;
+        int managerIndex = Arrays.binarySearch(sliceStartIndices, index);
+        int previousSliceElements = sliceStartIndices[managerIndex];
+        return slices.get(managerIndex).pointQuery(index - previousSliceElements);
     }
 
+
     public double rangeSumQuery(int leftIndex, int rightIndex){
-        //TODO
-        return 0;
+        int leftManagerIndex = Arrays.binarySearch(sliceStartIndices, leftIndex);
+        int rightManagerIndex = Arrays.binarySearch(sliceStartIndices, rightIndex);
+
+        double rangeSum = 0;
+
+        for (int i = leftManagerIndex; i <= rightManagerIndex; i++) {
+            int previousSliceElements = sliceStartIndices[i];
+            int localLeftIndex = i == leftManagerIndex ? leftIndex-previousSliceElements : 0;
+            int localRightIndex = i == rightManagerIndex ? rightIndex-previousSliceElements : sliceStartIndices[i+1] - previousSliceElements;
+            rangeSum += slices.get(i).rangeSumQuery(localLeftIndex, localRightIndex);
+        }
+        return rangeSum;
     }
 }
