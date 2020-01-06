@@ -11,6 +11,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 
 public class WaveletFunction<Input> implements AggregateFunction<Tuple2<Integer,Input>, WaveletSynopsis, SliceWaveletsManager>, Serializable {
     private int keyField;
@@ -83,6 +84,10 @@ public class WaveletFunction<Input> implements AggregateFunction<Tuple2<Integer,
 
     @Override
     public SliceWaveletsManager lower(WaveletSynopsis aggregate) {
-        return new;
+        ArrayList<WaveletSynopsis> sliceAggregates = new ArrayList<>();
+        for (int i = 0; i < ; i++) {
+
+        }
+        return null;
     }
 }

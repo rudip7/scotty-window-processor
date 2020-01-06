@@ -15,6 +15,8 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
     private PriorityQueue<DataNode> errorHeap;
     private double data1;
 
+    private WaveletSynopsis<T> combinedWith;
+
     public int getStreamElementCounter() {
         return streamElementCounter;
     }
@@ -34,6 +36,7 @@ public class WaveletSynopsis<T> implements Synopsis<T> {
         frontlineBottom = null;
         frontlineTop = null;
         errorHeap = new PriorityQueue<>();
+        combinedWith = null;
     }
 
     @Override
