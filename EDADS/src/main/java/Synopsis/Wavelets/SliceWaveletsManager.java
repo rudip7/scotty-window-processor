@@ -23,7 +23,7 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsis<Input, Dis
         }
     }
 
-    public SliceWaveletsManager(ArrayList<DistributedWaveletsManager<Input>> slices) {
+    public SliceWaveletsManager(ArrayList<WaveletSynopsis<Input>> slices) {
         this.slices = slices;
         this.slicesPerWindow = slices.size();
         sliceStartIndices = new int[slicesPerWindow];
@@ -32,9 +32,7 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsis<Input, Dis
         for (int i = 0; i < slicesPerWindow; i++) {
             sliceStartIndices[i] = previousSliceElements;
 
-            for (int j = 0; j < slices.get(i).parallelism; j++) {
-                previousSliceElements += slices.get(i).getCombinedSynopses().get(j).getStreamElementCounter();
-            }
+            previousSliceElements += slices.get(i).getStreamElementCounter();
         }
     }
 
