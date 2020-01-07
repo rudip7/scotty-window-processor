@@ -1,6 +1,7 @@
 package FlinkScottyConnector;
 
 import Synopsis.MergeableSynopsis;
+import Synopsis.NonMergeableSynopsis;
 import Synopsis.Sampling.SampleElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
 import de.tub.dima.scotty.core.AggregateWindow;
@@ -269,6 +270,19 @@ public final class BuildSynopsis {
             return keyedStream.process(processingFunction)
                     .flatMap(new MergePreAggregates())
                     .setParallelism(1);
+        }else if (NonMergeableSynopsis.class.isAssignableFrom(synopsisClass)){
+            KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismIndex<>()).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
+            processingFunction =
+                    new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(synopsisClass, parameters));
+
+            for (int i = 0; i < windows.length; i++) {
+                processingFunction.addWindow(windows[i]);
+            }
+            return keyedStream.process(processingFunction)
+                    .flatMap(new MergePreAggregates())
+                    .setParallelism(1);
+
         } else {
             KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismIndex<>()).keyBy(0);
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
