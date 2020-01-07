@@ -1,5 +1,6 @@
 package Jobs;
 
+import Synopsis.Sampling.ReservoirSampler;
 import Synopsis.Sketches.CountMinSketch;
 import Source.DemoSource;
 import FlinkScottyConnector.BuildSynopsis;
@@ -9,6 +10,7 @@ import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -30,7 +32,10 @@ public class BuildSynopsisJob {
         DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new DemoSource());
 
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
-        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+
+        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, ReservoirSampler.class, 10);
+
+//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 //        BuildSynopsis.setParallelismKeys(env.getParallelism()*2);
 //        SingleOutputStreamOperator<AggregateWindow<BloomFilter>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BloomFilter.class, 25, 20, 1L);
 //        SingleOutputStreamOperator<AggregateWindow<BiasedReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BiasedReservoirSampler.class, 20);
@@ -43,18 +48,19 @@ public class BuildSynopsisJob {
 //        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = keyedStream
 //                .process(windowOperator);
 
-        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
-            @Override
-            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
-                String result = value.getStart()+" ---> "+value.getEnd()+"\n\n";//+value.getAggValues().get(0).toString();
-                out.collect(result);
-//                for (CountMinSketch w: value.getAggValues()){
-//                    out.collect(w.toString());
-//                }
-            }
-        }).print();
+        finalSketch
+//                .flatMap(new FlatMapFunction<AggregateWindow<ReservoirSampler>, String>() {
+//            @Override
+//            public void flatMap(AggregateWindow<ReservoirSampler> value, Collector<String> out) throws Exception {
+//                String result = value.getStart()+" ---> "+value.getEnd()+"\n\n";//+value.getAggValues().get(0).toString();
+//                out.collect(result);
+////                for (CountMinSketch w: value.getAggValues()){
+////                    out.collect(w.toString());
+////                }
+//            }
+//        }).print();
 
-//        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE);
 
         env.execute("Flink Streaming Java API Skeleton");
     }
