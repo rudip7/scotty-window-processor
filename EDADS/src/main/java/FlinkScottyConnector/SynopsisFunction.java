@@ -12,13 +12,13 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class SynopsisFunction<Input, T extends MergeableSynopsis> implements AggregateFunction<Tuple2<Integer,Input>, MergeableSynopsis, MergeableSynopsis>, Serializable {
+public class SynopsisFunction<Input, T extends MergeableSynopsis> implements AggregateFunction<Input, MergeableSynopsis, MergeableSynopsis>, Serializable {
     private int keyField;
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
 
-    public SynopsisFunction(int keyField, Class<T> synopsisClass, Object[] constructorParam){
+    public SynopsisFunction(int keyField, Class<T> synopsisClass, Object[] constructorParam) {
         this.keyField = keyField;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -28,7 +28,7 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
         this.synopsisClass = synopsisClass;
     }
 
-    public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam){
+    public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam) {
         this.keyField = -1;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -57,15 +57,22 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     @Override
-    public MergeableSynopsis lift(Tuple2<Integer,Input> inputTuple) {
-        MergeableSynopsis partialAggregate = createAggregate();
-        if(inputTuple.f1 instanceof Tuple && keyField != -1){
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
+    public MergeableSynopsis lift(Input input) {
+        if (input instanceof Tuple2) {
+            Tuple2 inputTuple = (Tuple2) input;
+            MergeableSynopsis partialAggregate = createAggregate();
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            MergeableSynopsis partialAggregate = createAggregate();
+            partialAggregate.update(input);
             return partialAggregate;
         }
-        partialAggregate.update(inputTuple.f1);
-        return partialAggregate;
     }
 
     @Override
@@ -79,14 +86,20 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     @Override
-    public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
-        if(inputTuple.f1 instanceof Tuple && keyField != -1){
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
+    public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Input input) {
+        if (input instanceof Tuple2) {
+            Tuple2 inputTuple = (Tuple2) input;
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            partialAggregate.update(input);
             return partialAggregate;
         }
-        partialAggregate.update(inputTuple.f1);
-        return partialAggregate;
     }
 
     @Override

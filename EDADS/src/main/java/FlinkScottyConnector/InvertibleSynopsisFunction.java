@@ -14,14 +14,14 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> implements InvertibleAggregateFunction<Tuple2<Integer,Input>, InvertibleSynopsis, InvertibleSynopsis>, CommutativeAggregateFunction<Tuple2<Integer,Input>, InvertibleSynopsis, InvertibleSynopsis>, Serializable {
+public class InvertibleSynopsisFunction<Input, T extends InvertibleSynopsis> implements InvertibleAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, CommutativeAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, Serializable {
     private int keyField;
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
 
 
-    public InvertibleSynopsisFunction(int keyField, Class<T> synopsisClass, Object... constructorParam){
+    public InvertibleSynopsisFunction(int keyField, Class<T> synopsisClass, Object... constructorParam) {
         this.keyField = keyField;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -31,7 +31,7 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
         this.synopsisClass = synopsisClass;
     }
 
-    public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam){
+    public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam) {
         this.keyField = -1;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -70,26 +70,39 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
     }
 
     @Override
-    public InvertibleSynopsis liftAndInvert(InvertibleSynopsis partialAggregate, Tuple2<Integer,Input> toRemove) {
-        if(toRemove.f1 instanceof Tuple && keyField != -1){
-            Input field = ((Tuple) toRemove.f1).getField(this.keyField);
-            partialAggregate.decrement(field);
+    public InvertibleSynopsis liftAndInvert(InvertibleSynopsis partialAggregate, Input input) {
+        if (input instanceof Tuple2) {
+            Tuple2 toRemove = (Tuple2) input;
+            if (toRemove.f1 instanceof Tuple && keyField != -1) {
+                Input field = ((Tuple) toRemove.f1).getField(this.keyField);
+                partialAggregate.decrement(field);
+                return partialAggregate;
+            }
+            partialAggregate.decrement(toRemove.f1);
+            return partialAggregate;
+        } else{
+            partialAggregate.decrement(input);
             return partialAggregate;
         }
-        partialAggregate.decrement(toRemove.f1);
-        return partialAggregate;
     }
 
     @Override
-    public InvertibleSynopsis lift(Tuple2<Integer,Input> inputTuple) {
-        InvertibleSynopsis partialAggregate = createAggregate();
-        if(inputTuple.f1 instanceof Tuple && keyField != -1){
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
+    public InvertibleSynopsis lift(Input input) {
+        if (input instanceof Tuple2) {
+            Tuple2 inputTuple = (Tuple2) input;
+            InvertibleSynopsis partialAggregate = createAggregate();
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            InvertibleSynopsis partialAggregate = createAggregate();
+            partialAggregate.update(input);
             return partialAggregate;
         }
-        partialAggregate.update(inputTuple.f1);
-        return partialAggregate;
     }
 
     @Override
@@ -103,14 +116,20 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
     }
 
     @Override
-    public InvertibleSynopsis liftAndCombine(InvertibleSynopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
-        if(inputTuple.f1 instanceof Tuple && keyField != -1){
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
+    public InvertibleSynopsis liftAndCombine(InvertibleSynopsis partialAggregate, Input input) {
+        if (input instanceof Tuple2) {
+            Tuple2 inputTuple = (Tuple2) input;
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            partialAggregate.update(input);
             return partialAggregate;
         }
-        partialAggregate.update(inputTuple.f1);
-        return partialAggregate;
     }
 
     @Override

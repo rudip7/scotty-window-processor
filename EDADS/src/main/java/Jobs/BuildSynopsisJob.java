@@ -29,11 +29,14 @@ public class BuildSynopsisJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new DemoSource());
+        DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new DemoSource(10));
 
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
 
-        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, ReservoirSampler.class, 10);
+//        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, ReservoirSampler.class, 10);
+        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+
+        //        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, ReservoirSampler.class, 10);
 
 //        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 //        BuildSynopsis.setParallelismKeys(env.getParallelism()*2);
@@ -49,16 +52,19 @@ public class BuildSynopsisJob {
 //                .process(windowOperator);
 
         finalSketch
-//                .flatMap(new FlatMapFunction<AggregateWindow<ReservoirSampler>, String>() {
-//            @Override
-//            public void flatMap(AggregateWindow<ReservoirSampler> value, Collector<String> out) throws Exception {
-//                String result = value.getStart()+" ---> "+value.getEnd()+"\n\n";//+value.getAggValues().get(0).toString();
-//                out.collect(result);
-////                for (CountMinSketch w: value.getAggValues()){
-////                    out.collect(w.toString());
-////                }
-//            }
-//        }).print();
+                .flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
+            @Override
+            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
+                String result = value.getStart()+" ---> "+value.getEnd()+"\n"+value.getAggValues().get(0).toString()+"\n";//+value.getAggValues().get(0).toString();
+                out.collect(result);
+
+//                out.collect();
+//                for (CountMinSketch w: value.getAggValues()){
+//                    out.collect(w.toString());
+//                }
+            }
+        })
+//                .print();
 
         .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE);
 

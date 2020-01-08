@@ -17,6 +17,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -307,9 +308,7 @@ public final class BuildSynopsis {
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
-                    .setParallelism(1);
+            return keyedStream.process(processingFunction);
         } else {
             KeyedStream<T, Tuple> keyedStream = inputStream.keyBy(partitionField);
             KeyedScottyWindowOperator<Tuple, T, S> processingFunction;
@@ -323,9 +322,7 @@ public final class BuildSynopsis {
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
-                    .setParallelism(1);
+            return keyedStream.process(processingFunction);
         }
     }
 
