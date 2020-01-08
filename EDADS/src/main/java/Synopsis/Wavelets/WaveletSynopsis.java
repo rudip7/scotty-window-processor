@@ -45,18 +45,23 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
     @Override
     public void update(T element) {
         if (element instanceof Number){
-            streamElementCounter++;
-            if (streamElementCounter % 2 == 0){
-                double data2 = ((Number) element).doubleValue();
-                climbup(data1, data2);
-                if (streamElementCounter > size){
-                    discard();  // remove the two DataNodes with smallest MA from the Heap
-                }
-            }else {
-                data1 = ((Number) element).doubleValue();
-            }
+            double input = ((Number) element).doubleValue();
+            update(input);
         }else {
             throw new IllegalArgumentException("input elements have to be instance of Number!");
+        }
+    }
+
+    private void update(double element){
+        streamElementCounter++;
+        if (streamElementCounter % 2 == 0){
+            double data2 = element;
+            climbup(data1, data2);
+            if (streamElementCounter > size){
+                discard();  // remove the two DataNodes with smallest MA from the Heap
+            }
+        }else {
+            data1 = element;
         }
     }
 
@@ -66,6 +71,9 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
      * @return      value of the stream element at given index
      */
     public double pointQuery(int index){
+
+        if (index > streamElementCounter || index < 0) {
+        }
 
         return pointQuery(index, rootnode.hungChild, rootnode.value);
     }
@@ -176,6 +184,11 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
      * that turn the current structure into a rooted (sparse) sibling tree, which may be used to reconstruct any data value.
      */
     public void padding(){
+        if (streamElementCounter % 2 == 1){ // make sure to include data1 if odd elements have been added
+            update(data1);  // update with a proxy element so wavelet structure can include the single last element - value same as last element as to not discard important coefficients
+            streamElementCounter -=1; // make sure the counter does not include the proxy element
+        }
+
         if (frontlineBottom == frontlineTop){   // no need for padding -> sibling tree is already rooted
             rootnode = frontlineTop;
         }else {
@@ -183,7 +196,7 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
             double average = 0;
             DataNode previousCoefficient = null;
             boolean firstIteration = true;
-            while (frontlineBottom.next != null){
+            while (frontlineBottom.next != null){ // more frontline nodes exist
                 DataNode lowerHanging = frontlineBottom.hungChild;
                 DataNode upperHanging = frontlineBottom.next.hungChild;
                 average = firstIteration ? (frontlineBottom.value + frontlineBottom.next.value) / 2 : (average + frontlineBottom.next.value) / 2;
