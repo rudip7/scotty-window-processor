@@ -1,6 +1,7 @@
 package FlinkScottyConnector;
 
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 import de.tub.dima.scotty.core.windowFunction.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -17,8 +18,9 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
+    private int partitionField;
 
-    public SynopsisFunction(int keyField, Class<T> synopsisClass, Object[] constructorParam) {
+    public SynopsisFunction(int keyField, int partitionField, Class<T> synopsisClass, Object[] constructorParam) {
         this.keyField = keyField;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -26,6 +28,10 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
+        if (partitionField >= 0 && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
+            throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
+        }
+        this.partitionField = partitionField;
     }
 
     public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam) {
@@ -36,6 +42,7 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
+        this.partitionField = -1;
     }
 
     public MergeableSynopsis createAggregate() {
@@ -58,7 +65,10 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
 
     @Override
     public MergeableSynopsis lift(Input input) {
-        if (input instanceof Tuple2) {
+        if (partitionField < 0) {
+            if (!(input instanceof Tuple2)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+            }
             Tuple2 inputTuple = (Tuple2) input;
             MergeableSynopsis partialAggregate = createAggregate();
             if (inputTuple.f1 instanceof Tuple && keyField != -1) {
@@ -69,10 +79,20 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
             partialAggregate.update(inputTuple.f1);
             return partialAggregate;
         } else {
+            if (!(input instanceof Tuple)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
+            }
             MergeableSynopsis partialAggregate = createAggregate();
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
+            if (keyField != -1) {
+                Object field = ((Tuple) input).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
             partialAggregate.update(input);
             return partialAggregate;
         }
+
     }
 
     @Override
@@ -87,7 +107,10 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
 
     @Override
     public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Input input) {
-        if (input instanceof Tuple2) {
+        if (partitionField < 0) {
+            if (!(input instanceof Tuple2)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+            }
             Tuple2 inputTuple = (Tuple2) input;
             if (inputTuple.f1 instanceof Tuple && keyField != -1) {
                 Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
@@ -97,6 +120,15 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
             partialAggregate.update(inputTuple.f1);
             return partialAggregate;
         } else {
+            if (!(input instanceof Tuple)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
+            }
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
+            if (keyField != -1) {
+                Object field = ((Tuple) input).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
             partialAggregate.update(input);
             return partialAggregate;
         }
@@ -109,6 +141,7 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(keyField);
+        out.writeInt(partitionField);
         out.writeObject(synopsisClass);
         out.writeInt(constructorParam.length);
         for (int i = 0; i < constructorParam.length; i++) {
@@ -121,6 +154,7 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.keyField = in.readInt();
+        this.partitionField = in.readInt();
         this.synopsisClass = (Class<T>) in.readObject();
         int nParameters = in.readInt();
         this.constructorParam = new Object[nParameters];

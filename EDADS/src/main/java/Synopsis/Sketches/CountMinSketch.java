@@ -4,6 +4,7 @@ package Synopsis.Sketches;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -18,7 +19,7 @@ import java.util.Arrays;
  * @param <T> the type of elements maintained by this sketch
  * @author Rudi Poepsel Lemaitre
  */
-public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
+public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
 
     private int width;
     private int height;
@@ -215,8 +216,11 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
 
     @Override
     public String toString() {
-        String result = "CountMinSketch{" +
-                "width=" + width +
+        String result = "CountMinSketch{";
+        if (this.getPartitionValue() != null) {
+            result += "partition=" + this.getPartitionValue().toString()+", ";
+        }
+        result += "width=" + width +
                 ", height=" + height +
                 ", seed=" + seed +
                 ", array=";
@@ -241,6 +245,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
             }
         }
         out.writeObject(hashFunctions);
+        out.writeObject(this.getPartitionValue());
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -253,6 +258,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
             }
         }
         hashFunctions = (EfficientH3Functions) in.readObject();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {

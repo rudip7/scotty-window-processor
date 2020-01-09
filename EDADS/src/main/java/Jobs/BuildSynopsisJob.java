@@ -34,7 +34,7 @@ public class BuildSynopsisJob {
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
 
 //        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, ReservoirSampler.class, 10);
-        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyStratifiedSynopsis(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 
         //        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, ReservoirSampler.class, 10);
 
