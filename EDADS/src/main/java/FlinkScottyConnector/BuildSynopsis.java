@@ -244,7 +244,7 @@ public final class BuildSynopsis {
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
             if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField,-1, synopsisClass, parameters));
             } else {
                 processingFunction =
                         new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, -1, synopsisClass, parameters));
@@ -268,19 +268,17 @@ public final class BuildSynopsis {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
             KeyedStream<SampleElement, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(keyField)).keyBy(partitionField);
             KeyedScottyWindowOperator<Tuple, SampleElement, S> processingFunction =
-                    new KeyedScottyWindowOperator<>(new SynopsisFunction(synopsisClass, parameters));
+                    new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, partitionField, synopsisClass, parameters));
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
-                    .setParallelism(1);
+            return keyedStream.process(processingFunction);
         } else {
             KeyedStream<T, Tuple> keyedStream = inputStream.keyBy(partitionField);
             KeyedScottyWindowOperator<Tuple, T, S> processingFunction;
             if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, partitionField, synopsisClass, parameters));
             } else {
                 processingFunction =
                         new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, partitionField, synopsisClass, parameters));
@@ -288,44 +286,13 @@ public final class BuildSynopsis {
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
-            return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
-                    .setParallelism(1);
+            return keyedStream.process(processingFunction);
         }
     }
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyStratifiedSynopsis(DataStream<T> inputStream, Window[] windows, int partitionField, Class<S> synopsisClass, Object... parameters) {
-        if (!inputStream.getType().isTupleType()) {
-            throw new IllegalArgumentException("Input stream must be of type Tuple.");
-        }
-        if (partitionField > inputStream.getType().getArity() || partitionField < 0) {
-            throw new IllegalArgumentException("Partition field to execute the stratified sampling is not valid.");
-        }
-        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
-            KeyedStream<SampleElement, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(-1)).keyBy(partitionField);
-            KeyedScottyWindowOperator<Tuple, SampleElement, S> processingFunction =
-                    new KeyedScottyWindowOperator<>(new SynopsisFunction(synopsisClass, parameters));
-            for (int i = 0; i < windows.length; i++) {
-                processingFunction.addWindow(windows[i]);
-            }
-            return keyedStream.process(processingFunction);
-        } else {
-            KeyedStream<T, Tuple> keyedStream = inputStream.keyBy(partitionField);
-            KeyedScottyWindowOperator<Tuple, T, S> processingFunction;
-            if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
-                processingFunction =
-                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(synopsisClass, parameters));
-            } else {
-                processingFunction =
-                        new KeyedScottyWindowOperator<>(new SynopsisFunction(-1, partitionField, synopsisClass, parameters));
-            }
-            for (int i = 0; i < windows.length; i++) {
-                processingFunction.addWindow(windows[i]);
-            }
-            return keyedStream.process(processingFunction);
-        }
+        return scottyStratifiedSynopsis(inputStream, windows, partitionField, -1, synopsisClass, parameters);
     }
-
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, Class<S> synopsisClass, Object... parameters) {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
