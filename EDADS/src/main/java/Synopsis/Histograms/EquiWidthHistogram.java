@@ -1,15 +1,20 @@
 package Synopsis.Histograms;
 
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
 
 /**
  * Simple Equi-Width Histogram with given bucket boundaries.
  * @param <T>
  * @author joschavonhein
  */
-public class EquiWidthHistogram<T extends Number> implements MergeableSynopsis<T> {
+public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis implements MergeableSynopsis<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(EquiWidthHistogram.class);
 
@@ -141,5 +146,32 @@ public class EquiWidthHistogram<T extends Number> implements MergeableSynopsis<T
             s += frequency[i] + "|";
         }
         return s + "\n\n";
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeDouble(lowerBound);
+        out.writeDouble(upperBound);
+        out.writeInt(numBuckets);
+        for (int i = 0; i < numBuckets; i++) {
+            out.writeInt(frequency[i]);
+        }
+        out.writeDouble(bucketLength);
+        out.writeObject(this.getPartitionValue());
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        lowerBound = in.readDouble();
+        upperBound = in.readDouble();
+        numBuckets = in.readInt();
+        for (int i = 0; i < numBuckets; i++) {
+            frequency[i] = in.readInt();
+        }
+        bucketLength = in.readDouble();
+        this.setPartitionValue(in.readObject());
+
+    }
+
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 }

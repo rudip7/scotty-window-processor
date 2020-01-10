@@ -2,8 +2,10 @@ package Synopsis.Sketches;
 
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -21,7 +23,7 @@ import java.util.TreeMap;
  * @param <T> the type of elements maintained by this sketch
  * @author Rudi Poepsel Lemaitre
  */
-public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serializable {
+public class DDSketch<T extends Number> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
     private int maxNumBins;
     private boolean isCollapsed;
     private double relativeAccuracy;
@@ -333,6 +335,7 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
         out.writeDouble(minIndexedValue);
         out.writeDouble(maxIndexedValue);
         out.writeObject(counts);
+        out.writeObject(this.getPartitionValue());
     }
 
 
@@ -346,10 +349,11 @@ public class DDSketch<T extends Number> implements InvertibleSynopsis<T>, Serial
         minIndexedValue = in.readDouble();
         maxIndexedValue = in.readDouble();
         counts = (TreeMap<Integer, Integer>) in.readObject();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-        System.out.println("readObjectNoData() called - should give an exception");
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
 }

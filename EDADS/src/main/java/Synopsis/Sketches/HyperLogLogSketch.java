@@ -3,8 +3,10 @@ package Synopsis.Sketches;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
+import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 
@@ -17,7 +19,7 @@ import java.io.Serializable;
  *
  * @author Joscha von Hein
  */
-public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializable {
+public class HyperLogLogSketch<T> extends StratifiedSynopsis implements CommutativeSynopsis<T>, Serializable {
 
     // TODO: write method / constructor which selects the logRegNum according to estimated error or available memory
     // TODO: implement the Sparse Representation as given in the Google Paper!
@@ -160,6 +162,7 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
         out.write(this.registers);
         out.writeLong(this.distinctItemCount);
         out.writeObject(this.hashFunctions);
+        out.writeObject(this.getPartitionValue());
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
@@ -170,10 +173,11 @@ public class HyperLogLogSketch<T> implements CommutativeSynopsis<T>, Serializabl
         }
         this.distinctItemCount = in.readLong();
         this.hashFunctions = (EfficientH3Functions) in.readObject();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
     @Override

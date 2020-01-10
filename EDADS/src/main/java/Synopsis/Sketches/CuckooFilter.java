@@ -2,9 +2,11 @@ package Synopsis.Sketches;
 
 import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
+import Synopsis.StratifiedSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,7 +21,7 @@ import java.util.ArrayList;
  * @param <T> the type of elements maintained by this sketch
  * @author Rudi Poepsel Lemaitre
  */
-public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
+public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSynopsis<T>, Serializable {
     private int bucketSize;
     private ArrayList<Byte> buckets[];
     private int maxNumKicks = 500;
@@ -249,6 +251,7 @@ public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
         out.writeObject(random);
         out.writeInt(elementsProcessed);
         out.writeBoolean(full);
+        out.writeObject(this.getPartitionValue());
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -262,9 +265,10 @@ public class CuckooFilter<T> implements CommutativeSynopsis<T>, Serializable {
         random = (XORShiftRandom) in.readObject();
         elementsProcessed = in.readInt();
         full = in.readBoolean();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-        System.out.println("readObjectNoData() called - should give an exception");
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 }

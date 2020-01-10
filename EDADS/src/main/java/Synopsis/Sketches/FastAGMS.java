@@ -4,9 +4,11 @@ import Synopsis.Sketches.HashFunctions.EH3_HashFunction;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -23,7 +25,7 @@ import java.util.BitSet;
  *
  * @author joschavonhein
  */
-public class FastAGMS<T> implements InvertibleSynopsis<T>, Serializable {
+public class FastAGMS<T> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
 
     private int[][] array;
     private int width;
@@ -237,6 +239,7 @@ public class FastAGMS<T> implements InvertibleSynopsis<T>, Serializable {
         out.writeObject(hashFunctions);
         out.writeObject(eh3_boolean_hashfunctions);
         out.writeLong(seed);
+        out.writeObject(this.getPartitionValue());
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -246,9 +249,10 @@ public class FastAGMS<T> implements InvertibleSynopsis<T>, Serializable {
         hashFunctions = (EfficientH3Functions) in.readObject();
         eh3_boolean_hashfunctions = (EH3_HashFunction) in.readObject();
         seed = in.readLong();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-        System.out.println("readObjectNoData() called - should give an exception");
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 }

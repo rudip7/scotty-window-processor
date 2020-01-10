@@ -7,6 +7,7 @@ import Synopsis.MergeableSynopsis;
 import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -262,7 +263,7 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-        System.out.println("readObjectNoData() called - should give an exception");
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
 
