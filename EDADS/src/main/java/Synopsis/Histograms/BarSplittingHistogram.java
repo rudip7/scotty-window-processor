@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.TreeMap;
+import java.util.Set;
 
 /**
  * Class which sketch which can be merged with itself and updated in a streaming fashion.
@@ -59,6 +60,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         double maxSize = (MAXCOEF * totalFrequencies) / maxNumBars; // maximum value a bar can have before it should split
         float binFrequency;
         int next = input.f0;
+
         if (bars.isEmpty()){
             bars.put(next, input.f1);
             rightBoundary = next;
@@ -79,6 +81,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 key = next;
                 bars.put(key, binFrequency); // create new bin with new left boundary
             }
+
             while (binFrequency > maxSize){ // split bins while
                 /**
                  * Split Bin
@@ -99,20 +102,40 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 /**
                  * Merge the two smallest adjacent bars
                  */
-                if (bars.size() > maxNumBars){
-                    // Find Bars to Merge
+                Set<Integer> keys= bars.keySet();
+                Integer [] keyArray= new Integer[keys.size()];
+                keys.toArray(keyArray);
+                System.out.println(keys);
+
+               while(bars.size() > maxNumBars){
+//                     Find Bars to Merge
                     float currentMin = Float.MAX_VALUE;
                     int index = 0;
+
+//                    for(int i=0;i< maxNumBars- 1; i++){
+//                        if (bars.get(keyarray[i]) + bars.get(keyarray[i+1]) < currentMin){
+//                            index = keyarray[i];
+//                            currentMin = bars.get(keyarray[i]) + bars.get(keyarray[i+1]);
+//                        }
+//                    }
+
+
+
+
                     for (int i = 0; i < maxNumBars - 1; i++) {
                         if (bars.get(i) + bars.get(i+1) < currentMin){
                             index = i;
                             currentMin = bars.get(i) + bars.get(i+1);
                         }
                     }
-                    bars.remove(index+1);
-                    bars.replace(index, currentMin);
+                   System.out.println(!bars.containsKey(index+1));
+                   bars.remove(index+1);
+                   bars.replace(index, currentMin);
+
                 }
+
             }
+
 
         }
 

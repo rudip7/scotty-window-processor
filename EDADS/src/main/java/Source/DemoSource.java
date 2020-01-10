@@ -19,6 +19,8 @@ public class DemoSource extends RichSourceFunction<Tuple3<Integer, Integer, Long
     private int median = 10;
     private int standardDeviation = 3;
 
+    private int seconds;
+
 
     /**
      * This parameter configures the watermark delay.
@@ -26,6 +28,8 @@ public class DemoSource extends RichSourceFunction<Tuple3<Integer, Integer, Long
     private long watermarkDelay = 1000;
 
     public DemoSource(){}
+
+    public DemoSource(int seconds){this.seconds = seconds;}
 
     public DemoSource(long watermarkDelay){
         this.watermarkDelay = watermarkDelay;
@@ -49,7 +53,7 @@ public class DemoSource extends RichSourceFunction<Tuple3<Integer, Integer, Long
 
     @Override
     public void run(SourceContext<Tuple3<Integer, Integer, Long>> ctx) throws Exception {
-        while (!canceled) {
+        while (!canceled || seconds != 0) {
             int newKey = (int) (standardDeviation*key.nextGaussian() + median);
             if (newKey < 0){
                 continue;
@@ -60,6 +64,11 @@ public class DemoSource extends RichSourceFunction<Tuple3<Integer, Integer, Long
                 long watermark = System.currentTimeMillis() - watermarkDelay;
                 ctx.emitWatermark(new Watermark(watermark));
                 lastWaterMarkTs = System.currentTimeMillis();
+                seconds--;
+                if (seconds == 0){
+                    cancel();
+                }
+
             }
             Thread.sleep(1);
         }

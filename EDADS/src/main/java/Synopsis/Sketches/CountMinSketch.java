@@ -4,6 +4,7 @@ package Synopsis.Sketches;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -18,7 +19,7 @@ import java.util.Arrays;
  * @param <T> the type of elements maintained by this sketch
  * @author Rudi Poepsel Lemaitre
  */
-public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
+public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
 
     private int width;
     private int height;
@@ -55,9 +56,9 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     @Override
     public void update(T element) {
         int input;
-        if (element instanceof Number){
+        if (element instanceof Number) {
             input = ((Number) element).intValue();
-        }else {
+        } else {
             input = element.hashCode();
         }
         int[] indices = hashFunctions.hash(input);
@@ -93,9 +94,9 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
      */
     public Integer query(T element) {
         int input;
-        if (element instanceof Number){
+        if (element instanceof Number) {
             input = ((Number) element).intValue();
-        }else {
+        } else {
             input = element.hashCode();
         }
         int[] indices = hashFunctions.hash(input);
@@ -182,9 +183,9 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
     @Override
     public void decrement(T toDecrement) {
         int input;
-        if (toDecrement instanceof Number){
+        if (toDecrement instanceof Number) {
             input = ((Number) toDecrement).intValue();
-        }else {
+        } else {
             input = toDecrement.hashCode();
         }
         int[] indices = hashFunctions.hash(input);
@@ -215,14 +216,23 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
 
     @Override
     public String toString() {
-        return "CountMinSketch{" +
-                "width=" + width +
+        String result = "CountMinSketch{";
+        if (this.getPartitionValue() != null) {
+            result += "partition=" + this.getPartitionValue().toString()+", ";
+        }
+        result += "width=" + width +
                 ", height=" + height +
                 ", seed=" + seed +
-                ", array=" + Arrays.toString(array) +
-                ", hashFunctions=" + hashFunctions +
+                ", array=";
+
+        for (int i = 0; i < height; i++) {
+            result += Arrays.toString(array[i]) + " || ";
+        }
+
+        result += ", hashFunctions=" + hashFunctions +
                 ", elementsProcessed=" + elementsProcessed +
                 '}';
+        return result;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
@@ -235,6 +245,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
             }
         }
         out.writeObject(hashFunctions);
+        out.writeObject(this.getPartitionValue());
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -247,6 +258,7 @@ public class CountMinSketch<T> implements InvertibleSynopsis<T>, Serializable {
             }
         }
         hashFunctions = (EfficientH3Functions) in.readObject();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {

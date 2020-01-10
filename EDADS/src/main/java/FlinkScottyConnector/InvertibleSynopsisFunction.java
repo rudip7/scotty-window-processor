@@ -2,6 +2,7 @@ package FlinkScottyConnector;
 
 import Synopsis.Sketches.CountMinSketch;
 import Synopsis.InvertibleSynopsis;
+import Synopsis.StratifiedSynopsis;
 import de.tub.dima.scotty.core.windowFunction.CommutativeAggregateFunction;
 import de.tub.dima.scotty.core.windowFunction.InvertibleAggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -14,14 +15,15 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> implements InvertibleAggregateFunction<Tuple2<Integer,Input>, InvertibleSynopsis, InvertibleSynopsis>, CommutativeAggregateFunction<Tuple2<Integer,Input>, InvertibleSynopsis, InvertibleSynopsis>, Serializable {
+public class InvertibleSynopsisFunction<Input, T extends InvertibleSynopsis> implements InvertibleAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, CommutativeAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, Serializable {
     private int keyField;
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
+    private int partitionField;
 
 
-    public InvertibleSynopsisFunction(int keyField, Class<T> synopsisClass, Object... constructorParam){
+    public InvertibleSynopsisFunction(int keyField, int partitionField, Class<T> synopsisClass, Object... constructorParam) {
         this.keyField = keyField;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -29,9 +31,13 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
+        if (partitionField >= 0 && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
+            throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
+        }
+        this.partitionField = partitionField;
     }
 
-    public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam){
+    public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam) {
         this.keyField = -1;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -39,6 +45,7 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
+        this.partitionField = -1;
     }
 
     public InvertibleSynopsis createAggregate() {
@@ -70,26 +77,63 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
     }
 
     @Override
-    public InvertibleSynopsis liftAndInvert(InvertibleSynopsis partialAggregate, Tuple2<Integer,Input> toRemove) {
-        if(toRemove.f1 instanceof Tuple && keyField != -1){
-            Input field = ((Tuple) toRemove.f1).getField(this.keyField);
-            partialAggregate.decrement(field);
+    public InvertibleSynopsis liftAndInvert(InvertibleSynopsis partialAggregate, Input input) {
+        if (partitionField < 0) {
+            if (!(input instanceof Tuple2)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+            }
+            Tuple2 inputTuple = (Tuple2) input;
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.decrement(field);
+                return partialAggregate;
+            }
+            partialAggregate.decrement(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            if (!(input instanceof Tuple)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
+            }
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
+            if (keyField != -1) {
+                Object field = ((Tuple) input).getField(this.keyField);
+                partialAggregate.decrement(field);
+                return partialAggregate;
+            }
+            partialAggregate.decrement(input);
             return partialAggregate;
         }
-        partialAggregate.decrement(toRemove.f1);
-        return partialAggregate;
     }
 
     @Override
-    public InvertibleSynopsis lift(Tuple2<Integer,Input> inputTuple) {
-        InvertibleSynopsis partialAggregate = createAggregate();
-        if(inputTuple.f1 instanceof Tuple && keyField != -1){
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
+    public InvertibleSynopsis lift(Input input) {
+        if (partitionField < 0) {
+            if (!(input instanceof Tuple2)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+            }
+            Tuple2 inputTuple = (Tuple2) input;
+            InvertibleSynopsis partialAggregate = createAggregate();
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            if (!(input instanceof Tuple)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
+            }
+            InvertibleSynopsis partialAggregate = createAggregate();
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
+            if (keyField != -1) {
+                Object field = ((Tuple) input).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(input);
             return partialAggregate;
         }
-        partialAggregate.update(inputTuple.f1);
-        return partialAggregate;
     }
 
     @Override
@@ -103,14 +147,32 @@ public class InvertibleSynopsisFunction<Input,T extends InvertibleSynopsis> impl
     }
 
     @Override
-    public InvertibleSynopsis liftAndCombine(InvertibleSynopsis partialAggregate, Tuple2<Integer,Input> inputTuple) {
-        if(inputTuple.f1 instanceof Tuple && keyField != -1){
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
+    public InvertibleSynopsis liftAndCombine(InvertibleSynopsis partialAggregate, Input input) {
+        if (partitionField < 0) {
+            if (!(input instanceof Tuple2)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+            }
+            Tuple2 inputTuple = (Tuple2) input;
+            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(inputTuple.f1);
+            return partialAggregate;
+        } else {
+            if (!(input instanceof Tuple)) {
+                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
+            }
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
+            if (keyField != -1) {
+                Object field = ((Tuple) input).getField(this.keyField);
+                partialAggregate.update(field);
+                return partialAggregate;
+            }
+            partialAggregate.update(input);
             return partialAggregate;
         }
-        partialAggregate.update(inputTuple.f1);
-        return partialAggregate;
     }
 
     @Override

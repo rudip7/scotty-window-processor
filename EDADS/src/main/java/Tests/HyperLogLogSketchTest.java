@@ -1,7 +1,6 @@
 package Tests;
 
 import Synopsis.Sketches.HyperLogLogSketch;
-import Synopsis.Sketches.BloomFilter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -81,7 +80,7 @@ public class HyperLogLogSketchTest {
         HyperLogLogSketch otherHPLL = new HyperLogLogSketch(10, 7545465L);
 
         //update both sketches with same data set, so merge should not change the cardinality
-        File file= new File("data/data.csv");
+        File file= new File("data/dataset.csv");
         Scanner inputStream;
         try{
             inputStream = new Scanner(file);
@@ -122,7 +121,41 @@ public class HyperLogLogSketchTest {
         HyperLogLogSketch mergedWithNonOverlap=HPLLSketch.merge(nonOverlapHPLL);
         long withNonOverlapDistinct= mergedWithNonOverlap.getDistinctItemCount();
         Assertions.assertTrue(withNonOverlapDistinct> beforeMergeDistinct);
-
+    }
+    @Test
+    public void distinctItemEstimatorTest(){
+        HyperLogLogSketch HPLLSketch= new HyperLogLogSketch(16, 126765676L);
+        File file= new File("data/largdataset.csv");
+        Scanner inputStream;
+        try{
+            inputStream = new Scanner(file);
+            while(inputStream.hasNext()){
+                String line= inputStream.next();
+                HPLLSketch.update(Integer.parseInt(line));
+            }
+            inputStream.close();
+        }catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+//        File file1= new File("data/dataset.csv");
+//        Scanner inputStream1;
+//        try{
+//            inputStream1 = new Scanner(file1);
+//            while(inputStream1.hasNext()){
+//                String line1= inputStream1.next();
+//                HPLLSketch.update(Integer.parseInt(line1));
+//            }
+//            inputStream1.close();
+//        }catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        }
+        int regNum=HPLLSketch.getRegNum();
+        double relativeAccuracy= 1.04/Math.sqrt(regNum);
+        HPLLSketch.distinctItemsEstimator();
+        long distinctItem=HPLLSketch.getDistinctItemCount();
+        System.out.println(distinctItem);
+        System.out.println(relativeAccuracy);
+        System.out.println(regNum);
 
     }
 

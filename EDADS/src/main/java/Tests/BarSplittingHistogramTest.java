@@ -1,5 +1,6 @@
 package Tests;
 
+import Synopsis.Histograms.EquiDepthHistogram;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import Synopsis.Histograms.BarSplittingHistogram;
@@ -16,7 +17,7 @@ public class BarSplittingHistogramTest {
     public void updateTest()
     {
         int count=0;
-        BarSplittingHistogram BASHistogram= new BarSplittingHistogram(4,100);
+        BarSplittingHistogram BASHistogram= new BarSplittingHistogram(9,10);
         File file= new File("data/dataset.csv");
         // this gives you a 2-dimensional array of strings
         Scanner inputStream;
@@ -30,39 +31,27 @@ public class BarSplittingHistogramTest {
         }catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
-        TreeMap<Integer, Float> bars=BASHistogram.getBars();
-        Assertions.assertTrue(bars.size()<= 400);
-        //System.out.println(bars.keySet());
-//        int [] valuesWithHighFrequency=new int []{1,2,4,8,11,14,16,17,29,33,36,37,39,41,44,47,48,51,52,53,54,58,
-//                59,60,62,68,70,71,72,76,77,78,80,82,83,84,88,89,90,97,99,104,106,107,112,113,114,117,118,121,122,
-//                128,132,133,134,135,136,137,138,140,141,143,147,151,154,160,162,165,167,168,170,172,175,179,185,
-//                188,189,193,197,198,201,205,206,207,211,212,213,215,220,223,225,226,227,229,232,233,235,238};
-//
-
-//        for(Map.Entry<Integer,Float> bar:bars.entrySet()){
-//            if(!Arrays.stream(valuesWithHighFrequency).anyMatch(i -> i == bar.getKey())){
-//                if(bar.getValue()>=24.28 ){
-                   // Assertions.assertTrue(((bar.getValue()-17))/17<0.58);
-//                    System.out.printf("%d ---%f%n",bar.getKey(),bar.getValue());
-
-//                }
-                //else{
-                   // Assertions.assertTrue(bar.getValue()<17);
-//                }
+        System.out.println(BASHistogram.getBars().size());
+        //Assertions.assertTrue(BASHistogram.getBars().size()<=90);
+        EquiDepthHistogram equiDepthHistogram= BASHistogram.buildEquiDepthHistogram();
+        double errorbound= (4.0/BASHistogram.getP())*(BASHistogram.getTotalFrequencies()*BASHistogram.getNumBuckets());
+        double [] boundries = equiDepthHistogram.getLeftBoundaries();
 
 
-//            }
-//        }
+        Assertions.assertTrue(Math.abs(481-equiDepthHistogram.rangeQuery(0.0, 29.06908892805006)) <=errorbound);
+        Assertions.assertTrue(Math.abs(400-equiDepthHistogram.rangeQuery(29.06908892805006, 54.43088446195934) )<=errorbound);
+        Assertions.assertTrue(Math.abs(425-equiDepthHistogram.rangeQuery(54.43088446195934, 79.34602667515135)) <=errorbound);
+        Assertions.assertTrue(Math.abs(408-equiDepthHistogram.rangeQuery(79.34602667515135, 104.54059090481564)) <=errorbound);
+        Assertions.assertTrue(Math.abs(410-equiDepthHistogram.rangeQuery(104.54059090481564, 128.16725341562798) )<=errorbound);
+        Assertions.assertTrue(Math.abs(385-equiDepthHistogram.rangeQuery(128.16725341562798, 148.6070893468689)) <=errorbound);
+        Assertions.assertTrue(Math.abs(404-equiDepthHistogram.rangeQuery(148.6070893468689, 172.38918153458843) )<=errorbound);
+        Assertions.assertTrue(Math.abs(403-equiDepthHistogram.rangeQuery(172.38918153458843, 199.22379903590425)) <=errorbound);
+        Assertions.assertTrue(Math.abs(384-equiDepthHistogram.rangeQuery(199.22379903590425, 222.9701722420302) )<=errorbound);
+        Assertions.assertTrue(Math.abs(300-equiDepthHistogram.rangeQuery(222.9701722420302, 239) )<=errorbound);
 
-      double l= BASHistogram.buildEquiDepthHistogram().rangeQuery(8,25);
-//        double n= BASHistogram.buildEquiDepthHistogram().rangeQuery(154.89992181391713, 157.3875236294896);
-//        double m= BASHistogram.buildEquiDepthHistogram().rangeQuery(237.8,239);
+
 
         System.out.println(BASHistogram.buildEquiDepthHistogram());
-        System.out.println(l);
-//        System.out.println(l);
-//        System.out.println(n);
-//        System.out.println(m);
+
     }
 }

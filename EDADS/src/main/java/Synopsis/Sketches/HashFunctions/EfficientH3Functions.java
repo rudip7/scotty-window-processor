@@ -39,18 +39,25 @@ public class EfficientH3Functions {
     public int[] hash(int input) {
         // input = input == 0 ? 1 : input; // input must not be 0
         int[] result = new int[numFunctions];
+        int inputCopy = input;
         for (int i = 0; i < numFunctions; i++) {
             int temp = input;
             int current = 0;
             for (int j = 0; j < 32; j++) {
+<<<<<<< HEAD
                 current = current ^ ((1 & temp) * q_matrices[i][j]);
                 temp >>>= 1;
+=======
+                current = current ^ ((1 & inputCopy) * q_matrices[i][j]);
+                inputCopy >>>= 1;
+>>>>>>> 1d25c3528caa2df0843811d9d33ab9f9979418f8
             }
             if (current < 0) {
                 result[i] = -1 * current;
             } else {
                 result[i] = current;
             }
+            inputCopy = input;
         }
         return result;
     }
@@ -73,6 +80,14 @@ public class EfficientH3Functions {
 //        }
         return numFunctions == that.numFunctions &&
                 seed == that.seed;
+    }
+
+    @Override
+    public String toString() {
+        return "EfficientH3Functions{" +
+                "numFunctions=" + numFunctions +
+                ", seed=" + seed +
+                '}';
     }
 
     @Override
