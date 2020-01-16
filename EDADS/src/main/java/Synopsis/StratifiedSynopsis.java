@@ -1,6 +1,6 @@
 package Synopsis;
 
-public abstract class StratifiedSynopsis<T>{
+public abstract class StratifiedSynopsis<T> {
     private T partitionValue = null;
 
     public T getPartitionValue() {
@@ -8,6 +8,8 @@ public abstract class StratifiedSynopsis<T>{
     }
 
     public void setPartitionValue(T partitionValue) {
-        this.partitionValue = partitionValue;
+        if (this.partitionValue == null) {
+            this.partitionValue = partitionValue;
+        }
     }
 }

@@ -32,17 +32,17 @@ public class BenchmarkRunner {
 
     public static void main(String[] args) throws Exception {
 
-//        configPath = args[0];
-//        System.out.println("Configurations: "+configPath);
+        configPath = args[0];
+        System.out.println("Configurations: "+configPath);
 
-//        outputPath = args[1];
-//        System.out.println("Output: "+outputPath);
-        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
-        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
+        outputPath = args[1];
+        System.out.println("Output: "+outputPath);
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
 
         BenchmarkConfig config = loadConfig();
-//        outputPath += "/result_" + config.name + ".txt";
-        outputPath = "EDADS/output/result_" + config.name + ".txt";
+        outputPath += "/result_" + config.name + ".txt";
+
 
         PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
 

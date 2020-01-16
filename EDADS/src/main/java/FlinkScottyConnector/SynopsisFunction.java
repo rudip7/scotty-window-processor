@@ -98,6 +98,19 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     @Override
     public MergeableSynopsis combine(MergeableSynopsis input, MergeableSynopsis partialAggregate) {
         try {
+            if (partitionField >= 0){
+                Object partitionValue = ((StratifiedSynopsis) partialAggregate).getPartitionValue();
+                Object partitionValue2 = ((StratifiedSynopsis) input).getPartitionValue();
+                if (partitionValue != null
+                && partitionValue2 == null){
+                    ((StratifiedSynopsis)input).setPartitionValue(partitionValue);
+                } else if (partitionValue == null
+                        && partitionValue2 != null){
+                    ((StratifiedSynopsis)partialAggregate).setPartitionValue(partitionValue);
+                } else if(!partitionValue.equals(partitionValue2)){
+                    throw new IllegalArgumentException("Some internal error occurred and the synopses to be merged have not the same partition value.");
+                }
+            }
             return input.merge(partialAggregate);
         } catch (Exception e) {
             e.printStackTrace();
@@ -135,8 +148,8 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     @Override
-    public MergeableSynopsis lower(MergeableSynopsis inputInvertibleSynopsis) {
-        return inputInvertibleSynopsis;
+    public MergeableSynopsis lower(MergeableSynopsis inputSynopsis) {
+        return inputSynopsis;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
