@@ -202,6 +202,9 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
     @Override
     public String toString(){
         String s = new String("Reservoir sample size: " + this.sampleSize+"\n");
+        if (this.getPartitionValue() != null) {
+            s += "partition = " + this.getPartitionValue().toString()+"\n";
+        }
         for (int i = 0; i < processedElements; i++) {
             if (i == sampleSize){
                 break;

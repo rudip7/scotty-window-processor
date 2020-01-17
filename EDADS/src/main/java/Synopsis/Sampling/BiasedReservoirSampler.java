@@ -101,6 +101,9 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
                 && ((BiasedReservoirSampler) other).getSampleSize() == this.sampleSize) {
             BiasedReservoirSampler<T> toMerge = (BiasedReservoirSampler<T>) other;
             BiasedReservoirSampler<T> mergeResult = new BiasedReservoirSampler(this.sampleSize);
+            if (toMerge.getPartitionValue() != null){
+                mergeResult.setPartitionValue(toMerge.getPartitionValue());
+            }
             mergeResult.merged = this.merged + toMerge.merged;
             while ( !(this.getLatestPositions().isEmpty() && toMerge.getLatestPositions().isEmpty())) {
 
@@ -130,6 +133,9 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
     @Override
     public String toString() {
         String s = new String("Biased Reservoir sample size: " + this.actualSize + "\n");
+        if (this.getPartitionValue() != null) {
+            s += "partition = " + this.getPartitionValue().toString()+"\n";
+        }
         for (int i = 0; i < actualSize; i++) {
             s += this.sample[i].toString() + ", ";
         }
@@ -146,9 +152,10 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
             out.writeObject(sample[i]);
         }
         out.writeInt(actualSize);
+        out.writeObject(this.getPartitionValue());
         out.writeInt(merged);
         out.writeObject(latestPositions);
-        out.writeObject(this.getPartitionValue());
+
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -157,9 +164,10 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
             sample[i] = (SampleElement) in.readObject();
         }
         actualSize = in.readInt();
+        this.setPartitionValue(in.readObject());
         merged = in.readInt();
         latestPositions = (TreeMap<Long, Integer>) in.readObject();
-        this.setPartitionValue(in.readObject());
+
         this.rand = new XORShiftRandom();
     }
 
