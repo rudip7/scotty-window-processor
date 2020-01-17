@@ -1,8 +1,12 @@
 package Synopsis.Sampling;
 
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.TreeMap;
 
@@ -17,7 +21,7 @@ import java.util.TreeMap;
 // * @param <T> the type of elements maintained by this sampler
  * @author Rudi Poepsel Lemaitre
  */
-public class BiasedReservoirSampler<T> implements SamplerWithTimestamps<T>, Serializable {
+public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements SamplerWithTimestamps<T>, Serializable {
 
     private SampleElement sample[];
     private int sampleSize;
@@ -132,6 +136,35 @@ public class BiasedReservoirSampler<T> implements SamplerWithTimestamps<T>, Seri
         s = s.substring(0, s.length() - 2);
         s += "\n";
         return s;
+    }
+
+
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeInt(sampleSize);
+        for (int i = 0; i < sampleSize; i++) {
+            out.writeObject(sample[i]);
+        }
+        out.writeInt(actualSize);
+        out.writeInt(merged);
+        out.writeObject(latestPositions);
+        out.writeObject(this.getPartitionValue());
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        sampleSize = in.readInt();
+        for (int i = 0; i < sampleSize; i++) {
+            sample[i] = (SampleElement) in.readObject();
+        }
+        actualSize = in.readInt();
+        merged = in.readInt();
+        latestPositions = (TreeMap<Long, Integer>) in.readObject();
+        this.setPartitionValue(in.readObject());
+        this.rand = new XORShiftRandom();
+    }
+
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
 }

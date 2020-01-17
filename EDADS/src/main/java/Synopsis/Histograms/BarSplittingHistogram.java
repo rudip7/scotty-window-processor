@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.TreeMap;
 import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Class which sketch which can be merged with itself and updated in a streaming fashion.
@@ -60,7 +60,6 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         double maxSize = (MAXCOEF * totalFrequencies) / maxNumBars; // maximum value a bar can have before it should split
         float binFrequency;
         int next = input.f0;
-
         if (bars.isEmpty()){
             bars.put(next, input.f1);
             rightBoundary = next;
@@ -82,63 +81,56 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 bars.put(key, binFrequency); // create new bin with new left boundary
             }
 
-            while (binFrequency > maxSize){ // split bins while
+
+            if (binFrequency > maxSize){ // split bins while
                 /**
                  * Split Bin
                  */
-                binFrequency /= 2;
-                int nextRightBound;
-                if (key == bars.lastKey()){
-                    nextRightBound = rightBoundary;
-                }else{
-                    nextRightBound = bars.higherKey(key);
-                }
+                splitBin(key, maxSize); // split this bin until all bins within the original bin's bounds are below maxSize
 
-                int nextLeftBound = (nextRightBound+key) / 2;
-                if (nextLeftBound != key){ // edge case in which boundaries are too close to each other -> don't split
-                    bars.replace(key, binFrequency);
-                    bars.put(nextLeftBound, binFrequency);
-                }
+
                 /**
                  * Merge the two smallest adjacent bars
                  */
-                Set<Integer> keys= bars.keySet();
-                Integer [] keyArray= new Integer[keys.size()];
-                keys.toArray(keyArray);
-                System.out.println(keys);
-
-               while(bars.size() > maxNumBars){
-//                     Find Bars to Merge
+                while (bars.size() > maxNumBars){
+                    // Find Bars to Merge
                     float currentMin = Float.MAX_VALUE;
-                    int index = 0;
+                    int lowKey = 0;
 
-//                    for(int i=0;i< maxNumBars- 1; i++){
-//                        if (bars.get(keyarray[i]) + bars.get(keyarray[i+1]) < currentMin){
-//                            index = keyarray[i];
-//                            currentMin = bars.get(keyarray[i]) + bars.get(keyarray[i+1]);
-//                        }
-//                    }
-
-
-
-
-                    for (int i = 0; i < maxNumBars - 1; i++) {
-                        if (bars.get(i) + bars.get(i+1) < currentMin){
-                            index = i;
-                            currentMin = bars.get(i) + bars.get(i+1);
+                    int currentKey = bars.firstKey();
+                    while (bars.higherKey(currentKey) != null){
+                        if (bars.get(currentKey) + bars.get(bars.higherKey(currentKey)) < currentMin){
+                            lowKey = currentKey;
+                            currentMin = bars.get(currentKey) + bars.get(bars.higherKey(currentKey));
                         }
+                        currentKey = bars.higherKey(currentKey);
                     }
-                   System.out.println(!bars.containsKey(index+1));
-                   bars.remove(index+1);
-                   bars.replace(index, currentMin);
-
+                    bars.remove(bars.higherKey(lowKey));
+                    bars.replace(lowKey, currentMin);
                 }
-
             }
-
 
         }
 
+    }
+
+    private void splitBin(int leftKey, double maxSize){
+
+        float currentFrequency = bars.get(leftKey);
+
+        if (currentFrequency > maxSize){
+            int nextRightBound = leftKey == bars.lastKey() ? rightBoundary : bars.higherKey(leftKey);
+
+            int nextLeftBound = (nextRightBound+leftKey) / 2;
+            if (nextLeftBound != leftKey){ // edge case in which boundaries are too close to each other -> don't split
+                currentFrequency = currentFrequency/2;
+                bars.replace(leftKey, currentFrequency);
+                bars.put(nextLeftBound, currentFrequency);
+
+                splitBin(leftKey, maxSize);
+                splitBin(nextLeftBound, maxSize);
+            }
+        }
     }
 
     @Override
@@ -250,7 +242,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
             }
             logger.info("merge complete");
             return base;
-        }else {
+        } else {
             throw new IllegalArgumentException("MergeableSynopsis to be merged must be of the same type!");
         }
     }

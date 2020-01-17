@@ -3,8 +3,10 @@ package Synopsis.Sketches;
 import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
+import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.BitSet;
@@ -19,7 +21,7 @@ import java.util.BitSet;
  *
  * @author Rudi Poepsel Lemaitre
  */
-public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
+public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSynopsis<T>, Serializable {
     private BitSet hashmap;
     private int nHashFunctions;
     private int numberBits;
@@ -149,6 +151,7 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
         out.writeInt(elementsProcessed);
         out.writeObject(hashFunctions);
         out.writeObject(hashmap);
+        out.writeObject(this.getPartitionValue());
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
@@ -157,9 +160,10 @@ public class BloomFilter<T> implements CommutativeSynopsis<T>, Serializable {
         elementsProcessed = in.readInt();
         hashFunctions = (EfficientH3Functions) in.readObject();
         hashmap = (BitSet) in.readObject();
+        this.setPartitionValue(in.readObject());
     }
 
     private void readObjectNoData() throws ObjectStreamException {
-        System.out.println("readObjectNoData() called - should give an exception");
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 }

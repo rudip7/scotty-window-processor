@@ -2,8 +2,12 @@ package Synopsis.Sampling;
 
 import Synopsis.CommutativeSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 import org.apache.flink.util.XORShiftRandom;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
 
@@ -17,7 +21,7 @@ import java.util.ArrayList;
  *
  * @author Rudi Poepsel Lemaitre
  */
-public class ReservoirSampler<T> implements CommutativeSynopsis<T>, Serializable {
+public class ReservoirSampler<T> extends StratifiedSynopsis implements CommutativeSynopsis<T>, Serializable {
     private T sample[];
     private int sampleSize;
     private XORShiftRandom rand;
@@ -207,6 +211,29 @@ public class ReservoirSampler<T> implements CommutativeSynopsis<T>, Serializable
         s = s.substring(0,s.length()-2);
         s += "\n";
         return s;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeInt(sampleSize);
+        for (int i = 0; i < sampleSize; i++) {
+            out.writeObject(sample[i]);
+        }
+        out.writeInt(processedElements);
+        out.writeObject(this.getPartitionValue());
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        sampleSize = in.readInt();
+        for (int i = 0; i < sampleSize; i++) {
+            sample[i] = (T) in.readObject();
+        }
+        processedElements = in.readInt();
+        this.setPartitionValue(in.readObject());
+        this.rand = new XORShiftRandom();
+    }
+
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
 }

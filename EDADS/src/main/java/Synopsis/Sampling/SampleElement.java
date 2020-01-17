@@ -2,6 +2,9 @@ package Synopsis.Sampling;
 
 import FlinkScottyConnector.BuildSynopsis;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 /**
@@ -77,4 +80,17 @@ public class SampleElement<T> implements Serializable, Comparable<SampleElement>
         return new String("(" + value.toString() + " | " + timeStamp + ")");
     }
 
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeObject(value);
+        out.writeLong(timeStamp);
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        value = (T) in.readObject();
+        timeStamp = in.readLong();
+    }
+
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
+    }
 }

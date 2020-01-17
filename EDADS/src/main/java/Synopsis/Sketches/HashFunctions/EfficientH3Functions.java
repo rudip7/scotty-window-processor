@@ -44,13 +44,9 @@ public class EfficientH3Functions {
             int temp = input;
             int current = 0;
             for (int j = 0; j < 32; j++) {
-<<<<<<< HEAD
-                current = current ^ ((1 & temp) * q_matrices[i][j]);
-                temp >>>= 1;
-=======
                 current = current ^ ((1 & inputCopy) * q_matrices[i][j]);
                 inputCopy >>>= 1;
->>>>>>> 1d25c3528caa2df0843811d9d33ab9f9979418f8
+
             }
             if (current < 0) {
                 result[i] = -1 * current;

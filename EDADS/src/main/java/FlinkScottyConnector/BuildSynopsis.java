@@ -258,7 +258,7 @@ public final class BuildSynopsis {
         }
     }
 
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyStratifiedSynopsis(DataStream<T> inputStream, Window[] windows, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyStratifiedSynopsis(DataStream<T> inputStream, Window[] windows, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
         if (!inputStream.getType().isTupleType()) {
             throw new IllegalArgumentException("Input stream must be of type Tuple.");
         }
@@ -290,7 +290,7 @@ public final class BuildSynopsis {
         }
     }
 
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyStratifiedSynopsis(DataStream<T> inputStream, Window[] windows, int partitionField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyStratifiedSynopsis(DataStream<T> inputStream, Window[] windows, int partitionField, Class<S> synopsisClass, Object... parameters) {
         return scottyStratifiedSynopsis(inputStream, windows, partitionField, -1, synopsisClass, parameters);
     }
 

@@ -1,13 +1,17 @@
 package Synopsis.Sampling;
 
 import Synopsis.MergeableSynopsis;
+import Synopsis.StratifiedSynopsis;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 
+import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-public class FiFoSampler<T> implements SamplerWithTimestamps<T>, Serializable {
+public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTimestamps<T>, Serializable {
     private TreeSet<SampleElement<T>> sample;
     private int sampleSize;
     private boolean eventTime;
@@ -100,6 +104,24 @@ public class FiFoSampler<T> implements SamplerWithTimestamps<T>, Serializable {
         s = s.substring(0,s.length()-2);
         s += "\n";
         return s;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        out.writeInt(sampleSize);
+        out.writeObject(sample);
+        out.writeBoolean(eventTime);
+        out.writeObject(this.getPartitionValue());
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        sampleSize = in.readInt();
+        sample = (TreeSet<SampleElement<T>>) in.readObject();
+        eventTime = in.readBoolean();
+        this.setPartitionValue(in.readObject());
+    }
+
+    private void readObjectNoData() throws ObjectStreamException {
+        throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
 }
