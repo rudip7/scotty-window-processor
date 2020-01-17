@@ -5,11 +5,9 @@ import com.esotericsoftware.minlog.Log;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -173,7 +171,18 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
     public double getTotalFrequencies() {
         return totalFrequencies;
     }
-
+    public void setBars(TreeMap<Integer,Float> bars)
+    {
+        this.bars=bars;
+    }
+    public void setRight(int right)
+    {
+        this.rightBoundary=right;
+    }
+    public void setTotalFrequencies(double t)
+    {
+        this.totalFrequencies=t;
+    }
     @Override
     public BarSplittingHistogram merge(MergeableSynopsis other) {
         if (other instanceof BarSplittingHistogram){
@@ -186,9 +195,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 o = this;
             }
             TreeMap<Integer, Float> otherBars = o.getBars();
+
             TreeMap<Integer, Float> baseBars = base.getBars();
-            for (int i = 0; i < otherBars.size(); i++) { // add every bar of the other histogram to the base histogram using appropriate weights
+            int otherBarSize = o.getBars().size();
+            for (int i = 0; i < otherBarSize; i++) { // add every bar of the other histogram to the base histogram using appropriate weights
                 // Set base and other lower and upper bounds correctly
+
                 int otherLB = otherBars.firstKey();
                 float frequency = otherBars.remove(otherLB);
                 int otherUB;
@@ -215,7 +227,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                         baseUB = base.rightBoundary;
                     }
                 }
-
+//                System.out.println(otherLB);
+//                System.out.println(otherUB);
+//                System.out.println(baseLB);
+//                System.out.println(baseUB);
+//                System.out.println("base first");
+//                System.out.println(base.getBars());
 
                 // loop through all base bars which cover area of the current other bar
                 while (baseLB < otherUB){
@@ -230,7 +247,6 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                     } */else {
                         base.update(new Tuple2<>(baseLB, weightedFrequency)); // standard case of adding weighted fraction of other bar to base bar
                     }
-
                     // change base boundaries to next bar
                     baseLB = baseUB;
                     if(baseBars.higherKey(baseUB) != null) {
