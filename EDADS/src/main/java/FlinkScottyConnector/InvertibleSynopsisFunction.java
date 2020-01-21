@@ -182,6 +182,7 @@ public class InvertibleSynopsisFunction<Input, T extends InvertibleSynopsis> imp
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(keyField);
+        out.writeInt(partitionField);
         out.writeObject(synopsisClass);
         out.writeInt(constructorParam.length);
         for (int i = 0; i < constructorParam.length; i++) {
@@ -194,6 +195,7 @@ public class InvertibleSynopsisFunction<Input, T extends InvertibleSynopsis> imp
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.keyField = in.readInt();
+        this.partitionField = in.readInt();
         this.synopsisClass = (Class<T>) in.readObject();
         int nParameters = in.readInt();
         this.constructorParam = new Object[nParameters];

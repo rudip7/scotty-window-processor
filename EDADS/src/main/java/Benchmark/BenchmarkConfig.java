@@ -14,8 +14,11 @@ public class BenchmarkConfig {
 	// [Sliding(1,2), Tumbling(1), Session(2)]
 	public List<List<String>> windowConfigurations;
 
-	//Scotty, Flink
+	// Scotty, Flink
 	public List<String> configurations;
+
+	// Normal, Uniform, NYC-taxi
+	public String source;
 
 	// [CountMinSketch, BloomFilter, ReservoirSampling]
 	public List<String> synopses;

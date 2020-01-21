@@ -37,7 +37,12 @@ public class BenchmarkRunner {
 
         outputPath = args[1];
         System.out.println("Output: "+outputPath);
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
+
+
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/NYCbenchmark_CountMinSketch.json";
+//        outputPath = "EDADS/Results";
+        
+
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
 
         BenchmarkConfig config = loadConfig();
@@ -71,6 +76,7 @@ public class BenchmarkRunner {
                         System.out.println("\n\n\n\n\n\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
                         new ScottyBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+//                        new NYCScottyBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
 
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
