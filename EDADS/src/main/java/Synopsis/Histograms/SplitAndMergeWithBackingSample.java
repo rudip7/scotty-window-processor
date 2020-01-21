@@ -6,7 +6,6 @@ import com.esotericsoftware.minlog.Log;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -31,7 +30,7 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
     private int rightBoundary; // rightmost boundary - inclusive
     private double totalFrequencies; //
     private ReservoirSampler sample;
-    private double countError; // with probability of at least getErrorMinProbability() this is the maximum error the counts of this approximate histogram varies from the grue equi depth histogram
+    private double countError; // with probability of at least getErrorMinProbability() this is the maximum error the counts of this approximate histogram varies from the true equi depth histogram
     private int sampleSize;
     private double c;
     private final double GAMMA = 0.5; // hyper parameter which tunes the threshold - has to be greater than -1 and should realistically be smaller than 2

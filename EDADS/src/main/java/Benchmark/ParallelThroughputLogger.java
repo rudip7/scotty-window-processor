@@ -5,6 +5,8 @@ import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import java.io.*;
 
@@ -46,6 +48,22 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
         LOG.info(throughputStatistics.toString());
 //        resultWriter.append(configuration +
 //                throughputStatistics.mean() + "\t");
+
+
+        InetAddress ip = null;
+        String hostname="";
+        try {
+            ip = InetAddress.getLocalHost();
+            hostname = ip.getHostName();
+
+        } catch (UnknownHostException e) {
+
+            e.printStackTrace();
+        }
+
+
+        //resultWriter.append("current Hostname:"+"\t"+ hostname+"\t");
+        //String.format("%s = %d", "joe", 35);
         resultWriter.append(throughputStatistics.mean() + "\t");
         resultWriter.append("\n");
         resultWriter.flush();

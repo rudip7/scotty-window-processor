@@ -115,20 +115,18 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
 
             if (binFrequency >= threshold){ // check whether the bucket frequency exceeds the threshold and has to be split
                 // 2nd step: split the bucket whose frequency exceeds the threshold
-//                Double nextLeftBound = medianForBucket(key); // set the median of the sample to be the left boundary of the newly created bucket
-//                binFrequency /= 2;
-//                if (nextLeftBound != key){ // only split if buckets don't have the same keys
-//                    buckets.replace(key, binFrequency);
-//                    buckets.put(nextLeftBound, binFrequency);
-//                }
-                splitBucket(key, threshold);
+                Double nextLeftBound = medianForBucket(key); // set the median of the sample to be the left boundary of the newly created bucket
+                binFrequency /= 2;
+                if (nextLeftBound != key){ // only split if buckets don't have the same keys
+                    buckets.replace(key, binFrequency);
+                    buckets.put(nextLeftBound, binFrequency);
+                }
 
                 if (buckets.size() > maxNumBuckets){ // check whether buckets have to be merged after split
 
                     // 2nd step: find the two adjacent buckets where the sum of frequencies is minimal
                     // if their sum exceeds the threshold recompute from sample!
-                    //if (buckets.size() > maxNumBuckets){
-                    while (buckets.size() > threshold){
+                    if (buckets.size() > maxNumBuckets){
                         double currentMin = Double.MAX_VALUE;
                         double k = buckets.firstKey();  // key of the bucket to keep
                         double n = buckets.higherKey(k);    // key of the bucket to remove
@@ -137,16 +135,14 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
                             k = n;
                             buckets.higherKey(k);
                         }
-                        buckets.remove(buckets.higherKey(currentMin));
-                        buckets.replace(currentMin, currentMin);
 
-//                        if (currentMin < threshold){    // if sum of frequencies of buckets to be merged doesn't exceed the threshold merge can happen
-//                            buckets.remove(n);
-//                            buckets.replace(k, currentMin);
-//                        }else { // otherwise recompute from DDSketch
-//                            equiDepthSampleCompute();
-//                            threshold = (int)Math.round(totalFrequencies * (2+gamma));
-//                        }
+                        if (currentMin < threshold){    // if sum of frequencies of buckets to be merged doesn't exceed the threshold merge can happen
+                            buckets.remove(n);
+                            buckets.replace(k, currentMin);
+                        }else { // otherwise recompute from DDSketch
+                            equiDepthSampleCompute();
+                            threshold = (int)Math.round(totalFrequencies * (2+gamma));
+                        }
                     }
                 }
             }

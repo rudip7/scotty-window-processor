@@ -8,14 +8,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>EDADS</groupId>
   <artifactId>EDADS</artifactId>
-<<<<<<< HEAD
-  <name>Flink Quickstart Job</name>
-  <version>0.1</version>
-  <url>http://www.myorganization.org</url>
-=======
   <name>EDADS Benchmark Job</name>
   <version>0.1</version>
->>>>>>> 44b3746ce8119e2c3ad97bb1d1dab21d2b269dd8
   <build>
     <pluginManagement>
       <plugins>
@@ -98,11 +92,7 @@
               </filters>
               <transformers>
                 <transformer>
-<<<<<<< HEAD
-                  <mainClass>wikiedits.StreamingJob</mainClass>
-=======
                   <mainClass>Benchmark.BenchmarkRunner</mainClass>
->>>>>>> 44b3746ce8119e2c3ad97bb1d1dab21d2b269dd8
                 </transformer>
               </transformers>
             </configuration>
@@ -149,84 +139,22 @@
       <scope>provided</scope>
       <exclusions>
         <exclusion>
-<<<<<<< HEAD
           <artifactId>flink-shaded-asm-6</artifactId>
           <groupId>org.apache.flink</groupId>
         </exclusion>
-=======
-          <artifactId>flink-core</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-shaded-asm</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-shaded-asm-6</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>commons-lang3</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>commons-math3</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jsr305</artifactId>
-          <groupId>com.google.code.findbugs</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>force-shading</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-streaming-java_2.11</artifactId>
-      <version>1.8.0</version>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <artifactId>flink-runtime_2.11</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-clients_2.11</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>flink-shaded-guava</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>commons-math3</artifactId>
-          <groupId>org.apache.commons</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>jsr305</artifactId>
-          <groupId>com.google.code.findbugs</groupId>
-        </exclusion>
-        <exclusion>
-          <artifactId>force-shading</artifactId>
-          <groupId>org.apache.flink</groupId>
-        </exclusion>
->>>>>>> 44b3746ce8119e2c3ad97bb1d1dab21d2b269dd8
       </exclusions>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <version>1.7.7</version>
-      <scope>runtime</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
       <version>1.2.17</version>
-      <scope>runtime</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

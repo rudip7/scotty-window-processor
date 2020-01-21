@@ -39,7 +39,7 @@ public class BenchmarkRunner {
         System.out.println("Output: "+outputPath);
 
 
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/NYCbenchmark_CountMinSketch.json";
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_CountMinSketch.json";
 //        outputPath = "EDADS/Results";
         
 
@@ -119,7 +119,8 @@ public class BenchmarkRunner {
         resultWriter.close();
     }
 
-    private static void sumResult(String configuration, String outputPath, PrintWriter resultWriter, int parallelism) {
+    private static void sumResult(String configuration, String outputPath, PrintWriter resultWriter, int parallelism) throws InterruptedException {
+        Thread.sleep(seconds(3).toMilliseconds());
         FileReader fr = null;
         try {
             fr = new FileReader(outputPath);
@@ -143,7 +144,8 @@ public class BenchmarkRunner {
 
         double totalThroughput = 0.0;
         System.out.println("\nThroughputs: ");
-        for(int i=tmp.size()-1;i>=tmp.size()-1-parallelism;i--) {
+        for(int i=tmp.size()-1;i>tmp.size()-1-parallelism;i--) {
+            System.out.println("line "+i+": "+tmp.get(i));
             double readDouble = Double.parseDouble(tmp.get(i));
             System.out.println(readDouble);
             totalThroughput += Double.parseDouble(tmp.get(i));
@@ -153,7 +155,7 @@ public class BenchmarkRunner {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(configuration+totalThroughput+"\n\n");
+        System.out.println(configuration+totalThroughput+" parallelism: "+parallelism+"\n\n");
         resultWriter.append(configuration+totalThroughput+"\n");
     }
 
