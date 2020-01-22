@@ -1,10 +1,12 @@
-package Benchmark;
+package Benchmark.ScottyBenchmarkJobs;
 
+import Benchmark.ParallelThroughputLogger;
+import Benchmark.Sources.NormalDistributionSource;
+import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
-import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -26,10 +28,10 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 /**
  * Created by philipp on 5/28/17.
  */
-public class NYCScottyBenchmarkJob<S extends MergeableSynopsis> {
+public class UniformScottyJob<S extends MergeableSynopsis> {
 
-	public NYCScottyBenchmarkJob(String outputPath, String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
-                                 final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
+	public UniformScottyJob(String outputPath, String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
+                            final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
 
 
 		Map<String, String> configMap = new HashMap<>();
@@ -43,16 +45,13 @@ public class NYCScottyBenchmarkJob<S extends MergeableSynopsis> {
 			windows[i] = assigner.get(i);
 		}
 
-		DataStream<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> messageStream = env
-				.addSource(new TaxiRideSource("C:\\Users\\Rudi\\Documents\\EDADS\\flink-training-exercises\\data\\nycTaxiRides.gz",runtime, throughput,  gaps));
+		DataStream<Tuple3<Integer, Integer, Long>> messageStream = env
+				.addSource(new UniformDistributionSource(runtime, throughput, gaps));
 
-//		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
-//		messageStream.flatMap(new ParallelThroughputLogger<>(1000));
-
-		final SingleOutputStreamOperator<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> timestamped = messageStream
+		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
 
-		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 1, synopsisClass, parameters);
+		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
 
 		synopsesStream.addSink(new SinkFunction() {
 
@@ -86,14 +85,14 @@ public class NYCScottyBenchmarkJob<S extends MergeableSynopsis> {
 
 
 
-	public static class TimestampsAndWatermarks implements AssignerWithPeriodicWatermarks<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> {
+	public static class TimestampsAndWatermarks implements AssignerWithPeriodicWatermarks<Tuple3<Integer, Integer, Long>> {
 		private final long maxOutOfOrderness = seconds(20).toMilliseconds(); // 5 seconds
 		private long currentMaxTimestamp;
 		private long startTime = System.currentTimeMillis();
 
 		@Override
-		public long extractTimestamp(final Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> element, final long previousElementTimestamp) {
-			long timestamp = getEventTime(element);
+		public long extractTimestamp(final Tuple3<Integer, Integer, Long> element, final long previousElementTimestamp) {
+			long timestamp = element.f2;
 			currentMaxTimestamp = Math.max(timestamp, currentMaxTimestamp);
 			return timestamp;
 		}
@@ -104,14 +103,5 @@ public class NYCScottyBenchmarkJob<S extends MergeableSynopsis> {
 			return new Watermark(currentMaxTimestamp);
 		}
 
-		public long getEventTime(Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride) {
-			if (ride.f3) {
-				return ride.f4;
-			} else {
-				return ride.f5;
-			}
-		}
 	}
-
-
 }

@@ -1,5 +1,10 @@
 package Benchmark;
 
+import Benchmark.FlinkBenchmarkJobs.NormalFlinkJob;
+import Benchmark.ScottyBenchmarkJobs.NYCScottyJob;
+import Benchmark.ScottyBenchmarkJobs.NormalScottyJob;
+import Benchmark.ScottyBenchmarkJobs.UniformScottyJob;
+import Benchmark.ScottyBenchmarkJobs.ZipfScottyJob;
 import Synopsis.Histograms.EquiWidthHistogram;
 import Synopsis.MergeableSynopsis;
 import Synopsis.Sampling.BiasedReservoirSampler;
@@ -9,7 +14,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tub.dima.scotty.core.TimeMeasure;
 import de.tub.dima.scotty.core.windowType.*;
-import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -33,7 +37,7 @@ public class BenchmarkRunner {
     public static void main(String[] args) throws Exception {
 
         configPath = args[0];
-        System.out.println("Configurations: "+configPath);
+        System.out.println("Loading configurations: "+configPath);
 
         outputPath = args[1];
         System.out.println("Output: "+outputPath);
@@ -41,7 +45,7 @@ public class BenchmarkRunner {
 
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/NYCbenchmark_CountMinSketch.json";
 //        outputPath = "EDADS/Results";
-        
+
 
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
 
@@ -64,9 +68,9 @@ public class BenchmarkRunner {
         System.out.println(gaps);
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
-        for (String envConf:
-             config.configurations) {
-            if (envConf.equals("Scotty")){
+        for (String envConf :
+                config.configurations) {
+            if (envConf.equals("Scotty")) {
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
                         System.out.println("\n\n\n\n\n\n\n");
@@ -75,22 +79,24 @@ public class BenchmarkRunner {
                         System.out.println("Desired throughput: " + config.throughput);
                         System.out.println("\n\n\n\n\n\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        new ScottyBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
-//                        new NYCScottyBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
-
-//                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
-
+                        if (config.source.contentEquals("Zipf")) {
+                            new ZipfScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        } else if (config.source.contentEquals("Uniform")) {
+                            new UniformScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        } else if (config.source.contentEquals("NYC-taxi")) {
+                            new NYCScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        } else {
+                            throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Zipf, Uniform, NYC-taxi");
+                        }
                         sumResult(configuration, outputPath, resultWriter, env.getParallelism());
                         resultWriter.append("------------------------------------------------------------------------\n\n");
-//                        resultWriter.append("\n");
                         resultWriter.flush();
-//                        ParallelThroughputStatistics.getInstance().clean();
 
                         Thread.sleep(seconds(10).toMilliseconds());
                     }
                 }
 
-            } else if(envConf.equals("Flink")){
+            } else if (envConf.equals("Flink")) {
                 //TODO
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
@@ -99,7 +105,7 @@ public class BenchmarkRunner {
                         System.out.println("Start Benchmark with windows " + config.windowConfigurations);
                         System.out.println("\n\n\n\n\n\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        new FlinkBenchmarkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        new NormalFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
 
 //                        System.out.println(ParallelThroughputStatistics.getInstance().toString());
 
@@ -129,13 +135,13 @@ public class BenchmarkRunner {
         BufferedReader br = new BufferedReader(fr);
         List<String> tmp = new ArrayList<String>();
         String ch = null;
-        while (true){
+        while (true) {
             try {
                 ch = br.readLine();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            if (ch == null){
+            if (ch == null) {
                 break;
             }
             tmp.add(ch);
@@ -143,7 +149,7 @@ public class BenchmarkRunner {
 
         double totalThroughput = 0.0;
         System.out.println("\nThroughputs: ");
-        for(int i=tmp.size()-1;i>=tmp.size()-1-parallelism;i--) {
+        for (int i = tmp.size() - 1; i >= tmp.size() - 1 - parallelism; i--) {
             double readDouble = Double.parseDouble(tmp.get(i));
             System.out.println(readDouble);
             totalThroughput += Double.parseDouble(tmp.get(i));
@@ -153,29 +159,29 @@ public class BenchmarkRunner {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println(configuration+totalThroughput+"\n\n");
-        resultWriter.append(configuration+totalThroughput+"\n");
+        System.out.println(configuration + totalThroughput + "\n\n");
+        resultWriter.append(configuration + totalThroughput + "\n");
     }
 
-    private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn){
-        if (syn.equals("CountMinSketch")){
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(CountMinSketch.class, new Object[]{65536,5,7L});
-        }else if (syn.equals("ReservoirSampler")){
+    private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn) {
+        if (syn.equals("CountMinSketch")) {
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(CountMinSketch.class, new Object[]{65536, 5, 7L});
+        } else if (syn.equals("ReservoirSampler")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(ReservoirSampler.class, new Object[]{10000});
-        }else if (syn.equals("BiasedReservoirSampler")){
+        } else if (syn.equals("BiasedReservoirSampler")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BiasedReservoirSampler.class, new Object[]{500});
-        }else if (syn.equals("EquiWidthHistogram")){
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(EquiWidthHistogram.class, new Object[]{0,100,8});
-        }else if (syn.equals("BloomFilter")){
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BloomFilter.class, new Object[]{10000000,80000,7L});
-        }else if (syn.equals("CuckooFilter")){
+        } else if (syn.equals("EquiWidthHistogram")) {
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(EquiWidthHistogram.class, new Object[]{0, 100, 8});
+        } else if (syn.equals("BloomFilter")) {
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BloomFilter.class, new Object[]{10000000, 80000, 7L});
+        } else if (syn.equals("CuckooFilter")) {
             return null;
-        }else if (syn.equals("FastAGMS")){
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(FastAGMS.class, new Object[]{4000,2000,7L});
-        }else if (syn.equals("HyperLogLogSketch")){
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(HyperLogLogSketch.class, new Object[]{11,7L});
+        } else if (syn.equals("FastAGMS")) {
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(FastAGMS.class, new Object[]{4000, 2000, 7L});
+        } else if (syn.equals("HyperLogLogSketch")) {
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(HyperLogLogSketch.class, new Object[]{11, 7L});
         }
-        throw new IllegalArgumentException(syn+" is not a valid synopsis for benchmarking");
+        throw new IllegalArgumentException(syn + " is not a valid synopsis for benchmarking");
     }
 
     private static List<Window> getAssigners(List<String> config) {

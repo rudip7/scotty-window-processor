@@ -1,5 +1,7 @@
-package Benchmark;
+package Benchmark.FlinkBenchmarkJobs;
 
+import Benchmark.Sources.NormalDistributionSource;
+import Benchmark.ParallelThroughputLogger;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
@@ -27,10 +29,10 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 /**
  * Created by philipp on 5/28/17.
  */
-public class FlinkBenchmarkJob<S extends MergeableSynopsis> {
+public class NormalFlinkJob<S extends MergeableSynopsis> {
 
-	public FlinkBenchmarkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
-                             final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
+	public NormalFlinkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
+						  final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
 
 
 		Map<String, String> configMap = new HashMap<>();
@@ -40,7 +42,7 @@ public class FlinkBenchmarkJob<S extends MergeableSynopsis> {
 		env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
 		DataStream<Tuple3<Integer, Integer, Long>> messageStream = env
-				.addSource(new LoadGeneratorSource(runtime, throughput,  gaps));
+				.addSource(new NormalDistributionSource(runtime, throughput,  gaps));
 
 //		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
 		messageStream.flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));

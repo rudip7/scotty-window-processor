@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package Benchmark;
+package Benchmark.Sources;
 
 import Benchmark.Old.ThroughputStatistics;
 import org.apache.flink.api.java.tuple.Tuple11;
@@ -46,7 +46,7 @@ import java.util.zip.GZIPInputStream;
  * <p>
  * StreamExecutionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
  */
-public class TaxiRideSource implements SourceFunction<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> {
+public class NYCTaxiRideSource implements SourceFunction<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> {
     private static transient DateTimeFormatter timeFormatter =
             DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.US).withZoneUTC();
     private final String dataFilePath;
@@ -75,7 +75,7 @@ public class TaxiRideSource implements SourceFunction<Tuple11<Long, Long, Long, 
      *
      * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
      */
-    public TaxiRideSource(String dataFilePath, long runtime, int throughput) {
+    public NYCTaxiRideSource(String dataFilePath, long runtime, int throughput) {
         this(dataFilePath, runtime, throughput, new ArrayList<>());
     }
 
@@ -87,8 +87,20 @@ public class TaxiRideSource implements SourceFunction<Tuple11<Long, Long, Long, 
      * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
      *
      */
-    public TaxiRideSource(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
+    public NYCTaxiRideSource(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = dataFilePath;
+        this.throughput = throughput;
+        this.gaps = gaps;
+        this.runtime = runtime;
+    }
+
+    /**
+     * Serves the TaxiRide records from the specified and ordered gzipped input file.
+     * Rides are served out-of time stamp order with specified maximum random delay
+     * in a serving speed which is proportional to the specified serving speed factor.
+     */
+    public NYCTaxiRideSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
+        this.dataFilePath = "/share/hadoop/EDADS/nycTaxiRides.gz";
         this.throughput = throughput;
         this.gaps = gaps;
         this.runtime = runtime;
@@ -102,11 +114,16 @@ public class TaxiRideSource implements SourceFunction<Tuple11<Long, Long, Long, 
 
         long startTime = System.currentTimeMillis();
         long endTime = startTime + runtime;
+        loop:
         while (running) {
             long startTs = System.currentTimeMillis();
 
             for (int i = 0; i < throughput; i++) {
-                sourceContext.collect(readNextTuple());
+                Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride = readNextTuple();
+                if (ride == null){
+                    break loop;
+                }
+                sourceContext.collect(ride);
             }
 
             while (System.currentTimeMillis() < startTs + 1000) {

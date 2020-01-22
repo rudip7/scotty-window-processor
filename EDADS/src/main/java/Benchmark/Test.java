@@ -1,5 +1,6 @@
 package Benchmark;
 
+import org.apache.commons.math3.distribution.ZipfDistribution;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -16,52 +17,72 @@ public class Test {
     private static transient DateTimeFormatter timeFormatter =
             DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.US).withZoneUTC();
     public static void main(String[] args) {
-        String dataFilePath = "C:\\Users\\Rudi\\Documents\\EDADS\\flink-training-exercises\\data\\nycTaxiRides.gz";
+//        String dataFilePath = "C:\\Users\\Rudi\\Documents\\EDADS\\flink-training-exercises\\data\\nycTaxiRides.gz";
+//        try {
+//            GZIPInputStream gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
+//            BufferedReader reader = new BufferedReader(new InputStreamReader(gzipStream, "UTF-8"));
+//
+//            long number = 0;
+//            String line;
+//            TreeMap<Long, Integer> counts = new TreeMap<>();
+//            TreeMap<Long, Integer> times = new TreeMap<>();
+//            int des = 0;
+//            Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> old = null;
+//            while(reader.ready() && (line = reader.readLine()) != null) {
+//                // read first ride
+//                String[] tokens = line.split(",");
+//                Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride = fromString(line);
+//                if (old != null && getEventTime(old) > getEventTime(ride)){
+//                    des ++;
+//                }
+//
+//                old = ride;
+//                counts.merge(ride.f1, 1, (a, b) -> a + b);
+//                long diff = (getEventTime(ride)-1356998400000L);
+//                long key = diff%207080300L;
+////                long ref = diff/20708030L; 16 Buck
+//                long ref = diff/(20708030L/3);
+//                times.merge(ref, 1, (a, b) -> a + b);
+////                times.merge(getEventTime(ride), 1, (a, b) -> a + b);
+//                number++;
+//            }
+//            System.out.println(number);
+//            System.out.println("DES:  "+des);
+////            System.out.println(counts.toString());
+//            System.out.println(times.toString());
+//            System.out.println(times.size());
+//            System.out.println(times.firstKey()-times.lastKey());
+//
+//            System.out.println(times.firstKey());
+//            System.out.println(times.lastKey());
+//
+//
+//            int check=0;
+//            for (Integer c:
+//                 counts.values()) {
+//                check+=c ;
+//            }
+//            System.out.println(check);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+
+
+        String dataFilePath = "C:\\Users\\Rudi\\Documents\\EDADS\\flink-training-exercises\\data\\uniformTimestamped.gz";
         try {
             GZIPInputStream gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
             BufferedReader reader = new BufferedReader(new InputStreamReader(gzipStream, "UTF-8"));
 
             long number = 0;
             String line;
-            TreeMap<Long, Integer> counts = new TreeMap<>();
-            TreeMap<Long, Integer> times = new TreeMap<>();
-            int des = 0;
             Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> old = null;
             while(reader.ready() && (line = reader.readLine()) != null) {
                 // read first ride
                 String[] tokens = line.split(",");
-                Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride = fromString(line);
-                if (old != null && getEventTime(old) > getEventTime(ride)){
-                    des ++;
-                }
-
-                old = ride;
-                counts.merge(ride.f1, 1, (a, b) -> a + b);
-                long diff = (getEventTime(ride)-1356998400000L);
-                long key = diff%207080300L;
-//                long ref = diff/20708030L; 16 Buck
-                long ref = diff/(20708030L/3);
-                times.merge(ref, 1, (a, b) -> a + b);
-//                times.merge(getEventTime(ride), 1, (a, b) -> a + b);
                 number++;
             }
             System.out.println(number);
-            System.out.println("DES:  "+des);
-//            System.out.println(counts.toString());
-            System.out.println(times.toString());
-            System.out.println(times.size());
-            System.out.println(times.firstKey()-times.lastKey());
 
-            System.out.println(times.firstKey());
-            System.out.println(times.lastKey());
-
-
-            int check=0;
-            for (Integer c:
-                 counts.values()) {
-                check+=c ;
-            }
-            System.out.println(check);
         } catch (IOException e) {
             e.printStackTrace();
         }

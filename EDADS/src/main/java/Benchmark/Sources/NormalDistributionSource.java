@@ -1,4 +1,4 @@
-package Benchmark;
+package Benchmark.Sources;
 
 import Benchmark.Old.ThroughputStatistics;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.Random;
 
 
-public class LoadGeneratorSource extends RichSourceFunction<Tuple3<Integer, Integer, Long>> {
+public class NormalDistributionSource extends RichSourceFunction<Tuple3<Integer, Integer, Long>> {
 
     private static int maxBackpressure = 5000;
     private final long runtime;
 
-    private static final Logger LOG = LoggerFactory.getLogger(LoadGeneratorSource.class);
+    private static final Logger LOG = LoggerFactory.getLogger(NormalDistributionSource.class);
 
     private final int throughput;
     private boolean running = true;
@@ -38,7 +38,7 @@ public class LoadGeneratorSource extends RichSourceFunction<Tuple3<Integer, Inte
     private int median = 10;
     private int standardDeviation = 3;
 
-    public LoadGeneratorSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
+    public NormalDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
 
         this.throughput = throughput;
         this.gaps = gaps;
