@@ -149,7 +149,7 @@ public class BenchmarkRunner {
 
         double totalThroughput = 0.0;
         System.out.println("\nThroughputs: ");
-        for (int i = tmp.size() - 1; i >= tmp.size() - 1 - parallelism; i--) {
+        for (int i = tmp.size() - 1; i > tmp.size() - 1 - parallelism; i--) {
             double readDouble = Double.parseDouble(tmp.get(i));
             System.out.println(readDouble);
             totalThroughput += Double.parseDouble(tmp.get(i));
