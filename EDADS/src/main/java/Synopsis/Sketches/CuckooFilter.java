@@ -180,6 +180,7 @@ public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSy
     public int getElementsProcessed() {
         return elementsProcessed;
     }
+    public boolean getBucketStatus() {return full;}
 
     /**
      * Function to Merge two Cuckoo Filters by adding the content of the buckets.

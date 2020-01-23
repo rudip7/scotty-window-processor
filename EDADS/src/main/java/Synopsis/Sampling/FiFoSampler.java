@@ -25,7 +25,11 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
             this.eventTime = false;
         }
     }
-
+    public FiFoSampler(Integer sampleSize) {
+        this.sample = new TreeSet<>();
+        this.sampleSize = sampleSize;
+       this.eventTime=true;
+    }
 
     /**
      * Update the sketch with a value T

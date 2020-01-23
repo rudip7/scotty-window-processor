@@ -83,6 +83,9 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
     public int getActualSize() {
         return actualSize;
     }
+    public int getMerged() {
+        return merged;
+    }
 
     /**
      * Function to Merge two Biased Reservoir samples. This function takes advantage of the ordering of the elements
@@ -102,8 +105,8 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
                 mergeResult.setPartitionValue(toMerge.getPartitionValue());
             }
             mergeResult.merged = this.merged + toMerge.merged;
+            while ( !(this.getLatestPositions().isEmpty() && toMerge.getLatestPositions().isEmpty())) {
 
-            while (mergeResult.actualSize < this.sampleSize && !(this.getLatestPositions().isEmpty() && toMerge.getLatestPositions().isEmpty())) {
                 if (!toMerge.getLatestPositions().isEmpty() && !this.getLatestPositions().isEmpty()){
                     if (toMerge.getLatestPositions().firstKey() < this.getLatestPositions().firstKey()){
                         Integer index = toMerge.getLatestPositions().pollFirstEntry().getValue();

@@ -22,7 +22,7 @@ public class EH3_HashFunction implements Serializable {
      */
     public EH3_HashFunction(Long seed, int height) {
         this.height = height;
-
+        seeds= new long[height];
         // initialize seeds
         XORShiftRandom random = new XORShiftRandom(seed);
         for (int i = 0; i < height; i++) {

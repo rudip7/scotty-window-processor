@@ -8,6 +8,7 @@ EDADS/output/
 target/maven-archiver/
 target/maven-status/
 *.iml
+EDADS/test-python/
 
 # Compiled source #
 ###################
