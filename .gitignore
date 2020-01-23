@@ -3,7 +3,6 @@
 *target
 *.class
 
-EDADS/data/
 .idea/
 EDADS/output/
 target/maven-archiver/
