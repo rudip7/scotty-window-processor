@@ -1,6 +1,7 @@
 package Synopsis;
 
 import java.io.Serializable;
+import java.util.TreeMap;
 
 public interface InvertibleSynopsis<T> extends CommutativeSynopsis<T>, Serializable {
     InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove);

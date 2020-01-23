@@ -41,10 +41,12 @@ public class EfficientH3Functions {
         int[] result = new int[numFunctions];
         int inputCopy = input;
         for (int i = 0; i < numFunctions; i++) {
+            int temp = input;
             int current = 0;
             for (int j = 0; j < 32; j++) {
                 current = current ^ ((1 & inputCopy) * q_matrices[i][j]);
                 inputCopy >>>= 1;
+
             }
             if (current < 0) {
                 result[i] = -1 * current;

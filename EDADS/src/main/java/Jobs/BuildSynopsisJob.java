@@ -53,20 +53,20 @@ public class BuildSynopsisJob {
 
         finalSketch
                 .flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
-            @Override
-            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
-                String result = value.getStart()+" ---> "+value.getEnd()+"\n"+value.getAggValues().get(0).toString()+"\n";//+value.getAggValues().get(0).toString();
-                out.collect(result);
+                    @Override
+                    public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
+                        String result = value.getStart()+" ---> "+value.getEnd()+"\n"+value.getAggValues().get(0).toString()+"\n";//+value.getAggValues().get(0).toString();
+                        out.collect(result);
 
 //                out.collect();
 //                for (CountMinSketch w: value.getAggValues()){
 //                    out.collect(w.toString());
 //                }
-            }
-        })
+                    }
+                })
 //                .print();
 
-        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE);
+                .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE);
 
         env.execute("Flink Streaming Java API Skeleton");
     }

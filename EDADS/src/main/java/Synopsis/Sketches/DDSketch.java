@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of DDSketch to estimate every p-Quantile with relative error Bounds and fixed
@@ -156,6 +157,11 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
             return value(counts.lastKey());
         }
     }
+    public int getGlobalCount()
+    {return globalCount;}
+    public int getZeroCount()
+    {return zeroCount;}
+    public int getMaxNumBins(){return maxNumBins;}
 
     /**
      * Estimate the p-Quantile value considering all the elements in the actual structure
@@ -197,26 +203,34 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         }
 
         final long rank = (long) (quantile * (count - 1));
+
         if (rank < zeroCount) {
+            //System.out.println("zero rank");
             return 0;
         }
 
+
         if (quantile <= 0.5) {
             long n = zeroCount;
-            for (Map.Entry<Integer, Integer> bin : counts.entrySet()) {
-                if (n > rank) {
-                    return value(bin.getKey());
-                }
+
+            for(Map.Entry<Integer,Integer> bin : counts.entrySet()) {
                 n += bin.getValue();
+
+                if (n > rank){
+
+                    return value(bin.getKey());
+
+                }
             }
             return getMaxValue();
         } else {
             long n = count;
-            for (Map.Entry<Integer, Integer> bin : counts.descendingMap().entrySet()) {
-                if (n <= rank) {
+            for(Map.Entry<Integer,Integer> bin : counts.descendingMap().entrySet()) {
+                n -= bin.getValue();
+                if (n <= rank){
                     return value(bin.getKey());
                 }
-                n -= bin.getValue();
+
             }
             return getMinValue();
         }
@@ -227,7 +241,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
     }
 
     @Override
-    public InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove) {
+    public DDSketch<T> invert(InvertibleSynopsis<T> toRemove) {
         if (toRemove instanceof DDSketch) {
             DDSketch otherDD = (DDSketch) toRemove;
             if (this.relativeAccuracy == otherDD.relativeAccuracy && this.maxNumBins == otherDD.maxNumBins) {
@@ -237,14 +251,31 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
                 ((TreeMap<Integer, Integer>) otherDD.getCounts()).forEach(
                         (key, value) -> counts.merge(key, value, (a, b) -> a - b)
                 );
-                int newGlobalCount = 0;
-                for(Map.Entry<Integer,Integer> entry : counts.entrySet()) {
-                    if (entry.getValue() <= 0){
-                        counts.remove(entry.getKey());
-                    } else{
-                        globalCount += entry.getValue();
-                    }
-                }
+               int newGlobalCount = 0;
+
+               Map<Integer, Integer> collect = counts.entrySet().stream()
+                        .filter(x -> x.getValue() >0)
+                        .collect(Collectors.toMap(Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (oldValue,
+                                 newValue)
+                                        -> newValue,
+                                TreeMap::new));
+
+             counts.clear();
+             counts.putAll(collect);
+
+//                System.out.println(collect);
+
+//                    for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+//
+//                        if (entry.getValue() <= 0) {
+//                            counts.remove(entry.getKey());
+//                        } else {
+//                            newGlobalCount += entry.getValue();
+//                        }
+//                    }
+
 
                 this.globalCount = newGlobalCount;
                 if (this.zeroCount > otherDD.zeroCount){
