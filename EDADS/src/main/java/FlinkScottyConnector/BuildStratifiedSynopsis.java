@@ -28,12 +28,6 @@ import javax.annotation.Nullable;
  */
 public final class BuildStratifiedSynopsis {
 
-    static int parallelismKeys = -1;
-
-    public static void setParallelismKeys(int newParallelismKeys) {
-        parallelismKeys = newParallelismKeys;
-    }
-
     /**
      * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
      * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
@@ -49,7 +43,10 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T extends Tuple, S extends StratifiedSynopsis & MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
         if (partitionField > inputStream.getType().getArity() || partitionField < 0) {
             throw new IllegalArgumentException("Partition field to execute the stratified sampling is not valid.");
         }
@@ -82,7 +79,10 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T extends Tuple, S extends StratifiedSynopsis & MergeableSynopsis> SingleOutputStreamOperator<S> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int partionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int partionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
             return slidingSampleTimeBased(inputStream, windowTime, slideTime, partionField, keyField, synopsisClass, parameters);
         }
@@ -111,7 +111,7 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T extends Tuple, S extends StratifiedSynopsis & MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int partitionField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int partitionField, Class<S> synopsisClass, Object... parameters) {
         return timeBased(inputStream, windowTime, partitionField, -1, synopsisClass, parameters);
     }
 
@@ -131,7 +131,10 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T extends Tuple, S extends StratifiedSynopsis & MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
         SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, partitionField, keyField);
         SingleOutputStreamOperator reduce = inputStream
                 .keyBy(partitionField)
@@ -155,11 +158,14 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T extends Tuple, S extends StratifiedSynopsis & MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, int partitionField, Class<S> synopsisClass, Object... parameters) {
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, int partitionField, Class<S> synopsisClass, Object... parameters) {
         return countBased(inputStream, windowSize, partitionField, -1, synopsisClass, parameters);
     }
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> sampleTimeBased(DataStream<T> inputStream, Time windowTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
         SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, partitionField, keyField);
         SingleOutputStreamOperator reduce = inputStream
                 .process(new ConvertToSample(partitionField, keyField))
@@ -172,6 +178,9 @@ public final class BuildStratifiedSynopsis {
     }
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> slidingSampleTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
         SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
         SingleOutputStreamOperator reduce = inputStream
                 .process(new ConvertToSample(partitionField,keyField))
@@ -185,6 +194,9 @@ public final class BuildStratifiedSynopsis {
 
 
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
         if (partitionField > inputStream.getType().getArity() || partitionField < 0) {
             throw new IllegalArgumentException("Partition field to execute the stratified sampling is not valid.");
         }

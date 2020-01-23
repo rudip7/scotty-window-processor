@@ -97,7 +97,8 @@ public class UniformDistributionSource implements SourceFunction<Tuple3<Integer,
      * in a serving speed which is proportional to the specified serving speed factor.
      */
     public UniformDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
-        this.dataFilePath = "/share/hadoop/EDADS/uniformTimestamped.gz";
+//        this.dataFilePath = "/share/hadoop/EDADS/uniformTimestamped.gz";
+        this.dataFilePath = "EDADS/Data/uniformTimestamped.gz";
         this.throughput = throughput;
         this.gaps = gaps;
         this.runtime = runtime;

@@ -10,6 +10,7 @@ public class BenchmarkConfig {
 	public int throughput;
 	public long runtime;
 	public String name;
+	public boolean stratified;
 
 	// [Sliding(1,2), Tumbling(1), Session(2)]
 	public List<List<String>> windowConfigurations;

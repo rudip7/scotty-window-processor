@@ -2,6 +2,7 @@ package Benchmark.ScottyBenchmarkJobs;
 
 import Benchmark.Sources.NormalDistributionSource;
 import Benchmark.ParallelThroughputLogger;
+import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
@@ -30,7 +31,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 public class NormalScottyJob<S extends MergeableSynopsis> {
 
 	public NormalScottyJob(String outputPath, String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
-						   final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
+						   final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
 		Map<String, String> configMap = new HashMap<>();
@@ -50,7 +51,12 @@ public class NormalScottyJob<S extends MergeableSynopsis> {
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
 
-		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
+		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream;
+		if (stratified){
+			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
+		} else {
+			synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
+		}
 
 		synopsesStream.addSink(new SinkFunction() {
 

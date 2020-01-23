@@ -3,6 +3,7 @@ package Benchmark.FlinkBenchmarkJobs;
 import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.NormalDistributionSource;
 import Benchmark.Sources.UniformDistributionSource;
+import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
@@ -33,7 +34,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 public class UniformFlinkJob<S extends MergeableSynopsis> {
 
 	public UniformFlinkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
-                           final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, Object[] parameters) {
+                           final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
 		Map<String, String> configMap = new HashMap<>();
@@ -52,30 +53,53 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
 
-		for (Window w : assigners) {
+		if (assigners.size() == 1) {
+			if (assigners.get(0) instanceof TumblingWindow) {
+				if (stratified) {
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(messageStream, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
+					synopsesStream.addSink(new SinkFunction() {
 
-			if (w instanceof TumblingWindow) {
-				SingleOutputStreamOperator<S> synopsesStream = BuildSynopsis.timeBased(messageStream, Time.milliseconds(((TumblingWindow) w).getSize()), 0, synopsisClass, parameters);
-				synopsesStream.addSink(new SinkFunction() {
+						@Override
+						public void invoke(final Object value) throws Exception {
+							//System.out.println(value);
+						}
+					});
+				} else {
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(messageStream, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0,0, synopsisClass, parameters);
+					synopsesStream.addSink(new SinkFunction() {
 
-					@Override
-					public void invoke(final Object value) throws Exception {
-						//System.out.println(value);
-					}
-				});
+						@Override
+						public void invoke(final Object value) throws Exception {
+							//System.out.println(value);
+						}
+					});
+
+				}
 			}
-			if (w instanceof SlidingWindow) {
-				SingleOutputStreamOperator<S> synopsesStream = BuildSynopsis.slidingTimeBased(messageStream, Time.milliseconds(((SlidingWindow) w).getSize()),Time.milliseconds(((SlidingWindow) w).getSlide()), 0, synopsisClass, parameters);
-				synopsesStream.addSink(new SinkFunction() {
+			if (assigners.get(0) instanceof SlidingWindow) {
+				if (stratified){
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(messageStream, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
+					synopsesStream.addSink(new SinkFunction() {
 
-					@Override
-					public void invoke(final Object value) throws Exception {
-						//System.out.println(value);
-					}
-				});
+						@Override
+						public void invoke(final Object value) throws Exception {
+							//System.out.println(value);
+						}
+					});
+				} else {
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(messageStream, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
+					synopsesStream.addSink(new SinkFunction() {
+
+						@Override
+						public void invoke(final Object value) throws Exception {
+							//System.out.println(value);
+						}
+					});
+				}
+
 			}
-
-
+		} else {
+			throw new IllegalArgumentException("The Flink implementation supports only a single window definition.");
 		}
 
 		try {
