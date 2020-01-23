@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.TreeMap;
 public class SMWithBckSampleTest {
+    /*
     public void updateTest(){
         SplitAndMergeWithBackingSample SMWithBckSample= new SplitAndMergeWithBackingSample(10,0.1,40);
         //read from file and update with read elements
@@ -34,4 +35,6 @@ public class SMWithBckSampleTest {
         }
 
     }
+    */
+
 }

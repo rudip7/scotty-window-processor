@@ -37,7 +37,7 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
     // TODO: not yet debugged !!!
 
     private int maxNumBuckets; // maximum number of Bars in the sketch
-    private TreeMap<Double, Double> buckets; //
+    private TreeMap<Double, Double> buckets; // key: left boundary of bin - value: frequency of bin (rightboundary is the next key or rightMostBoundary)
     private Double rightMostBoundary; // rightmost boundary - inclusive
     private double totalFrequencies; //
     private DDSketch ddSketch;
@@ -115,25 +115,21 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
 
             if (binFrequency >= threshold){ // check whether the bucket frequency exceeds the threshold and has to be split
                 // 2nd step: split the bucket whose frequency exceeds the threshold
-                Double nextLeftBound = medianForBucket(key); // set the median of the sample to be the left boundary of the newly created bucket
-                binFrequency /= 2;
-                if (nextLeftBound != key){ // only split if buckets don't have the same keys
-                    buckets.replace(key, binFrequency);
-                    buckets.put(nextLeftBound, binFrequency);
-                }
+                splitBucket(key);
 
-                if (buckets.size() > maxNumBuckets){ // check whether buckets have to be merged after split
+                while (buckets.size() > maxNumBuckets){ // check whether buckets have to be merged after split
 
                     // 2nd step: find the two adjacent buckets where the sum of frequencies is minimal
                     // if their sum exceeds the threshold recompute from sample!
                     if (buckets.size() > maxNumBuckets){
                         double currentMin = Double.MAX_VALUE;
                         double k = buckets.firstKey();  // key of the bucket to keep
-                        double n = buckets.higherKey(k);    // key of the bucket to remove
+                        double n = 0; // key of bucket to remove
+
                         while (buckets.higherKey(k) != null){
+                            n = buckets.higherKey(k);    // key of the bucket to remove
                             currentMin = currentMin > buckets.get(k) + buckets.get(n) ? buckets.get(k) + buckets.get(n) : currentMin;
                             k = n;
-                            buckets.higherKey(k);
                         }
 
                         if (currentMin < threshold){    // if sum of frequencies of buckets to be merged doesn't exceed the threshold merge can happen
@@ -142,6 +138,7 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
                         }else { // otherwise recompute from DDSketch
                             equiDepthSampleCompute();
                             threshold = (int)Math.round(totalFrequencies * (2+gamma));
+                            break;
                         }
                     }
                 }
@@ -150,28 +147,24 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
     }
 
     /**
-     Added by Zahra
+     * private method to recursively split buckets until all buckets have sizes smaller than the threshold.
+     * Only exception is when Buckets can't be split further when the computed median is the left bucket boundary.
+     *
+     * @param key   left boundary of bucket to split
      */
-    private void splitBucket(double leftKey, double maxSize){
+    private void splitBucket(double key){
 
-        Double currentFrequency = buckets.get(leftKey);
-
-        if (currentFrequency > maxSize){
-            Double nextRightBound = leftKey == buckets.lastKey() ? rightMostBoundary : buckets.higherKey(leftKey);
-
-            Double nextLeftBound = (nextRightBound+leftKey) / 2;
-            if (nextLeftBound != leftKey){ // edge case in which boundaries are too close to each other -> don't split
-                currentFrequency = currentFrequency/2;
-                buckets.replace(leftKey, currentFrequency);
-                buckets.put(nextLeftBound, currentFrequency);
-
-                splitBucket(leftKey, maxSize);
-                splitBucket(nextLeftBound, maxSize);
+        double nextLeftBound = medianForBucket(key);
+        double newFrequency = buckets.get(key) / 2;
+        if (nextLeftBound != key){
+            buckets.replace(key, newFrequency);
+            buckets.put(nextLeftBound, newFrequency);
+            if (newFrequency >= threshold){
+                splitBucket(key);
+                splitBucket(nextLeftBound);
             }
         }
     }
-    //
-
 
 
     /**
