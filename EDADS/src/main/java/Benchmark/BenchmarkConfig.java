@@ -17,7 +17,7 @@ public class BenchmarkConfig {
 	// Scotty, Flink
 	public List<String> configurations;
 
-	// Zipf, Uniform, NYC-taxi
+	// Normal, Zipf, Uniform, NYC-taxi
 	public String source;
 
 	// [CountMinSketch, BloomFilter, ReservoirSampling]

@@ -43,7 +43,7 @@ public class BenchmarkRunner {
         System.out.println("Output: "+outputPath);
 
 
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/NYCbenchmark_CountMinSketch.json";
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/UniformBenchmark_CountMinSketch.json";
 //        outputPath = "EDADS/Results";
 
 
@@ -79,14 +79,16 @@ public class BenchmarkRunner {
                         System.out.println("Desired throughput: " + config.throughput);
                         System.out.println("\n\n\n\n\n\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        if (config.source.contentEquals("Zipf")) {
+                        if (config.source.contentEquals("Normal")) {
+                            new NormalScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
+                        } else if (config.source.contentEquals("Zipf")) {
                             new ZipfScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
                         } else if (config.source.contentEquals("Uniform")) {
                             new UniformScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
                         } else if (config.source.contentEquals("NYC-taxi")) {
                             new NYCScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, synopsis.f1);
                         } else {
-                            throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Zipf, Uniform, NYC-taxi");
+                            throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
                         }
                         sumResult(configuration, outputPath, resultWriter, env.getParallelism());
                         resultWriter.append("------------------------------------------------------------------------\n\n");

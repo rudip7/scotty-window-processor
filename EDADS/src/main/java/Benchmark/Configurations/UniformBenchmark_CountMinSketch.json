@@ -1,0 +1,17 @@
+{
+  "name" : "synopses_window_benchmark",
+  "runtime" : 10000,
+  "throughput": 3000000,
+  "source" : "Uniform",
+  "windowConfigurations": [
+    [
+      "Sliding(10000,5000)"
+    ]
+  ],
+  "configurations": [
+    "Scotty"
+  ],
+  "synopses":[
+    "CountMinSketch"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name" : "synopses_window_benchmark",
+  "runtime" : 10000,
+  "throughput": 3000000,
+  "source" : "NYC-taxi",
+  "windowConfigurations": [
+    [
+      "Sliding(6902676,3451338)"
+    ]
+  ],
+  "configurations": [
+    "Scotty"
+  ],
+  "synopses":[
+    "CountMinSketch"
+  ]
+}
