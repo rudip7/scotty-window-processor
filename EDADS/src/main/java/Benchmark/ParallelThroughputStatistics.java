@@ -5,6 +5,7 @@ import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,9 +15,11 @@ public class ParallelThroughputStatistics implements Serializable {
 
 	//private static ParallelThroughputStatistics statistics;
 	private boolean pause;
+	public ArrayList<Double> history;
 //	private int parallelism = 1;
 
 	public ParallelThroughputStatistics() {
+		this.history = new ArrayList<>();
 //		id = nextId.incrementAndGet();
 	}
 
@@ -39,6 +42,7 @@ public class ParallelThroughputStatistics implements Serializable {
 	public void addThrouputResult(double throuputPerS) {
 		if (this.pause)
 			return;
+		history.add(throuputPerS);
 		counter += ((double) 1);
 //		counter += ((double) 1)/parallelism;
 		sum += throuputPerS;
@@ -51,6 +55,14 @@ public class ParallelThroughputStatistics implements Serializable {
 
 	public double mean() {
 		return sum / counter;
+	}
+
+	public String printHistory(){
+		String res = "";
+		for (int i = 0; i < history.size(); i++) {
+			res += history.get(i).toString()+" ; ";
+		}
+		return res;
 	}
 
 	@Override
@@ -68,6 +80,7 @@ public class ParallelThroughputStatistics implements Serializable {
 		out.writeDouble(counter);
 		out.writeDouble(sum);
 		out.writeBoolean(pause);
+		out.writeObject(history);
 //		out.writeInt(id);
 
 //		out.writeObject(nextId);
@@ -77,6 +90,7 @@ public class ParallelThroughputStatistics implements Serializable {
 		counter = in.readDouble();
 		sum = in.readDouble();
 		pause = in.readBoolean();
+		history = (ArrayList<Double>) in.readObject();
 //		id = in.readInt();
 
 //		nextId = (AtomicInteger) in.readObject();

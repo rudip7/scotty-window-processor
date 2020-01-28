@@ -39,24 +39,17 @@ public class BenchmarkRunner {
 
     public static void main(String[] args) throws Exception {
 
-//        configPath = args[0];
-//        System.out.println("\nLoading configurations: "+configPath);
-//
-//        outputPath = args[1];
-//        System.out.println("Output: "+outputPath);
+        configPath = args[0];
+        System.out.println("\n\nLoading configurations: " + configPath);
 
 
-        configPath = "EDADS/src/main/java/Benchmark/Configurations/StratifiedUniformBenchmark_CountMinSketch.json";
-        outputPath = "EDADS/Results";
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/FlinkStratifiedUniformBenchmark_CountMinSketch.json";
+//        outputPath = "EDADS/Results";
 
 
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
 
         BenchmarkConfig config = loadConfig();
-        outputPath += "/result_" + config.name + ".txt";
-
-
-        PrintWriter resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
 
 //        Configuration conf = new Configuration();
 //        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
@@ -71,16 +64,23 @@ public class BenchmarkRunner {
         System.out.println(gaps);
         Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
+
         for (String envConf :
                 config.configurations) {
             if (envConf.equals("Scotty")) {
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
-                        System.out.println("\n\n\n");
-                        String configuration = windows + " \t" + syn + " \t";
-                        System.out.println("Start Benchmark with windows: " + config.windowConfigurations);
+                        System.out.println("\n\n");
+                        String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                        if (config.stratified) {
+                            configuration += "Stratified " + syn + " \t";
+                        } else {
+                            configuration += syn + " \t";
+                        }
+                        System.out.println("Starting Benchmark:");
+                        System.out.println(configuration);
                         System.out.println("Desired throughput: " + config.throughput);
-                        System.out.println("\n\n\n");
+                        System.out.println("\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
                         if (config.source.contentEquals("Normal")) {
                             new NormalScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
@@ -93,22 +93,22 @@ public class BenchmarkRunner {
                         } else {
                             throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
                         }
-                        sumResult(configuration, outputPath, resultWriter, env.getParallelism());
-                        resultWriter.append("------------------------------------------------------------------------\n\n");
-                        resultWriter.flush();
-
-                        Thread.sleep(seconds(10).toMilliseconds());
                     }
                 }
 
             } else if (envConf.equals("Flink")) {
-                //TODO
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
-                        System.out.println("\n\n\n");
-                        String configuration = windows + " \t" + syn + " \t";
-                        System.out.println("Start Benchmark with windows " + config.windowConfigurations);
-                        System.out.println("\n\n\n");
+                        System.out.println("\n\n");
+                        String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                        if (config.stratified) {
+                            configuration += "Stratified " + syn + " \t";
+                        } else {
+                            configuration += syn + " \t";
+                        }
+                        System.out.println("Starting Benchmark:");
+                        System.out.println(configuration);
+                        System.out.println("\n\n");
                         Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
                         if (config.source.contentEquals("Normal")) {
                             new NormalFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
@@ -121,59 +121,10 @@ public class BenchmarkRunner {
                         } else {
                             throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
                         }
-
-                        sumResult(configuration, outputPath, resultWriter, env.getParallelism());
-                        resultWriter.append("------------------------------------------------------------------------\n\n");
-//                        resultWriter.append("\n");
-                        resultWriter.flush();
-//                        ParallelThroughputStatistics.getInstance().clean();
-
-                        Thread.sleep(seconds(10).toMilliseconds());
                     }
                 }
             }
         }
-
-
-        resultWriter.close();
-    }
-
-    private static void sumResult(String configuration, String outputPath, PrintWriter resultWriter, int parallelism) {
-        FileReader fr = null;
-        try {
-            fr = new FileReader(outputPath);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        BufferedReader br = new BufferedReader(fr);
-        List<String> tmp = new ArrayList<String>();
-        String ch = null;
-        while (true) {
-            try {
-                ch = br.readLine();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            if (ch == null) {
-                break;
-            }
-            tmp.add(ch);
-        }
-
-        double totalThroughput = 0.0;
-        System.out.println("\nThroughputs: ");
-        for (int i = tmp.size() - 1; i > tmp.size() - 1 - parallelism; i--) {
-            double readDouble = Double.parseDouble(tmp.get(i));
-            System.out.println(readDouble);
-            totalThroughput += Double.parseDouble(tmp.get(i));
-        }
-        try {
-            fr.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.out.println(configuration + totalThroughput + "\n\n");
-        resultWriter.append(configuration + totalThroughput + "\n");
     }
 
     private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn) {

@@ -56,7 +56,7 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 		if (assigners.size() == 1) {
 			if (assigners.get(0) instanceof TumblingWindow) {
 				if (stratified) {
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(messageStream, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
 					synopsesStream.addSink(new SinkFunction() {
 
 						@Override
@@ -65,7 +65,7 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 						}
 					});
 				} else {
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(messageStream, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0,0, synopsisClass, parameters);
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0,0, synopsisClass, parameters);
 					synopsesStream.addSink(new SinkFunction() {
 
 						@Override
@@ -78,7 +78,7 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 			}
 			if (assigners.get(0) instanceof SlidingWindow) {
 				if (stratified){
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(messageStream, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
 					synopsesStream.addSink(new SinkFunction() {
 
 						@Override
@@ -87,7 +87,7 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 						}
 					});
 				} else {
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(messageStream, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
+					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
 					synopsesStream.addSink(new SinkFunction() {
 
 						@Override

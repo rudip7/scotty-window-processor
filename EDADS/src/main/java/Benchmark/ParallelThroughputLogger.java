@@ -39,35 +39,41 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 
     @Override
     public void close() throws Exception {
-        PrintWriter resultWriter;
-        try {
-            resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("File not found: "+outputPath);
-        }
+//        BufferedWriter resultWriter;
+//        try {
+////            resultWriter = new PrintWriter(new FileOutputStream(new File(outputPath), true));
+//            resultWriter = new BufferedWriter(new PrintWriter(new FileOutputStream(new File(outputPath), true)));
+//        } catch (FileNotFoundException e) {
+//            throw new IllegalArgumentException("File not found: "+outputPath);
+//        }
         LOG.info(throughputStatistics.toString());
 //        resultWriter.append(configuration +
 //                throughputStatistics.mean() + "\t");
 
+        System.out.println(System.currentTimeMillis()+" : "+configuration+" : "+throughputStatistics.printHistory());
+//        System.out.println(throughputStatistics.history.size());
+        System.out.println();
 
-        InetAddress ip = null;
-        String hostname="";
-        try {
-            ip = InetAddress.getLocalHost();
-            hostname = ip.getHostName();
+//        InetAddress ip = null;
+//        String hostname="";
+//        try {
+//            ip = InetAddress.getLocalHost();
+//            hostname = ip.getHostName();
+//
+//        } catch (UnknownHostException e) {
+//
+//            e.printStackTrace();
+//        }
+//        String res = "current Hostname:"+"\t"+ hostname+"\t"+throughputStatistics.mean() + "\t"+"\n";
+////        ThroughputWriter.getThroughputWriter().append(res);
+//        System.out.println(res);
 
-        } catch (UnknownHostException e) {
-
-            e.printStackTrace();
-        }
-
-
-        //resultWriter.append("current Hostname:"+"\t"+ hostname+"\t");
-        //String.format("%s = %d", "joe", 35);
-        resultWriter.append(throughputStatistics.mean() + "\t");
-        resultWriter.append("\n");
-        resultWriter.flush();
-        resultWriter.close();
+//        resultWriter.append("current Hostname:"+"\t"+ hostname+"\t");
+////        String.format("%s = %d", "joe", 35);
+//        resultWriter.append(throughputStatistics.mean() + "\t");
+//        resultWriter.append("\n");
+//        resultWriter.flush();
+//        resultWriter.close();
 //        System.out.println(ParallelThroughputStatistics.getInstance().toString());
     }
 
