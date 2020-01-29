@@ -20,6 +20,7 @@ import Benchmark.Old.ThroughputStatistics;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -49,7 +50,7 @@ import java.util.zip.GZIPInputStream;
  * <p>
  * StreamExecutionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
  */
-public class ZipfDistributionSource implements SourceFunction<Tuple3<Integer, Integer, Long>> {
+public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Integer, Integer, Long>> {
 
     private final String dataFilePath;
 

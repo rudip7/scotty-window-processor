@@ -1,58 +1,25 @@
-/*
- * Copyright 2015 data Artisans GmbH, 2019 Ververica GmbH
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package Benchmark.Sources;
 
 import Benchmark.Old.ThroughputStatistics;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
+import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
+import org.apache.flink.util.XORShiftRandom;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
-
-/**
- * This SourceFunction generates a data stream of TaxiRide records which are
- * read from a gzipped input file. Each record has a time stamp and the input file must be
- * ordered by this time stamp.
- * <p>
- * In order to simulate a realistic stream source, the SourceFunction serves events proportional to
- * their timestamps. In addition, the serving of events can be delayed by a bounded random delay
- * which causes the events to be served slightly out-of-order of their timestamps.
- * <p>
- * The serving speed of the SourceFunction can be adjusted by a serving speed factor.
- * A factor of 60.0 increases the logical serving time by a factor of 60, i.e., events of one
- * minute (60 seconds) are served in 1 second.
- * <p>
- * This SourceFunction is an EventSourceFunction and does continuously emit watermarks.
- * Hence it is able to operate in event time mode which is configured as follows:
- * <p>
- * StreamExecutionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
- */
-public class UniformDistributionSource implements SourceFunction<Tuple3<Integer, Integer, Long>> {
-
-    private final String dataFilePath;
-
-    private transient BufferedReader reader;
-    private transient InputStream gzipStream;
+import java.util.Random;
 
 
+public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3<Integer, Integer, Long>> {
+
+    private static int maxBackpressure = 5000;
     private final long runtime;
+
+    private static final Logger LOG = LoggerFactory.getLogger(NormalDistributionSource.class);
 
     private final int throughput;
     private boolean running = true;
@@ -63,65 +30,42 @@ public class UniformDistributionSource implements SourceFunction<Tuple3<Integer,
     private long nextGapStart = 0;
     private long nextGapEnd;
 
+    private long timeOffset;
+    private Random random;
 
+    private Random key;
 
-    /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
-     * Rides are served exactly in order of their time stamps
-     * in a serving speed which is proportional to the specified serving speed factor.
-     *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
-     */
-    public UniformDistributionSource(String dataFilePath, long runtime, int throughput) {
-        this(dataFilePath, runtime, throughput, new ArrayList<>());
-    }
+    private int median = 10;
+    private int standardDeviation = 3;
 
-    /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
-     * Rides are served out-of time stamp order with specified maximum random delay
-     * in a serving speed which is proportional to the specified serving speed factor.
-     *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
-     *
-     */
-    public UniformDistributionSource(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
-        this.dataFilePath = dataFilePath;
-        this.throughput = throughput;
-        this.gaps = gaps;
-        this.runtime = runtime;
-    }
-
-    /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
-     * Rides are served out-of time stamp order with specified maximum random delay
-     * in a serving speed which is proportional to the specified serving speed factor.
-     */
     public UniformDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
-        this.dataFilePath = "/share/hadoop/EDADS/uniformTimestamped.gz";
-//        this.dataFilePath = "EDADS/Data/uniformTimestamped.gz";
+
         this.throughput = throughput;
         this.gaps = gaps;
+        this.random = new XORShiftRandom();
         this.runtime = runtime;
     }
 
     @Override
-    public void run(SourceContext<Tuple3<Integer, Integer, Long>> sourceContext) throws Exception {
+    public void open(Configuration parameters) throws Exception {
+        super.open(parameters);
+        this.key = new XORShiftRandom(42);
+    }
 
-        gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
-        reader = new BufferedReader(new InputStreamReader(gzipStream, "UTF-8"));
+    private int backpressureCounter = 0;
 
+    @Override
+    public void run(final SourceContext<Tuple3<Integer, Integer, Long>> ctx) throws Exception {
         long startTime = System.currentTimeMillis();
+
+//        ThroughputStatistics.getInstance().pause(false);
+
         long endTime = startTime + runtime;
-        loop:
         while (running) {
             long startTs = System.currentTimeMillis();
 
             for (int i = 0; i < throughput; i++) {
-                Tuple3<Integer, Integer, Long> tuple = readNextTuple();
-                if (tuple == null){
-                    break loop;
-                }
-                sourceContext.collect(tuple);
+                emitValue(readNextTuple(), ctx);
             }
 
             while (System.currentTimeMillis() < startTs + 1000) {
@@ -131,84 +75,37 @@ public class UniformDistributionSource implements SourceFunction<Tuple3<Integer,
             if(endTime <= System.currentTimeMillis())
                 running = false;
         }
-
-        this.reader.close();
-        this.reader = null;
-        this.gzipStream.close();
-        this.gzipStream = null;
-
     }
 
-    private void emitValue(final Tuple3<Integer, Integer, Long> tuple, final SourceContext<Tuple3<Integer, Integer, Long>> ctx) {
+    private void emitValue(final Tuple3<Integer, Integer, Long> tuple3, final SourceContext<Tuple3<Integer, Integer, Long>> ctx) {
 
-        if (tuple.f2 > nextGapStart) {
+        if (tuple3.f2 > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
             //System.out.println("in Gap");
-            if (tuple.f2 > this.nextGapEnd) {
+            if (tuple3.f2 > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;
                 if (currentGapIndex < gaps.size()) {
-                    this.nextGapStart = this.gaps.get(currentGapIndex).f0;
+                    this.nextGapStart = this.gaps.get(currentGapIndex).f0 + this.timeOffset;
                     this.nextGapEnd = this.nextGapStart + this.gaps.get(currentGapIndex).f1;
                 }
             } else
                 return;
         }
-        ctx.collect(tuple);
+        ctx.collect(tuple3);
     }
 
     private Tuple3<Integer, Integer, Long> readNextTuple() throws Exception {
-        String line;
-        if (reader.ready() && (line = reader.readLine()) != null) {
-            // read first tuple
-            return fromString(line);
-        } else {
-            return null;
-        }
-    }
+        int newKey = key.nextInt(101);
+//        while (newKey < 0){
+//            newKey = (int) (standardDeviation*key.nextGaussian() + median);
+//        }
+        return new Tuple3<>(newKey, key.nextInt(10), System.currentTimeMillis());
 
-    /**
-     * f0:  key            : Integer      // a random integer selected from a ZIPF distribution
-     * f1:  value          : Integer      // a random integer
-     * f2:  eventTime      : Long      // a unique id for each driver
-     */
-    public Tuple3<Integer, Integer, Long> fromString(String line) {
-
-        String[] tokens = line.split(",");
-        if (tokens.length != 3) {
-            throw new RuntimeException("Invalid record: " + line);
-        }
-
-        Tuple3<Integer, Integer, Long> tuple = new Tuple3<>();
-
-        try {
-            tuple.f0 = Integer.parseInt(tokens[0]);
-            tuple.f1 = Integer.parseInt(tokens[1]);
-            tuple.f2 = Long.parseLong(tokens[2]);
-        } catch (NumberFormatException nfe) {
-            throw new RuntimeException("Invalid record: " + line, nfe);
-        }
-
-        return tuple;
     }
 
     @Override
     public void cancel() {
-        try {
-            if (this.reader != null) {
-                this.reader.close();
-            }
-            if (this.gzipStream != null) {
-                this.gzipStream.close();
-            }
-        } catch (IOException ioe) {
-            throw new RuntimeException("Could not cancel SourceFunction", ioe);
-        } finally {
-            this.reader = null;
-            this.gzipStream = null;
-            this.running = false;
-        }
+        running = false;
     }
-
 }
-

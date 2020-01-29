@@ -135,7 +135,7 @@ public class BenchmarkRunner {
         } else if (syn.equals("BiasedReservoirSampler")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BiasedReservoirSampler.class, new Object[]{500});
         } else if (syn.equals("EquiWidthHistogram")) {
-            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(EquiWidthHistogram.class, new Object[]{0, 100, 8});
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(EquiWidthHistogram.class, new Object[]{0.0, 101.0, 10});
         } else if (syn.equals("BloomFilter")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BloomFilter.class, new Object[]{10000000, 80000, 7L});
         } else if (syn.equals("CuckooFilter")) {

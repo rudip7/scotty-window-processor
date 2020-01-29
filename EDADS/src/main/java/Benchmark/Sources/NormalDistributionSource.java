@@ -4,6 +4,7 @@ import Benchmark.Old.ThroughputStatistics;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.util.XORShiftRandom;
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Random;
 
 
-public class NormalDistributionSource extends RichSourceFunction<Tuple3<Integer, Integer, Long>> {
+public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<Integer, Integer, Long>> {
 
     private static int maxBackpressure = 5000;
     private final long runtime;
