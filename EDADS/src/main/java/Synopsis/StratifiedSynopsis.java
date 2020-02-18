@@ -1,13 +1,13 @@
 package Synopsis;
 
-public abstract class StratifiedSynopsis<T> implements Synopsis<T>{
-    private T partitionValue = null;
+public abstract class StratifiedSynopsis<Partition>{
+    private Partition partitionValue = null;
 
-    public T getPartitionValue() {
+    public Partition getPartitionValue() {
         return partitionValue;
     }
 
-    public void setPartitionValue(T partitionValue) {
+    public void setPartitionValue(Partition partitionValue) {
         if (this.partitionValue == null) {
             this.partitionValue = partitionValue;
         }

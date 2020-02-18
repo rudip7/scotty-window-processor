@@ -4,7 +4,7 @@ import Synopsis.NonMergeableSynopsisManager;
 
 import java.util.ArrayList;
 
-public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsisManager<SliceWaveletsManager<Input>> {
+public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Input,SliceWaveletsManager<Input>> {
 
     int parallelism = 0;
     int elementsProcessed = 0;

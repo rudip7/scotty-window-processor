@@ -2,8 +2,8 @@ package Synopsis;
 
 import java.util.ArrayList;
 
-public abstract class NonMergeableSynopsisManager<T extends Synopsis> extends StratifiedSynopsis{
-    protected ArrayList<T> unifiedSynopses;
+public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Input>> extends StratifiedSynopsis implements Synopsis<Input>{
+    protected ArrayList<S> unifiedSynopses;
 
     public NonMergeableSynopsisManager(){
         unifiedSynopses = new ArrayList<>();
@@ -11,11 +11,11 @@ public abstract class NonMergeableSynopsisManager<T extends Synopsis> extends St
 
     public abstract int getSynopsisIndex(int streamIndex);
 
-    public void addSynopsis(T synopsis){
+    public void addSynopsis(S synopsis){
         unifiedSynopses.add(synopsis);
     }
 
-    public ArrayList<T> getUnifiedSynopses() {
+    public ArrayList<S> getUnifiedSynopses() {
         return unifiedSynopses;
     }
 

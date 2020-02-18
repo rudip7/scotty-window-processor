@@ -4,7 +4,7 @@ import Synopsis.NonMergeableSynopsisManager;
 
 import java.util.ArrayList;
 
-public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManager<WaveletSynopsis<Input>> {
+public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManager<Input,WaveletSynopsis<Input>> {
 
     private ArrayList<WaveletSynopsis<Input>> combinedSynopses;
     int parallelism;

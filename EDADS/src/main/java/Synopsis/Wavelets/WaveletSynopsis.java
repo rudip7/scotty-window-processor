@@ -33,7 +33,7 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
      * @param size denotes the size budget of the WaveletSynopsis structure which equals the maximum amount of Coefficients
      *             the WaveletSynopsis stores at all times.
      */
-    public WaveletSynopsis(int size) {
+    public WaveletSynopsis(Integer size) {
         this.size = size;
         streamElementCounter = 0;
 

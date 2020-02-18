@@ -3,6 +3,10 @@ package Jobs;
 import FlinkScottyConnector.BuildSynopsis;
 import Source.DemoSource;
 import Synopsis.Sketches.CountMinSketch;
+import Synopsis.Wavelets.DistributedSliceWaveletsManager;
+import Synopsis.Wavelets.DistributedWaveletsManager;
+import Synopsis.Wavelets.SliceWaveletsManager;
+import Synopsis.Wavelets.WaveletSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
@@ -30,12 +34,12 @@ public class WaveletsJob {
         DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new DemoSource());
 
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
-        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+        SingleOutputStreamOperator<AggregateWindow<DistributedSliceWaveletsManager>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, DistributedSliceWaveletsManager.class, 100);
 
 
-        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
+        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<DistributedSliceWaveletsManager>, String>() {
             @Override
-            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
+            public void flatMap(AggregateWindow<DistributedSliceWaveletsManager> value, Collector<String> out) throws Exception {
                 String result = value.getStart()+" ---> "+value.getEnd()+"\n\n";//+value.getAggValues().get(0).toString();
                 out.collect(result);
 //                for (CountMinSketch w: value.getAggValues()){

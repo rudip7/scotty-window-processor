@@ -6,7 +6,7 @@ import Synopsis.StratifiedSynopsis;
 import java.util.ArrayList;
 
 
-public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<WaveletSynopsis<Input>> {
+public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Input,WaveletSynopsis<Input>> {
 
     int slicesPerWindow;
     ArrayList<Integer> sliceStartIndices;
