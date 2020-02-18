@@ -1,48 +1,47 @@
 package Synopsis.Wavelets;
 
-import Synopsis.NonMergeableSynopsis;
+import Synopsis.NonMergeableSynopsisManager;
+import Synopsis.StratifiedSynopsis;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 
-public class SliceWaveletsManager<Input> extends NonMergeableSynopsis<Input, DistributedWaveletsManager<Input>> {
+public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<WaveletSynopsis<Input>> {
 
-    ArrayList<WaveletSynopsis<Input>> slices;
     int slicesPerWindow;
-    int[] sliceStartIndices;
+    ArrayList<Integer> sliceStartIndices;
+    int elementsProcessed = 0;
 
-    public SliceWaveletsManager(ArrayList<WaveletSynopsis<Input>> slices, int slicesPerWindow) {
-        this.slices = slices;
-        this.slicesPerWindow = slicesPerWindow;
-        sliceStartIndices = new int[slicesPerWindow];
+    public SliceWaveletsManager(ArrayList<WaveletSynopsis<Input>> unifiedSynopses) {
+        this.unifiedSynopses = unifiedSynopses;
+        this.slicesPerWindow = unifiedSynopses.size();
+        sliceStartIndices = new ArrayList<>(slicesPerWindow);
 
-        int previousSliceElements = 0;
+        elementsProcessed = 0;
         for (int i = 0; i < slicesPerWindow; i++) {
-            sliceStartIndices[i] = previousSliceElements;
+            sliceStartIndices.add(i, elementsProcessed);
 
-            previousSliceElements += slices.get(i).getStreamElementCounter();
+            elementsProcessed += unifiedSynopses.get(i).getStreamElementCounter();
         }
     }
 
-    public SliceWaveletsManager(ArrayList<WaveletSynopsis<Input>> slices) {
-        this.slices = slices;
-        this.slicesPerWindow = slices.size();
-        sliceStartIndices = new int[slicesPerWindow];
+    public SliceWaveletsManager() {
+        super();
+        sliceStartIndices = new ArrayList<>();
+    }
 
-        int previousSliceElements = 0;
-        for (int i = 0; i < slicesPerWindow; i++) {
-            sliceStartIndices[i] = previousSliceElements;
-
-            previousSliceElements += slices.get(i).getStreamElementCounter();
+    @Override
+    public void update(Object element) {
+        if (!unifiedSynopses.isEmpty()) {
+            unifiedSynopses.get(unifiedSynopses.size() - 1).update((Input) element);
         }
     }
 
     @Override
     public int getSynopsisIndex(int streamIndex) {
         int index = -1;
-        for (int i = 0; i < sliceStartIndices.length; i++) {
-            if (sliceStartIndices[i] > streamIndex){
+        for (int i = 0; i < sliceStartIndices.size(); i++) {
+            if (sliceStartIndices.get(i) > streamIndex) {
                 return index;
             }
             index++;
@@ -50,28 +49,50 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsis<Input, Dis
         return index;
     }
 
-    public double pointQuery(int index){
-//        int managerIndex = Arrays.binarySearch(sliceStartIndices, index);
+    @Override
+    public void addSynopsis(WaveletSynopsis<Input> synopsis) {
+        if (sliceStartIndices == null){
+            sliceStartIndices = new ArrayList<>();
+        }
+        slicesPerWindow++;
+        elementsProcessed += synopsis.getStreamElementCounter();
+        if (unifiedSynopses.isEmpty()) {
+            sliceStartIndices.add(0);
+        } else {
+            sliceStartIndices.add(sliceStartIndices.get(sliceStartIndices.size() - 1) + unifiedSynopses.get(unifiedSynopses.size() - 1).getStreamElementCounter());
+        }
+        super.addSynopsis(synopsis);
+    }
+
+    @Override
+    public void unify(NonMergeableSynopsisManager other) {
+        if (other instanceof SliceWaveletsManager){
+            SliceWaveletsManager o = (SliceWaveletsManager) other;
+            for (int i = 0; i < o.getUnifiedSynopses().size(); i++) {
+                this.addSynopsis((WaveletSynopsis<Input>) o.getUnifiedSynopses().get(i));
+            }
+        }
+        throw new IllegalArgumentException("It is only possible to unify two objects of type NonMergeableSynopsisManager with each other.");
+    }
+
+    public double pointQuery(int index) {
         int managerIndex = getSynopsisIndex(index);
-        int previousSliceElements = sliceStartIndices[managerIndex];
-        return slices.get(managerIndex).pointQuery(index - previousSliceElements);
+        int previousSliceElements = sliceStartIndices.get(managerIndex);
+        return unifiedSynopses.get(managerIndex).pointQuery(index - previousSliceElements);
     }
 
 
-    public double rangeSumQuery(int leftIndex, int rightIndex){
-//        int leftManagerIndex = Arrays.binarySearch(sliceStartIndices, leftIndex);
-//        int rightManagerIndex = Arrays.binarySearch(sliceStartIndices, rightIndex);
-
+    public double rangeSumQuery(int leftIndex, int rightIndex) {
         int leftManagerIndex = getSynopsisIndex(leftIndex);
         int rightManagerIndex = getSynopsisIndex(rightIndex);
 
         double rangeSum = 0;
 
         for (int i = leftManagerIndex; i <= rightManagerIndex; i++) {
-            int previousSliceElements = sliceStartIndices[i];
-            int localLeftIndex = i == leftManagerIndex ? leftIndex-previousSliceElements : 0;
-            int localRightIndex = i == rightManagerIndex ? rightIndex-previousSliceElements : sliceStartIndices[i+1] - previousSliceElements - 1;
-            rangeSum += slices.get(i).rangeSumQuery(localLeftIndex, localRightIndex);
+            int previousSliceElements = sliceStartIndices.get(i);
+            int localLeftIndex = i == leftManagerIndex ? leftIndex - previousSliceElements : 0;
+            int localRightIndex = i == rightManagerIndex ? rightIndex - previousSliceElements : sliceStartIndices.get(i + 1) - previousSliceElements - 1;
+            rangeSum += unifiedSynopses.get(i).rangeSumQuery(localLeftIndex, localRightIndex);
         }
         return rangeSum;
     }

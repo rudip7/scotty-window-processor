@@ -172,6 +172,8 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     }
 
     /**
+     * Total number of bytes 59.
+     *
      * f0:  rideId         : Long      // a unique id for each ride
      * f1:  taxiId         : Long      // a unique id for each taxi
      * f2:  driverId       : Long      // a unique id for each driver

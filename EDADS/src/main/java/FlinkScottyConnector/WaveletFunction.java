@@ -1,7 +1,5 @@
 package FlinkScottyConnector;
 
-import Synopsis.MergeableSynopsis;
-import Synopsis.NonMergeableSynopsis;
 import Synopsis.Wavelets.SliceWaveletsManager;
 import Synopsis.Wavelets.WaveletSynopsis;
 import de.tub.dima.scotty.core.windowFunction.AggregateFunction;

@@ -1,12 +1,14 @@
 package FlinkScottyConnector;
 
 import Synopsis.MergeableSynopsis;
-import Synopsis.NonMergeableSynopsis;
+import Synopsis.NonMergeableSynopsisManager;
 import Synopsis.Sampling.SampleElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
+import Synopsis.Synopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
@@ -17,7 +19,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -26,6 +27,8 @@ import Synopsis.InvertibleSynopsis;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
 /**
@@ -93,6 +96,34 @@ public final class BuildSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+        SingleOutputStreamOperator reduce = inputStream
+                .map(new AddParallelismIndex())
+                .keyBy(0)
+                .timeWindow(windowTime)
+                .aggregate(agg)
+                .timeWindowAll(windowTime)
+                .aggregate(new NonMergeableSynopsisUnifier(managerClass))
+                .returns(managerClass);
+        return reduce;
+    }
+
+    /**
+     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the MergeableSynopsis
+     * @param windowTime    the size of the time window
+     * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
+     * @param synopsisClass the type of MergeableSynopsis to be computed
+     * @param parameters    the initialization parameters for the MergeableSynopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the MergeableSynopsis
+     * @return stream of time window based Synopses
+     */
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
             return slidingSampleTimeBased(inputStream, windowTime, slideTime, keyField, synopsisClass, parameters);
@@ -115,6 +146,34 @@ public final class BuildSynopsis {
         return reduce;
     }
 
+    /**
+     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the MergeableSynopsis
+     * @param windowTime    the size of the time window
+     * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
+     * @param synopsisClass the type of MergeableSynopsis to be computed
+     * @param parameters    the initialization parameters for the MergeableSynopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the MergeableSynopsis
+     * @return stream of time window based Synopses
+     */
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+        SingleOutputStreamOperator reduce = inputStream
+                .map(new AddParallelismIndex())
+                .keyBy(0)
+                .timeWindow(windowTime, slideTime)
+                .aggregate(agg)
+                .timeWindowAll(windowTime, slideTime)
+                .aggregate(new NonMergeableSynopsisUnifier(managerClass))
+                .returns(managerClass);
+        return reduce;
+    }
+
 
     /**
      * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
@@ -132,6 +191,24 @@ public final class BuildSynopsis {
      */
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Object... parameters) {
         return timeBased(inputStream, windowTime, -1, synopsisClass, parameters);
+    }
+
+    /**
+     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the MergeableSynopsis
+     * @param windowTime    the size of the time window
+     * @param synopsisClass the type of MergeableSynopsis to be computed
+     * @param parameters    the initialization parameters for the MergeableSynopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the MergeableSynopsis
+     * @return stream of time window based Synopses
+     */
+    public static <T, S extends MergeableSynopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+        return timeBased(inputStream, windowTime, -1, synopsisClass, managerClass, parameters);
     }
 
 
@@ -177,6 +254,36 @@ public final class BuildSynopsis {
      *
      * @param inputStream   the data stream to build the MergeableSynopsis
      * @param windowSize    the size of the count window
+     * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
+     * @param synopsisClass the type of MergeableSynopsis to be computed
+     * @param parameters    the initialization parameters for the MergeableSynopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the MergeableSynopsis
+     * @return stream of count window based Synopses
+     */
+    public static <T, S extends MergeableSynopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, long windowSize, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+        int parallelism = inputStream.getExecutionEnvironment().getParallelism();
+
+        SingleOutputStreamOperator reduce = inputStream
+                .map(new AddParallelismIndex())
+                .keyBy(0)
+                .countWindow(windowSize / parallelism)
+                .aggregate(agg)
+                .countWindowAll(parallelism)
+                .aggregate(new NonMergeableSynopsisUnifier(managerClass))
+                .returns(managerClass);
+        return reduce;
+    }
+
+    /**
+     * Build an operator pipeline to generate a stream of count window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#countWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the MergeableSynopsis
+     * @param windowSize    the size of the count window
      * @param synopsisClass the type of MergeableSynopsis to be computed
      * @param parameters    the initialization parameters for the MergeableSynopsis
      * @param <T>           the type of the input elements
@@ -185,6 +292,24 @@ public final class BuildSynopsis {
      */
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, Class<S> synopsisClass, Object... parameters) {
         return countBased(inputStream, windowSize, -1, synopsisClass, parameters);
+    }
+
+    /**
+     * Build an operator pipeline to generate a stream of count window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#countWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the MergeableSynopsis
+     * @param windowSize    the size of the count window
+     * @param synopsisClass the type of MergeableSynopsis to be computed
+     * @param parameters    the initialization parameters for the MergeableSynopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the MergeableSynopsis
+     * @return stream of count window based Synopses
+     */
+    public static <T, S extends MergeableSynopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, long windowSize, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+        return countBased(inputStream, windowSize, -1, synopsisClass, managerClass, parameters);
     }
 
 
@@ -242,7 +367,7 @@ public final class BuildSynopsis {
             KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, S> processingFunction;
             if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField,-1, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, -1, synopsisClass, parameters));
             } else {
                 processingFunction =
                         new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, -1, synopsisClass, parameters));
@@ -258,6 +383,20 @@ public final class BuildSynopsis {
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, Class<S> synopsisClass, Object... parameters) {
         return scottyWindows(inputStream, windows, -1, synopsisClass, parameters);
+    }
+
+    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<AggregateWindow<M>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Class<M> managerClass, Object... parameters) {
+
+        KeyedStream<Tuple2<Integer, T>, Tuple> keyedStream = inputStream.map(new AddParallelismIndex<>()).keyBy(0);
+        KeyedScottyWindowOperator<Tuple, Tuple2<Integer, T>, NonMergeableSynopsisManager> processingFunction =
+                new KeyedScottyWindowOperator<>(new NonMergeableSynopsisFunction(keyField, -1, synopsisClass, sliceManagerClass, parameters));
+
+        for (int i = 0; i < windows.length; i++) {
+            processingFunction.addWindow(windows[i]);
+        }
+        return keyedStream.process(processingFunction)
+                .flatMap(new UnifyToManager<M>(managerClass))
+                .setParallelism(1);
     }
 
 
@@ -387,6 +526,60 @@ public final class BuildSynopsis {
 
     }
 
+
+    public static class UnifyToManager<M extends NonMergeableSynopsisManager> extends RichFlatMapFunction<AggregateWindow<NonMergeableSynopsisManager>, AggregateWindow<M>> {
+
+        WindowState state;
+        Class<M> managerClass;
+
+        public UnifyToManager(Class<M> managerClass){
+            this.managerClass = managerClass;
+        }
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            state = new WindowState(parallelismKeys);
+        }
+
+        @Override
+        public void flatMap(AggregateWindow<NonMergeableSynopsisManager> value, Collector<AggregateWindow<M>> out) throws Exception {
+            HashMap<WindowID, Tuple2<Integer, AggregateWindow<M>>> openWindows = state.value();
+            WindowID windowID = new WindowID(value.getStart(), value.getEnd());
+            Tuple2<Integer, AggregateWindow<M>> synopsisAggregateWindow = openWindows.get(windowID);
+            if (synopsisAggregateWindow == null) {
+                Constructor<M> constructor;
+                try {
+                    constructor = managerClass.getConstructor();
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                }
+                M manager;
+                try {
+                    manager = constructor.newInstance();
+                } catch (InstantiationException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                }
+                manager.addSynopsis(value.getAggValues().get(0));
+                value.getAggValues().remove(0);
+                value.getAggValues().add(manager);
+                openWindows.put(windowID, new Tuple2<>(1, (AggregateWindow<M>) value));
+            } else if (synopsisAggregateWindow.f0 == parallelismKeys - 1) {
+                synopsisAggregateWindow.f1.getAggValues().get(0).addSynopsis(value.getAggValues().get(0));
+                out.collect(synopsisAggregateWindow.f1);
+                openWindows.remove(windowID);
+            } else {
+                synopsisAggregateWindow.f1.getAggValues().get(0).addSynopsis(value.getAggValues().get(0));
+                synopsisAggregateWindow.f0 += 1;
+            }
+            state.update(openWindows);
+        }
+
+    }
+
     /**
      * Stateful map functions to add the parallelism variable
      *
@@ -486,6 +679,54 @@ public final class BuildSynopsis {
         @Override
         public long extractTimestamp(SampleElement element, long previousElementTimestamp) {
             return element.getTimeStamp();
+        }
+    }
+
+    public static class NonMergeableSynopsisUnifier<S extends Synopsis, M extends NonMergeableSynopsisManager> implements AggregateFunction<S, M, M> {
+        private Class<M> managerClass;
+
+        public NonMergeableSynopsisUnifier(Class<M> managerClass) {
+            this.managerClass = managerClass;
+        }
+
+        @Override
+        public M createAccumulator() {
+            Constructor<M> constructor = null;
+            try {
+                constructor = managerClass.getConstructor();
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+            }
+            M manager = null;
+            try {
+                manager = constructor.newInstance();
+            } catch (InstantiationException e) {
+                throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+            }
+            return manager;
+        }
+
+        @Override
+        public M add(S value, M accumulator) {
+            accumulator.addSynopsis(value);
+            return accumulator;
+        }
+
+        @Override
+        public M getResult(M accumulator) {
+            return accumulator;
+        }
+
+        @Override
+        public M merge(M a, M b) {
+            for (int i = 0; i < b.getUnifiedSynopses().size(); i++) {
+                a.addSynopsis((S) b.getUnifiedSynopses().get(i));
+            }
+            return a;
         }
     }
 

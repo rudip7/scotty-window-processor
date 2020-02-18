@@ -84,7 +84,7 @@ public class waveletTest {
         arrayList.add(partition1);
         arrayList.add(partition2);
 
-        DistributedWaveletsManager distributedWaveletsManager = new DistributedWaveletsManager(3, 10, arrayList);
+        DistributedWaveletsManager distributedWaveletsManager = new DistributedWaveletsManager(3, arrayList);
 
         double rangeSum = 0;
 

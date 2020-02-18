@@ -2,13 +2,14 @@ package Synopsis.Wavelets;
 
 
 import Synopsis.Synopsis;
+import Synopsis.StratifiedSynopsis;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.PriorityQueue;
 
-public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
+public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsis<T>, Serializable {
 
     private int size;
     private FrontlineNode frontlineBottom;
@@ -23,7 +24,7 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
     public int getStreamElementCounter() {
         return streamElementCounter;
     }
-//TODO: make sure padding includes data1 when elementCounter is odd! (otherwise last input will be forgotten)
+//TODO: make sure padding includes data1 when elementsProcessed is odd! (otherwise last input will be forgotten)
 
 
     /**
@@ -73,8 +74,11 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
     public double pointQuery(int index){
 
         if (index > streamElementCounter || index < 0) {
+            throw new IllegalArgumentException("Local index must be higher than 0 and lower than "+streamElementCounter);
         }
-
+        if (rootnode == null){
+            this.padding();
+        }
         return pointQuery(index, rootnode.hungChild, rootnode.value);
     }
 
@@ -122,7 +126,14 @@ public class WaveletSynopsis<T> implements Synopsis<T>, Serializable {
     public double rangeSumQuery(int leftIndex, int rightIndex){
 
         if (rightIndex < leftIndex){
-            return 0;   // rightIndex has to be greater than leftIndex
+            throw new IllegalArgumentException("rightIndex has to be greater than leftIndex.");
+        }
+        if (leftIndex > streamElementCounter || leftIndex < 0 || rightIndex > streamElementCounter || rightIndex < 0) {
+            throw new IllegalArgumentException("Local index must be higher than 0 and lower than "+streamElementCounter);
+        }
+
+        if (rootnode == null){
+            this.padding();
         }
 
         double rangeSum = (rightIndex - leftIndex + 1) * rootnode.value;

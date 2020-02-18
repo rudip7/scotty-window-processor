@@ -1,30 +1,33 @@
 package Synopsis.Wavelets;
 
-import Synopsis.NonMergeableSynopsis;
+import Synopsis.NonMergeableSynopsisManager;
 
 import java.util.ArrayList;
 
-public class DistributedWaveletsManager<Input> extends NonMergeableSynopsis<Input, WaveletSynopsis<Input>> {
+public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManager<WaveletSynopsis<Input>> {
 
-    private ArrayList<SliceWaveletsManager<Input>> combinedSynopses;
+    private ArrayList<WaveletSynopsis<Input>> combinedSynopses;
     int parallelism;
     int elementCounter = 0;
 
-    public DistributedWaveletsManager(int parallelism, int size, ArrayList<SliceWaveletsManager<Input>> combinedSynopses) {
+    public DistributedWaveletsManager(int parallelism, ArrayList<WaveletSynopsis<Input>> combinedSynopses) {
         this.combinedSynopses = combinedSynopses;
         this.parallelism = parallelism;
     }
 
+    public DistributedWaveletsManager(){
+        super();
+    }
+
     @Override
     public int getSynopsisIndex(int streamIndex) {
-
         return streamIndex % parallelism;
     }
 
     @Override
-    public void update(Input element) {
+    public void update(Object element) {
         elementCounter++;
-        combinedSynopses.get(getSynopsisIndex(elementCounter)).update(element);
+        combinedSynopses.get(getSynopsisIndex(elementCounter)).update((Input) element);
     }
 
     public int getLocalIndex(int index){
