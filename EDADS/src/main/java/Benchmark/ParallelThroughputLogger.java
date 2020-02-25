@@ -52,7 +52,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 
         System.out.println(System.currentTimeMillis()+" : "+configuration+" : "+throughputStatistics.printHistory());
 //        System.out.println(throughputStatistics.history.size());
-        System.out.println();
+//        System.out.println();
 
 //        InetAddress ip = null;
 //        String hostname="";

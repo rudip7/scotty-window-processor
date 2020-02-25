@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Input>> extends StratifiedSynopsis implements Synopsis<Input>{
     protected ArrayList<S> unifiedSynopses;
+    protected int elementsProcessed = 0;
 
     public NonMergeableSynopsisManager(){
         unifiedSynopses = new ArrayList<>();
@@ -19,7 +20,12 @@ public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Inpu
         return unifiedSynopses;
     }
 
+    public int getElementsProcessed() {
+        return elementsProcessed;
+    }
+
     public void unify(NonMergeableSynopsisManager other){
+        elementsProcessed += other.getElementsProcessed();
         unifiedSynopses.addAll(other.getUnifiedSynopses());
     }
 }

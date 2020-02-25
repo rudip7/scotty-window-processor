@@ -1,9 +1,9 @@
 package Jobs;
 
 import FlinkScottyConnector.BuildSynopsis;
-import Source.DemoSource;
+import FlinkScottyConnector.NonMergeableSynopsisAggregator;
+import FlinkScottyConnector.SynopsisAggregator;
 import Source.WaveletTestSource;
-import Synopsis.Sketches.CountMinSketch;
 import Synopsis.Wavelets.DistributedSliceWaveletsManager;
 import Synopsis.Wavelets.DistributedWaveletsManager;
 import Synopsis.Wavelets.SliceWaveletsManager;
@@ -13,53 +13,62 @@ import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
 
-public class WaveletsJob {
+public class TestRoundRobinJob {
     public static void main(String[] args) throws Exception {
 
 
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        BuildSynopsis.IntegerState count = new BuildSynopsis.IntegerState();
+        Time windowTime = Time.seconds(1);
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000,10));
+        SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000, 10)).assignTimestampsAndWatermarks(new CustomTimeStampExtractor());
+        SingleOutputStreamOperator<DistributedWaveletsManager> wavelets = BuildSynopsis.timeBased(timestamped, windowTime, 1, WaveletSynopsis.class, DistributedWaveletsManager.class, 100);
+        wavelets.flatMap(new FlatMapFunction<DistributedWaveletsManager, String>() {
+                             @Override
+                             public void flatMap(DistributedWaveletsManager value, Collector<String> out) throws Exception {
+                                 String result = "Elements Processed: "+value.getElementsProcessed()+"\n";
+                                 for (int i = 0; i < value.getElementsProcessed(); i++) {
+                                     result += value.pointQuery(i)+"\n";
+                                 }
+                                 out.collect(result);
+                             }
+                         }
+                )
+                .writeAsText("EDADS/output/roundRobin.txt", FileSystem.WriteMode.OVERWRITE);
 
-        Window[] windows = {new SlidingWindow(WindowMeasure.Time, 2000, 1000)};
-        SingleOutputStreamOperator<AggregateWindow<DistributedSliceWaveletsManager>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, DistributedSliceWaveletsManager.class, 1000);
-
-
-        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<DistributedSliceWaveletsManager>, String>() {
-            @Override
-            public void flatMap(AggregateWindow<DistributedSliceWaveletsManager> value, Collector<String> out) throws Exception {
-                String result = value.getStart()+" ---> "+value.getEnd()+"\n";//+value.getAggValues().get(0).toString();
-                DistributedSliceWaveletsManager manager = value.getAggValues().get(0);
-                result += "Elements Processed: "+manager.getElementsProcessed()+"\n";
-                for (int i = 0; i < manager.getElementsProcessed(); i++) {
-//                    System.out.println(manager.pointQuery(i));
-                    result += manager.pointQuery(i)+"\n";
-                }
-                out.collect(result);
-//                for (CountMinSketch w: value.getAggValues()){
-//                    out.collect(w.toString());
-//                }
-            }
-        }).print();
-
-//        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("Flink Streaming Java API Skeleton");
     }
 
+    static class CountCreatedElements implements MapFunction<Tuple3<Integer, Integer, Long>, Integer> {
+        BuildSynopsis.IntegerState counter;
+
+        public CountCreatedElements(BuildSynopsis.IntegerState counter) {
+            this.counter = counter;
+        }
+
+        @Override
+        public Integer map(Tuple3<Integer, Integer, Long> value) throws Exception {
+            counter.update(counter.value() + 1);
+            return value.f1;
+        }
+    }
 
 
     /**
@@ -70,7 +79,7 @@ public class WaveletsJob {
         public void flatMap(String value, Collector<Tuple3<Integer, Integer, Long>> out) throws Exception {
             String[] tuples = value.split(",");
 
-            if(tuples.length == 3) {
+            if (tuples.length == 3) {
 
                 Integer key = new Integer(tuples[0]);
                 Integer val = new Integer(tuples[1]);
@@ -107,7 +116,7 @@ public class WaveletsJob {
         @Nullable
         @Override
         public Watermark checkAndGetNextWatermark(Tuple3<Integer, Integer, Long> lastElement, long extractedTimestamp) {
-            return new Watermark(extractedTimestamp-1000);
+            return new Watermark(extractedTimestamp - 1000);
         }
 
         /**

@@ -10,7 +10,7 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
 
     int slicesPerWindow;
     ArrayList<Integer> sliceStartIndices;
-    int elementsProcessed = 0;
+
 
     public SliceWaveletsManager(ArrayList<WaveletSynopsis<Input>> unifiedSynopses) {
         this.unifiedSynopses = unifiedSynopses;
@@ -66,13 +66,14 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
 
     @Override
     public void unify(NonMergeableSynopsisManager other) {
-        if (other instanceof SliceWaveletsManager){
+//        if (other instanceof SliceWaveletsManager){
             SliceWaveletsManager o = (SliceWaveletsManager) other;
             for (int i = 0; i < o.getUnifiedSynopses().size(); i++) {
                 this.addSynopsis((WaveletSynopsis<Input>) o.getUnifiedSynopses().get(i));
             }
-        }
-        throw new IllegalArgumentException("It is only possible to unify two objects of type NonMergeableSynopsisManager with each other.");
+//        }
+//        System.out.println(other.getClass());
+//        throw new IllegalArgumentException("It is only possible to unify two objects of type NonMergeableSynopsisManager with each other.");
     }
 
     public double pointQuery(int index) {

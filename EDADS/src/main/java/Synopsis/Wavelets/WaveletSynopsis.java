@@ -74,7 +74,7 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
     public double pointQuery(int index){
 
         if (index > streamElementCounter || index < 0) {
-            throw new IllegalArgumentException("Local index must be higher than 0 and lower than "+streamElementCounter);
+            throw new IllegalArgumentException("Local index must be higher than 0 and lower than "+streamElementCounter+" and given was "+index);
         }
         if (rootnode == null){
             this.padding();

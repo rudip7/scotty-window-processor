@@ -6,13 +6,11 @@ import java.util.ArrayList;
 
 public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManager<Input,WaveletSynopsis<Input>> {
 
-    private ArrayList<WaveletSynopsis<Input>> combinedSynopses;
     int parallelism;
-    int elementCounter = 0;
 
-    public DistributedWaveletsManager(int parallelism, ArrayList<WaveletSynopsis<Input>> combinedSynopses) {
-        this.combinedSynopses = combinedSynopses;
+    public DistributedWaveletsManager(int parallelism, ArrayList<WaveletSynopsis<Input>> unifiedSynopses) {
         this.parallelism = parallelism;
+        this.unifiedSynopses = unifiedSynopses;
     }
 
     public DistributedWaveletsManager(){
@@ -26,8 +24,15 @@ public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManag
 
     @Override
     public void update(Object element) {
-        elementCounter++;
-        combinedSynopses.get(getSynopsisIndex(elementCounter)).update((Input) element);
+        elementsProcessed++;
+        unifiedSynopses.get(getSynopsisIndex(elementsProcessed)).update((Input) element);
+    }
+
+    @Override
+    public void addSynopsis(WaveletSynopsis<Input> synopsis) {
+        parallelism++;
+        elementsProcessed += synopsis.getStreamElementCounter();
+        super.addSynopsis(synopsis);
     }
 
     public int getLocalIndex(int index){
@@ -35,7 +40,15 @@ public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManag
     }
 
     public double pointQuery(int index){
-        return combinedSynopses.get(getSynopsisIndex(index)).pointQuery(getLocalIndex(index));
+        WaveletSynopsis<Input> wavelet = unifiedSynopses.get(getSynopsisIndex(index));
+        int localIndex = getLocalIndex(index);
+        if (localIndex > wavelet.getStreamElementCounter()){
+            System.out.println("ups");
+            localIndex = getLocalIndex(index);
+            return -1;
+        }
+        return wavelet.pointQuery(localIndex);
+//        return unifiedSynopses.get(getSynopsisIndex(index)).pointQuery(getLocalIndex(index));
     }
 
     public double rangeSumQuery(int leftIndex, int rightIndex){
@@ -56,7 +69,7 @@ public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManag
                 partitionRightIndex -=1;
             }
 
-            rangeSum += combinedSynopses.get(i).rangeSumQuery(partitionLeftIndex, partitionRightIndex);
+            rangeSum += unifiedSynopses.get(i).rangeSumQuery(partitionLeftIndex, partitionRightIndex);
         }
 
         return rangeSum;

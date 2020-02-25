@@ -29,9 +29,6 @@ import java.util.regex.Pattern;
 
 import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 
-/**
- * Created by philipp on 5/28/17.
- */
 public class BenchmarkRunner {
 
     private static String configPath;
@@ -41,6 +38,11 @@ public class BenchmarkRunner {
 
         configPath = args[0];
         System.out.println("\n\nLoading configurations: " + configPath);
+
+        int iterations = 1;
+        if (args.length == 2) {
+            iterations = Integer.parseInt(args[1]);
+        }
 
 
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/FlinkStratifiedUniformBenchmark_CountMinSketch.json";
@@ -71,27 +73,30 @@ public class BenchmarkRunner {
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
                         System.out.println("\n\n");
-                        String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
-                        if (config.stratified) {
-                            configuration += "Stratified " + syn + " \t";
-                        } else {
-                            configuration += syn + " \t";
-                        }
-                        System.out.println("Starting Benchmark:");
-                        System.out.println(configuration);
-                        System.out.println("Desired throughput: " + config.throughput);
-                        System.out.println("\n\n");
-                        Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        if (config.source.contentEquals("Normal")) {
-                            new NormalScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else if (config.source.contentEquals("Zipf")) {
-                            new ZipfScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else if (config.source.contentEquals("Uniform")) {
-                            new UniformScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else if (config.source.contentEquals("NYC-taxi")) {
-                            new NYCScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else {
-                            throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
+                        for (int i = 0; i < iterations; i++) {
+                            System.out.println("Iteration: "+i);
+                            String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                            if (config.stratified) {
+                                configuration += "Stratified " + syn + " \t";
+                            } else {
+                                configuration += syn + " \t";
+                            }
+                            System.out.println("Starting Benchmark:");
+                            System.out.println(configuration);
+                            System.out.println("Desired throughput: " + config.throughput);
+                            System.out.println("\n\n");
+                            Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
+                            if (config.source.contentEquals("Normal")) {
+                                new NormalScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else if (config.source.contentEquals("Zipf")) {
+                                new ZipfScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else if (config.source.contentEquals("Uniform")) {
+                                new UniformScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else if (config.source.contentEquals("NYC-taxi")) {
+                                new NYCScottyJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else {
+                                throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
+                            }
                         }
                     }
                 }
@@ -100,26 +105,29 @@ public class BenchmarkRunner {
                 for (List<String> windows : config.windowConfigurations) {
                     for (String syn : config.synopses) {
                         System.out.println("\n\n");
-                        String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
-                        if (config.stratified) {
-                            configuration += "Stratified " + syn + " \t";
-                        } else {
-                            configuration += syn + " \t";
-                        }
-                        System.out.println("Starting Benchmark:");
-                        System.out.println(configuration);
-                        System.out.println("\n\n");
-                        Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
-                        if (config.source.contentEquals("Normal")) {
-                            new NormalFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else if (config.source.contentEquals("Zipf")) {
-                            new ZipfFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else if (config.source.contentEquals("Uniform")) {
-                            new UniformFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else if (config.source.contentEquals("NYC-taxi")) {
-                            new NYCFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
-                        } else {
-                            throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
+                        for (int i = 0; i < iterations; i++) {
+                            System.out.println("Iteration: "+i);
+                            String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                            if (config.stratified) {
+                                configuration += "Stratified " + syn + " \t";
+                            } else {
+                                configuration += syn + " \t";
+                            }
+                            System.out.println("Starting Benchmark:");
+                            System.out.println(configuration);
+                            System.out.println("\n\n");
+                            Tuple2<Class<? extends MergeableSynopsis>, Object[]> synopsis = getSynopsis(syn);
+                            if (config.source.contentEquals("Normal")) {
+                                new NormalFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else if (config.source.contentEquals("Zipf")) {
+                                new ZipfFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else if (config.source.contentEquals("Uniform")) {
+                                new UniformFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else if (config.source.contentEquals("NYC-taxi")) {
+                                new NYCFlinkJob(outputPath, configuration, getAssigners(windows), env, config.runtime, config.throughput, gaps, synopsis.f0, config.stratified, synopsis.f1);
+                            } else {
+                                throw new IllegalArgumentException("Source not supported: " + config.source + " ; Available sources are: Normal, Zipf, Uniform, NYC-taxi");
+                            }
                         }
                     }
                 }

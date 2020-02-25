@@ -60,7 +60,7 @@ public class ParallelThroughputStatistics implements Serializable {
 	public String printHistory(){
 		String res = "";
 		for (int i = 0; i < history.size(); i++) {
-			res += history.get(i).toString()+" ; ";
+			res += history.get(i).toString()+",";
 		}
 		return res;
 	}

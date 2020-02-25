@@ -7,12 +7,16 @@ import Synopsis.Sampling.SamplerWithTimestamps;
 import Synopsis.Synopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
+import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichFlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -27,9 +31,14 @@ import Synopsis.InvertibleSynopsis;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  * Class to organize the static functions to generate window based Synopses.
@@ -97,9 +106,11 @@ public final class BuildSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
-        SingleOutputStreamOperator reduce = inputStream
-                .map(new AddParallelismIndex())
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
+        SingleOutputStreamOperator parallel = inputStream
+                .map(new AddParallelismIndex()).setParallelism(1);
+
+        SingleOutputStreamOperator reduce = parallel
                 .keyBy(0)
                 .timeWindow(windowTime)
                 .aggregate(agg)
@@ -162,7 +173,7 @@ public final class BuildSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
         SingleOutputStreamOperator reduce = inputStream
                 .map(new AddParallelismIndex())
                 .keyBy(0)
@@ -207,7 +218,7 @@ public final class BuildSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T, S extends MergeableSynopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         return timeBased(inputStream, windowTime, -1, synopsisClass, managerClass, parameters);
     }
 
@@ -261,8 +272,8 @@ public final class BuildSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T, S extends MergeableSynopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, long windowSize, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, long windowSize, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
         int parallelism = inputStream.getExecutionEnvironment().getParallelism();
 
         SingleOutputStreamOperator reduce = inputStream
@@ -403,7 +414,7 @@ public final class BuildSynopsis {
     /**
      * Integer state for Stateful Functions
      */
-    public static class IntegerState implements ValueState<Integer> {
+    public static class IntegerState implements ValueState<Integer>, Serializable {
         int value;
 
         @Override
@@ -419,6 +430,19 @@ public final class BuildSynopsis {
         @Override
         public void clear() {
             value = 0;
+        }
+
+        private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+            out.writeInt(value);
+        }
+
+
+        private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+            this.value = in.readInt();
+        }
+
+        private void readObjectNoData() throws ObjectStreamException {
+            throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
         }
     }
 
@@ -547,26 +571,8 @@ public final class BuildSynopsis {
             WindowID windowID = new WindowID(value.getStart(), value.getEnd());
             Tuple2<Integer, AggregateWindow<M>> synopsisAggregateWindow = openWindows.get(windowID);
             if (synopsisAggregateWindow == null) {
-                Constructor<M> constructor;
-                try {
-                    constructor = managerClass.getConstructor();
-                } catch (NoSuchMethodException e) {
-                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
-                }
-                M manager;
-                try {
-                    manager = constructor.newInstance();
-                } catch (InstantiationException e) {
-                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
-                } catch (InvocationTargetException e) {
-                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
-                }
-                manager.addSynopsis(value.getAggValues().get(0));
-                value.getAggValues().remove(0);
-                value.getAggValues().add(manager);
-                openWindows.put(windowID, new Tuple2<>(1, (AggregateWindow<M>) value));
+                NonMergeableSynopsisWindowState<M> aggWindow = new NonMergeableSynopsisWindowState(value, managerClass);
+                openWindows.put(windowID, new Tuple2<>(1, aggWindow));
             } else if (synopsisAggregateWindow.f0 == parallelismKeys - 1) {
                 synopsisAggregateWindow.f1.getAggValues().get(0).addSynopsis(value.getAggValues().get(0));
                 out.collect(synopsisAggregateWindow.f1);
@@ -580,6 +586,69 @@ public final class BuildSynopsis {
 
     }
 
+    public static class NonMergeableSynopsisWindowState<M extends NonMergeableSynopsisManager> implements AggregateWindow<M>{
+        private final long start;
+        private final long endTs;
+        private final WindowMeasure measure;
+        private List<M> aggValues;
+
+        public NonMergeableSynopsisWindowState(AggregateWindow<Synopsis> aggWindow, Class<M> managerClass){
+            this(aggWindow.getStart(), aggWindow.getEnd(), aggWindow.getMeasure());
+            Constructor<M> constructor;
+            try {
+                constructor = managerClass.getConstructor();
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+            }
+            for (int i = 0; i < aggWindow.getAggValues().size(); i++) {
+                M manager;
+                try {
+                    manager = constructor.newInstance();
+                } catch (InstantiationException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
+                }
+                manager.addSynopsis(aggWindow.getAggValues().get(i));
+                aggValues.add(manager);
+            }
+        }
+
+        public NonMergeableSynopsisWindowState(long start, long endTs, WindowMeasure measure) {
+            this.start = start;
+            this.endTs = endTs;
+            this.measure = measure;
+            this.aggValues = new ArrayList<>();
+        }
+
+        @Override
+        public WindowMeasure getMeasure() {
+            return measure;
+        }
+
+        @Override
+        public long getStart() {
+            return start;
+        }
+
+        @Override
+        public long getEnd() {
+            return endTs;
+        }
+
+        @Override
+        public List<M> getAggValues() {
+            return aggValues;
+        }
+
+        @Override
+        public boolean hasValue() {
+            return !aggValues.isEmpty();
+        }
+    }
+
     /**
      * Stateful map functions to add the parallelism variable
      *
@@ -587,7 +656,7 @@ public final class BuildSynopsis {
      */
     public static class AddParallelismIndex<T0> extends RichMapFunction<T0, Tuple2<Integer, T0>> {
 
-        ValueState<Integer> state;
+        private transient ValueState<Integer> state;
 
         @Override
         public void open(Configuration parameters) throws Exception {
@@ -682,22 +751,22 @@ public final class BuildSynopsis {
         }
     }
 
-    public static class NonMergeableSynopsisUnifier<S extends Synopsis, M extends NonMergeableSynopsisManager> implements AggregateFunction<S, M, M> {
-        private Class<M> managerClass;
+    public static class NonMergeableSynopsisUnifier<S extends Synopsis> implements AggregateFunction<S, NonMergeableSynopsisManager, NonMergeableSynopsisManager> {
+        private Class<? extends NonMergeableSynopsisManager> managerClass;
 
-        public NonMergeableSynopsisUnifier(Class<M> managerClass) {
+        public NonMergeableSynopsisUnifier(Class<? extends NonMergeableSynopsisManager> managerClass) {
             this.managerClass = managerClass;
         }
 
         @Override
-        public M createAccumulator() {
-            Constructor<M> constructor = null;
+        public NonMergeableSynopsisManager createAccumulator() {
+            Constructor<? extends NonMergeableSynopsisManager> constructor = null;
             try {
                 constructor = managerClass.getConstructor();
             } catch (NoSuchMethodException e) {
                 throw new RuntimeException("An unexpected error happen, while unifying the partial results.");
             }
-            M manager = null;
+            NonMergeableSynopsisManager manager = null;
             try {
                 manager = constructor.newInstance();
             } catch (InstantiationException e) {
@@ -711,18 +780,18 @@ public final class BuildSynopsis {
         }
 
         @Override
-        public M add(S value, M accumulator) {
+        public NonMergeableSynopsisManager add(S value, NonMergeableSynopsisManager accumulator) {
             accumulator.addSynopsis(value);
             return accumulator;
         }
 
         @Override
-        public M getResult(M accumulator) {
+        public NonMergeableSynopsisManager getResult(NonMergeableSynopsisManager accumulator) {
             return accumulator;
         }
 
         @Override
-        public M merge(M a, M b) {
+        public NonMergeableSynopsisManager merge(NonMergeableSynopsisManager a, NonMergeableSynopsisManager b) {
             for (int i = 0; i < b.getUnifiedSynopses().size(); i++) {
                 a.addSynopsis((S) b.getUnifiedSynopses().get(i));
             }

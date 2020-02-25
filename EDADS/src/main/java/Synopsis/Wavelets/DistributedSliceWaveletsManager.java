@@ -7,13 +7,12 @@ import java.util.ArrayList;
 public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Input,SliceWaveletsManager<Input>> {
 
     int parallelism = 0;
-    int elementsProcessed = 0;
 
     public DistributedSliceWaveletsManager(ArrayList<SliceWaveletsManager<Input>> unifiedSynopses) {
         this.unifiedSynopses = unifiedSynopses;
         this.parallelism = unifiedSynopses.size();
         for (int i = 0; i < unifiedSynopses.size(); i++) {
-            elementsProcessed += unifiedSynopses.get(i).elementsProcessed;
+            elementsProcessed += unifiedSynopses.get(i).getElementsProcessed();
         }
     }
 
@@ -35,7 +34,7 @@ public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsis
     @Override
     public void addSynopsis(SliceWaveletsManager<Input> synopsis) {
         parallelism++;
-        elementsProcessed += synopsis.elementsProcessed;
+        elementsProcessed += synopsis.getElementsProcessed();
         super.addSynopsis(synopsis);
     }
 
