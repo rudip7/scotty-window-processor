@@ -1,0 +1,42 @@
+{
+  "benchmarkConfigurations": [
+    {
+      "name": "rudi_benchmark",
+      "parallelism": 2,
+      "iterations": 10,
+      "runtime": 15000,
+      "throughput": 160000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(10000,5000)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    },
+    {
+      "name": "rudi_benchmark2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 15000,
+      "throughput": 160000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(10000,5000)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    }
+  ]
+}

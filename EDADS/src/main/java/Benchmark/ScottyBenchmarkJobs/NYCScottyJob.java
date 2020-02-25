@@ -30,7 +30,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class NYCScottyJob<S extends MergeableSynopsis> {
 
-	public NYCScottyJob(String outputPath, String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
+	public NYCScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
 						final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
@@ -52,7 +52,7 @@ public class NYCScottyJob<S extends MergeableSynopsis> {
 				.addSource(new NYCTaxiRideSource(runtime, throughput,  gaps));
 
 		final SingleOutputStreamOperator<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> timestamped = messageStream
-				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
+				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>>(1000, configuration));
 
 		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream;
 		if (stratified){

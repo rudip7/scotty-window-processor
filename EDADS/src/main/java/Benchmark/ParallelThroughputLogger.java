@@ -20,18 +20,18 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
     //	private int elementSize;
     private long logfreq;
     private boolean parallelismSet = false;
-    private String outputPath;
+//    private String outputPath;
     private String configuration;
     private ParallelThroughputStatistics throughputStatistics;
 
-    public ParallelThroughputLogger(long logfreq, String outputPath, String configuration) {
+    public ParallelThroughputLogger(long logfreq, String configuration) {
 //		this.elementSize = elementSize;
         this.logfreq = logfreq;
         this.totalReceived = 0;
         this.lastTotalReceived = 0;
         this.lastLogTimeMs = -1;
         this.configuration = configuration;
-        this.outputPath = outputPath;
+//        this.outputPath = outputPath;
 
         this.throughputStatistics = new ParallelThroughputStatistics();
         

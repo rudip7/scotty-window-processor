@@ -33,7 +33,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class NormalFlinkJob<S extends MergeableSynopsis> {
 
-    public NormalFlinkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
+    public NormalFlinkJob(String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
                           final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
@@ -47,7 +47,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
                 .addSource(new NormalDistributionSource(runtime, throughput, gaps));
 
 //		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
-        messageStream.flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
+        messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configuration));
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());

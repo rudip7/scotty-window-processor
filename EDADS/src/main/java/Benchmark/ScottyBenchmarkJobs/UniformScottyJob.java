@@ -31,7 +31,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class UniformScottyJob<S extends MergeableSynopsis> {
 
-	public UniformScottyJob(String outputPath, String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
+	public UniformScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
                             final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
@@ -50,7 +50,7 @@ public class UniformScottyJob<S extends MergeableSynopsis> {
 				.addSource(new UniformDistributionSource(runtime, throughput, gaps));
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
-				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
+				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configuration));
 
 		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream;
 		if (stratified){

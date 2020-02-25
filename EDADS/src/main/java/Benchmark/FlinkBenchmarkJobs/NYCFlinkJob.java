@@ -34,7 +34,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class NYCFlinkJob<S extends MergeableSynopsis> {
 
-	public NYCFlinkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
+	public NYCFlinkJob(String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
                        final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
@@ -48,7 +48,7 @@ public class NYCFlinkJob<S extends MergeableSynopsis> {
 				.addSource(new NYCTaxiRideSource(runtime, throughput,  gaps));
 
 //		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
-		messageStream.flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
+		messageStream.flatMap(new ParallelThroughputLogger<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>>(1000,configuration));
 
 		final SingleOutputStreamOperator<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());

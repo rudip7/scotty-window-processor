@@ -8,8 +8,8 @@ public class BenchmarkConfig {
 	public long runtime;
 	public String name;
 	public boolean stratified;
-//	public int parallelism;
-//	public int iterations;
+	public int parallelism;
+	public int iterations;
 
 	// [Sliding(1,2), Tumbling(1), Session(2)]
 	public List<List<String>> windowConfigurations;

@@ -33,7 +33,7 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
  */
 public class ZipfFlinkJob<S extends MergeableSynopsis> {
 
-	public ZipfFlinkJob(String outputPath, String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
+	public ZipfFlinkJob(String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
                         final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 		Map<String, String> configMap = new HashMap<>();
@@ -46,7 +46,7 @@ public class ZipfFlinkJob<S extends MergeableSynopsis> {
 				.addSource(new ZipfDistributionSource(runtime, throughput,  gaps));
 
 //		messageStream.flatMap(new ThroughputLogger<>(throughput)).setParallelism(1);
-		messageStream.flatMap(new ParallelThroughputLogger<>(1000, outputPath, configuration));
+		messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000,configuration));
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
