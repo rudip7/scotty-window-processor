@@ -13,36 +13,32 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class SynopsisFunction<Input, T extends MergeableSynopsis> implements AggregateFunction<Input, MergeableSynopsis, MergeableSynopsis>, Serializable {
-    private int keyField;
+public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis> implements AggregateFunction<Input, MergeableSynopsis, MergeableSynopsis>, Serializable {
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
-    private int partitionField;
+    private boolean stratified = false;
 
-    public SynopsisFunction(int keyField, int partitionField, Class<T> synopsisClass, Object[] constructorParam) {
-        this.keyField = keyField;
+    public SynopsisFunction(boolean stratified, Class<T> synopsisClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
         for (int i = 0; i < constructorParam.length; i++) {
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
-        if (partitionField >= 0 && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
+        if (stratified && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
         }
-        this.partitionField = partitionField;
+        this.stratified = stratified;
     }
 
     public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam) {
-        this.keyField = -1;
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
         for (int i = 0; i < constructorParam.length; i++) {
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
-        this.partitionField = -1;
     }
 
     public MergeableSynopsis createAggregate() {
@@ -64,50 +60,28 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     @Override
-    public MergeableSynopsis lift(Input input) {
-        if (partitionField < 0) {
-            if (!(input instanceof Tuple2)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
-            }
-            Tuple2 inputTuple = (Tuple2) input;
-            MergeableSynopsis partialAggregate = createAggregate();
-            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
-                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(inputTuple.f1);
-            return partialAggregate;
-        } else {
-            if (!(input instanceof Tuple)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
-            }
-            MergeableSynopsis partialAggregate = createAggregate();
-            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
-            if (keyField != -1) {
-                Object field = ((Tuple) input).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(input);
-            return partialAggregate;
+    public MergeableSynopsis lift(Input inputTuple) {
+        MergeableSynopsis partialAggregate = createAggregate();
+        if (stratified) {
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
         }
-
+        partialAggregate.update(inputTuple.f1);
+        return partialAggregate;
     }
 
     @Override
     public MergeableSynopsis combine(MergeableSynopsis input, MergeableSynopsis partialAggregate) {
         try {
-            if (partitionField >= 0){
+            if (stratified) {
                 Object partitionValue = ((StratifiedSynopsis) partialAggregate).getPartitionValue();
                 Object partitionValue2 = ((StratifiedSynopsis) input).getPartitionValue();
                 if (partitionValue != null
-                && partitionValue2 == null){
-                    ((StratifiedSynopsis)input).setPartitionValue(partitionValue);
+                        && partitionValue2 == null) {
+                    ((StratifiedSynopsis) input).setPartitionValue(partitionValue);
                 } else if (partitionValue == null
-                        && partitionValue2 != null){
-                    ((StratifiedSynopsis)partialAggregate).setPartitionValue(partitionValue2);
-                } else if(!partitionValue.equals(partitionValue2)){
+                        && partitionValue2 != null) {
+                    ((StratifiedSynopsis) partialAggregate).setPartitionValue(partitionValue2);
+                } else if (!partitionValue.equals(partitionValue2)) {
                     throw new IllegalArgumentException("Some internal error occurred and the synopses to be merged have not the same partition value.");
                 }
             }
@@ -119,32 +93,12 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     @Override
-    public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Input input) {
-        if (partitionField < 0) {
-            if (!(input instanceof Tuple2)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
-            }
-            Tuple2 inputTuple = (Tuple2) input;
-            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
-                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(inputTuple.f1);
-            return partialAggregate;
-        } else {
-            if (!(input instanceof Tuple)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
-            }
-            ((StratifiedSynopsis) partialAggregate).setPartitionValue(((Tuple) input).getField(partitionField));
-            if (keyField != -1) {
-                Object field = ((Tuple) input).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(input);
-            return partialAggregate;
+    public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Input inputTuple) {
+        if (stratified) {
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
         }
+        partialAggregate.update(inputTuple.f1);
+        return partialAggregate;
     }
 
     @Override
@@ -153,8 +107,7 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        out.writeInt(keyField);
-        out.writeInt(partitionField);
+        out.writeBoolean(stratified);
         out.writeObject(synopsisClass);
         out.writeInt(constructorParam.length);
         for (int i = 0; i < constructorParam.length; i++) {
@@ -166,8 +119,7 @@ public class SynopsisFunction<Input, T extends MergeableSynopsis> implements Agg
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        this.keyField = in.readInt();
-        this.partitionField = in.readInt();
+        this.stratified = in.readBoolean();
         this.synopsisClass = (Class<T>) in.readObject();
         int nParameters = in.readInt();
         this.constructorParam = new Object[nParameters];

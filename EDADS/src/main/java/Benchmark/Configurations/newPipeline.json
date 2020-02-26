@@ -1,0 +1,22 @@
+{
+  "benchmarkConfigurations": [
+    {
+      "name": "rudi_benchmark",
+      "runtime": 20000,
+      "throughput": 5000,
+      "source": "Uniform",
+      "stratified" : "true",
+      "windowConfigurations": [
+        [
+          "Sliding(2000,1000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    }
+  ]
+}

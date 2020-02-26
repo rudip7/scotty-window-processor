@@ -8,6 +8,8 @@ import Synopsis.StratifiedSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
+import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -44,7 +46,7 @@ public final class BuildStratifiedSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
         if (partitionField > inputStream.getType().getArity() || partitionField < 0) {
@@ -53,10 +55,11 @@ public final class BuildStratifiedSynopsis {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
             return sampleTimeBased(inputStream, windowTime, partitionField, keyField, synopsisClass, parameters);
         }
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, partitionField, keyField);
+        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
 
         SingleOutputStreamOperator reduce = inputStream
-                .keyBy(partitionField)
+                .map(new TransformStratified<>(partitionField, keyField))
+                .keyBy(0)
                 .timeWindow(windowTime)
                 .aggregate(agg)
                 .returns(synopsisClass);
@@ -79,17 +82,18 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int partionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> slidingTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
-            return slidingSampleTimeBased(inputStream, windowTime, slideTime, partionField, keyField, synopsisClass, parameters);
+            return slidingSampleTimeBased(inputStream, windowTime, slideTime, partitionField, keyField, synopsisClass, parameters);
         }
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, partionField, keyField);
+        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
 
         SingleOutputStreamOperator reduce = inputStream
-                .keyBy(partionField)
+                .map(new TransformStratified<>(partitionField, keyField))
+                .keyBy(0)
                 .timeWindow(windowTime, slideTime)
                 .aggregate(agg)
                 .returns(synopsisClass);
@@ -132,12 +136,13 @@ public final class BuildStratifiedSynopsis {
      * @return stream of count window based Synopses
      */
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, partitionField, keyField);
+        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
         SingleOutputStreamOperator reduce = inputStream
-                .keyBy(partitionField)
+                .map(new TransformStratified<>(partitionField, keyField))
+                .keyBy(0)
                 .countWindow(windowSize)
                 .aggregate(agg)
                 .returns(synopsisClass);
@@ -163,10 +168,10 @@ public final class BuildStratifiedSynopsis {
     }
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> sampleTimeBased(DataStream<T> inputStream, Time windowTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, partitionField, keyField);
+        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
         SingleOutputStreamOperator reduce = inputStream
                 .process(new ConvertToSample(partitionField, keyField))
                 .assignTimestampsAndWatermarks(new SampleTimeStampExtractor())
@@ -178,12 +183,12 @@ public final class BuildStratifiedSynopsis {
     }
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> slidingSampleTimeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters, keyField);
+        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
         SingleOutputStreamOperator reduce = inputStream
-                .process(new ConvertToSample(partitionField,keyField))
+                .process(new ConvertToSample(partitionField, keyField))
                 .assignTimestampsAndWatermarks(new SampleTimeStampExtractor())
                 .keyBy(0)
                 .timeWindow(windowTime, slideTime)
@@ -194,7 +199,7 @@ public final class BuildStratifiedSynopsis {
 
 
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)){
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
         if (partitionField > inputStream.getType().getArity() || partitionField < 0) {
@@ -203,20 +208,20 @@ public final class BuildStratifiedSynopsis {
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
             KeyedStream<Tuple2<String, SampleElement>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(partitionField, keyField)).keyBy(0);
             KeyedScottyWindowOperator<Tuple, Tuple2<String, SampleElement>, S> processingFunction =
-                    new KeyedScottyWindowOperator<>(new SynopsisFunction(1, partitionField, synopsisClass, parameters));
+                    new KeyedScottyWindowOperator<>(new SynopsisFunction(true, synopsisClass, parameters));
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction);
         } else {
-            KeyedStream<T, Tuple> keyedStream = inputStream.keyBy(partitionField);
-            KeyedScottyWindowOperator<Tuple, T, S> processingFunction;
+            KeyedStream<Tuple2<String,Object>, Tuple> keyedStream = inputStream.map(new TransformStratified(partitionField, keyField)).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<String,Object>, S> processingFunction;
             if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(keyField, partitionField, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(true, synopsisClass, parameters));
             } else {
                 processingFunction =
-                        new KeyedScottyWindowOperator<>(new SynopsisFunction(keyField, partitionField, synopsisClass, parameters));
+                        new KeyedScottyWindowOperator<>(new SynopsisFunction(true, synopsisClass, parameters));
             }
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
@@ -229,8 +234,6 @@ public final class BuildStratifiedSynopsis {
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int partitionField, Class<S> synopsisClass, Object... parameters) {
         return scottyWindows(inputStream, windows, partitionField, -1, synopsisClass, parameters);
     }
-
-
 
 
     public static class ConvertToSample<T extends Tuple>
@@ -302,6 +305,36 @@ public final class BuildStratifiedSynopsis {
         @Override
         public long extractTimestamp(Tuple2<Object, SampleElement> element, long previousElementTimestamp) {
             return element.f1.getTimeStamp();
+        }
+    }
+
+
+    /**
+     * Stateful map functions to add the parallelism variable
+     *
+     * @param <T0> type of input elements
+     */
+    public static class TransformStratified<T0 extends Tuple> implements MapFunction<T0, Tuple2<String, Object>> {
+
+        public int partitionField;
+        public int keyField;
+        private Tuple2<String, Object> newTuple;
+
+        public TransformStratified(int partitionField, int keyField) {
+            this.keyField = keyField;
+            this.partitionField = partitionField;
+            newTuple = new Tuple2<>();
+        }
+
+        @Override
+        public Tuple2<String, Object> map(T0 value) throws Exception {
+            if (keyField != -1) {
+                newTuple.setField(value.getField(keyField), 1);
+            } else {
+                newTuple.setField(value, 1);
+            }
+            newTuple.setField(value.getField(partitionField).toString(), 0);
+            return newTuple;
         }
     }
 }
