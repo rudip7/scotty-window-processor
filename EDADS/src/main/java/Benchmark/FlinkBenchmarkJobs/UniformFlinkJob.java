@@ -68,27 +68,27 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 				if (stratified){
 					synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
 				} else {
-					synopsesStream = BuildSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, synopsisClass, parameters);
+					synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, synopsisClass, parameters);
 				}
 			} else {
 				throw new IllegalArgumentException("Window not supported in benchmark.");
 			}
 
-			synopsesStream.addSink(new SinkFunction() {
-
-				@Override
-				public void invoke(final Object value) throws Exception {
-					//System.out.println(value);
-				}
-			});
-
-//			synopsesStream.flatMap(new FlatMapFunction<S, String>() {
+//			synopsesStream.addSink(new SinkFunction() {
+//
 //				@Override
-//				public void flatMap(S value, Collector<String> out) throws Exception {
-//					String result = value.toString()+"\n";
-//					out.collect(result);
+//				public void invoke(final Object value) throws Exception {
+//					//System.out.println(value);
 //				}
-//			}).writeAsText("EDADS/output/rudiTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+//			});
+
+			synopsesStream.flatMap(new FlatMapFunction<S, String>() {
+				@Override
+				public void flatMap(S value, Collector<String> out) throws Exception {
+					String result = value.toString()+"\n";
+					out.collect(result);
+				}
+			}).writeAsText("EDADS/output/rudiTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
 		} else {
 			throw new IllegalArgumentException("The Flink implementation supports only a single window definition.");

@@ -2,7 +2,6 @@ package Benchmark.FlinkBenchmarkJobs;
 
 import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.NYCTaxiRideSource;
-import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
@@ -11,7 +10,6 @@ import de.tub.dima.scotty.core.windowType.TumblingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -55,50 +53,39 @@ public class NYCFlinkJob<S extends MergeableSynopsis> {
 
 
 		if (assigners.size() == 1) {
+			SingleOutputStreamOperator<S> synopsesStream;
 			if (assigners.get(0) instanceof TumblingWindow) {
 				if (stratified) {
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
-					synopsesStream.addSink(new SinkFunction() {
-
-						@Override
-						public void invoke(final Object value) throws Exception {
-							//System.out.println(value);
-						}
-					});
+					synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
 				} else {
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0,0, synopsisClass, parameters);
-					synopsesStream.addSink(new SinkFunction() {
-
-						@Override
-						public void invoke(final Object value) throws Exception {
-							//System.out.println(value);
-						}
-					});
-
+					synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()),0, synopsisClass, parameters);
 				}
-			}
-			if (assigners.get(0) instanceof SlidingWindow) {
+			} else if (assigners.get(0) instanceof SlidingWindow) {
 				if (stratified){
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
-					synopsesStream.addSink(new SinkFunction() {
-
-						@Override
-						public void invoke(final Object value) throws Exception {
-							//System.out.println(value);
-						}
-					});
+					synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
 				} else {
-					SingleOutputStreamOperator<S> synopsesStream = BuildStratifiedSynopsis.slidingTimeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
-					synopsesStream.addSink(new SinkFunction() {
-
-						@Override
-						public void invoke(final Object value) throws Exception {
-							//System.out.println(value);
-						}
-					});
+					synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, synopsisClass, parameters);
 				}
-
+			} else {
+				throw new IllegalArgumentException("Window not supported in benchmark.");
 			}
+
+			synopsesStream.addSink(new SinkFunction() {
+
+				@Override
+				public void invoke(final Object value) throws Exception {
+					//System.out.println(value);
+				}
+			});
+
+//			synopsesStream.flatMap(new FlatMapFunction<S, String>() {
+//				@Override
+//				public void flatMap(S value, Collector<String> out) throws Exception {
+//					String result = value.toString()+"\n";
+//					out.collect(result);
+//				}
+//			}).writeAsText("EDADS/output/rudiTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+
 		} else {
 			throw new IllegalArgumentException("The Flink implementation supports only a single window definition.");
 		}

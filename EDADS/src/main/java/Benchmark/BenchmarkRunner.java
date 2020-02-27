@@ -35,11 +35,12 @@ public class BenchmarkRunner {
 
     public static void main(String[] args) throws Exception {
 
-        configPath = args[0];
-        System.out.println("\n\nLoading configurations: " + configPath);
+//        configPath = args[0];
+//        System.out.println("\n\nLoading configurations: " + configPath);
 
 
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/newPipeline.json";
+        configPath = "EDADS/src/main/java/Benchmark/Configurations/newPipeline.json";
+
 //        outputPath = "EDADS/Results";
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/rudiConfig.json";
 
@@ -57,14 +58,14 @@ public class BenchmarkRunner {
         for (int k = 0; k < benchmark.benchmarkConfigurations.size(); k++) {
             BenchmarkConfig config = benchmark.benchmarkConfigurations.get(k);
             if (config.parallelism < 0 || config.parallelism > env.getMaxParallelism()) {
-                throw new IllegalArgumentException("Illegal argument in configuration "+k+": Parallelism must be at least 1 and be less than "+env.getMaxParallelism()+" and was "+config.parallelism);
+                throw new IllegalArgumentException("Illegal argument in configuration " + k + ": Parallelism must be at least 1 and be less than " + env.getMaxParallelism() + " and was " + config.parallelism);
             }
-            if (config.iterations < 0){
-                throw new IllegalArgumentException("Illegal argument in configuration "+k+": Number of iterations must be a positive number and was "+config.iterations);
-            } else if (config.iterations == 0){
+            if (config.iterations < 0) {
+                throw new IllegalArgumentException("Illegal argument in configuration " + k + ": Number of iterations must be a positive number and was " + config.iterations);
+            } else if (config.iterations == 0) {
                 config.iterations = 1;
             }
-            if (config.parallelism == 0){
+            if (config.parallelism == 0) {
                 env.setParallelism(env.getMaxParallelism());
             } else {
                 env.setParallelism(config.parallelism);
@@ -87,7 +88,7 @@ public class BenchmarkRunner {
                             System.out.println("\n\n");
                             for (int i = 0; i < config.iterations; i++) {
                                 System.out.println("Iteration: " + i);
-                                String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                                String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t" + config.throughput + " \t";
                                 if (config.stratified) {
                                     configuration += "Stratified " + syn + " \t";
                                 } else {
@@ -119,7 +120,7 @@ public class BenchmarkRunner {
                             System.out.println("\n\n");
                             for (int i = 0; i < config.iterations; i++) {
                                 System.out.println("Iteration: " + i);
-                                String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                                String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t" + config.throughput + " \t";
                                 if (config.stratified) {
                                     configuration += "Stratified " + syn + " \t";
                                 } else {
