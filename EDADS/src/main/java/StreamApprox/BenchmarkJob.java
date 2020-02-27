@@ -9,17 +9,15 @@ import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingProcessingTimeWindows;
 import org.apache.flink.util.Collector;
+import scala.Int;
 
 import javax.annotation.Nullable;
 
@@ -30,18 +28,37 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 
 public class BenchmarkJob {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
-        final long runtime = 20000; // duration in milli-seconds the source produces data
-        final int throughput = 10000; // desired throughput in tuples / seconds
-        final int sampleSize = 10; // maximum reservoir size of each stratum
+        long runtime;// duration in milli-seconds the source produces data
+        int throughput; // desired throughput in tuples / seconds
+        int sampleSize; // maximum reservoir size of each stratum
         List<Tuple2<Long, Long>> gaps = new LinkedList<>(); // empty list for source
+        int stratification;
+        int parallelism;
+
+
+        if (args.length == 5){
+            System.out.println(args[0]);
+            System.out.println(args[1]);
+            System.out.println(args[2]);
+            System.out.println(args[3]);
+            System.out.println(args[4]);
+
+            parallelism = Integer.parseInt(args[0]);
+            runtime = Long.parseLong(args[1]);
+            throughput = Integer.parseInt(args[2]);
+            sampleSize = Integer.parseInt(args[3]);
+            stratification = Integer.parseInt(args[4]);
+        }else {
+            throw new Exception("Illegal Number of Arguments!");
+        }
+
 
         StratifiedReservoirSampling oasrs = new StratifiedReservoirSampling(sampleSize);
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-
+        env.setParallelism(parallelism);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         DataStream<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new NormalDistributionSource(runtime, throughput, gaps));
@@ -56,10 +73,7 @@ public class BenchmarkJob {
         SingleOutputStreamOperator<Tuple2<Integer, Integer>> mapped = timestamped.map(new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Integer, Integer>>() {
             @Override
             public Tuple2<Integer, Integer> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = 0;
-                if (value.f1 > 10){
-                    key = 1;
-                }
+                int key = value.f0 / 2 < stratification ? value.f0 / 2 : stratification -1;
 
                 return new Tuple2<Integer, Integer>(key, value.f1);
             }
@@ -104,13 +118,5 @@ public class BenchmarkJob {
             return new Watermark(currentMaxTimestamp);
         }
 
-    }
-
-    public static class WeightSum implements FlatMapFunction<Tuple3<Integer, Integer, Double>, Tuple2<Integer, Double>> {
-        @Override
-        public void flatMap(Tuple3<Integer, Integer, Double> item, Collector<Tuple2<Integer, Double>> out) throws Exception {
-            double value = item.f1 * item.f2;
-            out.collect(new Tuple2<Integer, Double>(item.f0, value));
-        }
     }
 }
