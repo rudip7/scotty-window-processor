@@ -87,7 +87,7 @@ public class BenchmarkRunner {
                             System.out.println("\n\n");
                             for (int i = 0; i < config.iterations; i++) {
                                 System.out.println("Iteration: " + i);
-                                String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                                String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t"+config.throughput+" \t";
                                 if (config.stratified) {
                                     configuration += "Stratified " + syn + " \t";
                                 } else {
@@ -119,7 +119,7 @@ public class BenchmarkRunner {
                             System.out.println("\n\n");
                             for (int i = 0; i < config.iterations; i++) {
                                 System.out.println("Iteration: " + i);
-                                String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                                String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t"+config.throughput+" \t";
                                 if (config.stratified) {
                                     configuration += "Stratified " + syn + " \t";
                                 } else {
