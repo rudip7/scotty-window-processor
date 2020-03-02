@@ -2,10 +2,13 @@ package StreamApprox;
 
 
 import Benchmark.FlinkBenchmarkJobs.NormalFlinkJob;
+import Synopsis.Sampling.ReservoirSampler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tub.dima.scotty.core.windowType.Window;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.io.FileInputStream;
@@ -56,17 +59,13 @@ public class Runner {
                     System.out.println("Starting Benchmark:");
                     System.out.println(configString);
 
-                    new NormalFlinkJob<Synopsis.Sampling.ReservoirSampler>(configString);
+                    new FlinkBenchmarkJob(config, env,configString);
                 }
-                
-                public NormalFlinkJob(String configuration, List< Window > assigners, StreamExecutionEnvironment env, final long runtime,
-                final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
-
-
-
             }
             if(config.environment == Environment.Scotty){
+                for (int j = 0; j < config.iterations; j++) {
 
+                }
             }
         }
     }

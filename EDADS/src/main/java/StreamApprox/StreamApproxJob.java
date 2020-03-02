@@ -75,7 +75,7 @@ public class StreamApproxJob {
     public static class TimestampsAndWatermarks implements AssignerWithPeriodicWatermarks<Tuple3<Integer, Integer, Long>> {
         private final long maxOutOfOrderness = seconds(20).toMilliseconds(); // 5 seconds
         private long currentMaxTimestamp;
-        private long startTime = Environment.currentTimeMillis();
+        private long startTime = System.currentTimeMillis();
 
         @Override
         public long extractTimestamp(final Tuple3<Integer, Integer, Long> element, final long previousElementTimestamp) {
