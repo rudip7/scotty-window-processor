@@ -35,11 +35,12 @@ public class BenchmarkRunner {
 
     public static void main(String[] args) throws Exception {
 
-        configPath = args[0];
-        System.out.println("\n\nLoading configurations: " + configPath);
+//        configPath = args[0];
+//        System.out.println("\n\nLoading configurations: " + configPath);
 
 
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/FlinkStratifiedUniformBenchmark_CountMinSketch.json";
+        configPath = "EDADS/src/main/java/Benchmark/Configurations/newPipeline.json";
+
 //        outputPath = "EDADS/Results";
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/rudiConfig.json";
 
@@ -56,13 +57,20 @@ public class BenchmarkRunner {
         env.setMaxParallelism(env.getParallelism());
         for (int k = 0; k < benchmark.benchmarkConfigurations.size(); k++) {
             BenchmarkConfig config = benchmark.benchmarkConfigurations.get(k);
-            if (config.parallelism <= 0 || config.parallelism > env.getMaxParallelism()) {
-                throw new IllegalArgumentException("Illegal argument in configuration "+k+": Parallelism must be at least 1 and be less than "+env.getMaxParallelism()+" and was "+config.parallelism);
+            if (config.parallelism < 0 || config.parallelism > env.getMaxParallelism()) {
+                throw new IllegalArgumentException("Illegal argument in configuration " + k + ": Parallelism must be at least 1 and be less than " + env.getMaxParallelism() + " and was " + config.parallelism);
             }
-            if (config.iterations <= 0){
-                throw new IllegalArgumentException("Illegal argument in configuration "+k+": Number of iterations must be a positive number and was "+config.iterations);
+            if (config.iterations < 0) {
+                throw new IllegalArgumentException("Illegal argument in configuration " + k + ": Number of iterations must be a positive number and was " + config.iterations);
+            } else if (config.iterations == 0) {
+                config.iterations = 1;
             }
-            env.setParallelism(config.parallelism);
+            if (config.parallelism == 0) {
+                env.setParallelism(env.getMaxParallelism());
+            } else {
+                env.setParallelism(config.parallelism);
+            }
+
             List<Tuple2<Long, Long>> gaps = Collections.emptyList();
             if (config.sessionConfig != null)
                 gaps = generateSessionGaps(config.sessionConfig.gapCount, (int) config.runtime, config.sessionConfig.minGapTime, config.sessionConfig.maxGapTime);
@@ -80,7 +88,7 @@ public class BenchmarkRunner {
                             System.out.println("\n\n");
                             for (int i = 0; i < config.iterations; i++) {
                                 System.out.println("Iteration: " + i);
-                                String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                                String configuration = "Scotty:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t" + config.throughput + " \t";
                                 if (config.stratified) {
                                     configuration += "Stratified " + syn + " \t";
                                 } else {
@@ -112,7 +120,7 @@ public class BenchmarkRunner {
                             System.out.println("\n\n");
                             for (int i = 0; i < config.iterations; i++) {
                                 System.out.println("Iteration: " + i);
-                                String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t";
+                                String configuration = "Flink:\t Parallelism: " + env.getParallelism() + " \t" + config.source + " \t" + windows + " \t" + config.throughput + " \t";
                                 if (config.stratified) {
                                     configuration += "Stratified " + syn + " \t";
                                 } else {
@@ -144,8 +152,10 @@ public class BenchmarkRunner {
     private static Tuple2<Class<? extends MergeableSynopsis>, Object[]> getSynopsis(String syn) {
         if (syn.equals("CountMinSketch")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(CountMinSketch.class, new Object[]{65536, 5, 7L});
+//            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(CountMinSketch.class, new Object[]{10, 5, 7L});
         } else if (syn.equals("ReservoirSampler")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(ReservoirSampler.class, new Object[]{10000});
+//            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(ReservoirSampler.class, new Object[]{10});
         } else if (syn.equals("BiasedReservoirSampler")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(BiasedReservoirSampler.class, new Object[]{500});
         } else if (syn.equals("EquiWidthHistogram")) {
