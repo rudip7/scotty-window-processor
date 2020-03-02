@@ -50,6 +50,7 @@ public class ZipfFlinkJob<S extends MergeableSynopsis> {
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
+		/*
 
 		if (assigners.size() == 1) {
 			SingleOutputStreamOperator<S> synopsesStream;
@@ -95,6 +96,8 @@ public class ZipfFlinkJob<S extends MergeableSynopsis> {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+		 */
 
 	}
 

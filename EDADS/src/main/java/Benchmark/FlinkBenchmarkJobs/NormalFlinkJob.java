@@ -51,11 +51,13 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
+        /*
+
         if (assigners.size() == 1) {
             SingleOutputStreamOperator<S> synopsesStream;
             if (assigners.get(0) instanceof TumblingWindow) {
                 if (stratified) {
-                    synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
+                    synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, ((TumblingWindow) assigners.get(0)).getSize(), null, new TemporaryMapFunction(), synopsisClass, parameters);
                 } else {
                     synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()),0, synopsisClass, parameters);
                 }
@@ -95,6 +97,9 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        */
+
 
     }
 

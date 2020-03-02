@@ -26,6 +26,8 @@ import javax.annotation.Nullable;
 public class StratifiedSynopsisJob {
     public static void main(String[] args) throws Exception {
 
+        /*
+
 
         // set up the streaming execution Environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -58,6 +60,9 @@ public class StratifiedSynopsisJob {
         .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE);
 
         env.execute("Flink Streaming Java API Skeleton");
+
+
+         */
     }
 
 
