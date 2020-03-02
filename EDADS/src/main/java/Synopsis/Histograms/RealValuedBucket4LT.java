@@ -133,8 +133,8 @@ public class RealValuedBucket4LT implements Serializable {
 
                     }
                 }
-                //System.out.println(newQueryLowerBound);
-                //System.out.println(newQueryUpperBound);
+                //Environment.out.println(newQueryLowerBound);
+                //Environment.out.println(newQueryUpperBound);
                 System.out.println("3rd level");
                 frequency += getFrequency(queryLowerBound, newQueryUpperBound);//0-0
                 frequency += getFrequency(newQueryLowerBound, queryUpperBound);//50-75
@@ -164,8 +164,8 @@ public class RealValuedBucket4LT implements Serializable {
 
                         }
                     }
-                    //System.out.println(newQueryLowerBound);
-                    //System.out.println(newQueryUpperBound);
+                    //Environment.out.println(newQueryLowerBound);
+                    //Environment.out.println(newQueryUpperBound);
                     System.out.println("4th level");
                     frequency += getFrequency(queryLowerBound, newQueryUpperBound);//50-50
                     frequency += getFrequency(newQueryLowerBound, queryUpperBound);//51-75
@@ -175,8 +175,8 @@ public class RealValuedBucket4LT implements Serializable {
                     int bucketIndex = (int) Math.floor(leftIndex);
 
                     frequency += (rightIndex - leftIndex) * countL4[bucketIndex]; // add partial buckets to frequency
-                    //System.out.println((rightIndex - leftIndex) * countL4[bucketIndex]);
-                    //System.out.println(frequency);
+                    //Environment.out.println((rightIndex - leftIndex) * countL4[bucketIndex]);
+                    //Environment.out.println(frequency);
                 }
 
             }

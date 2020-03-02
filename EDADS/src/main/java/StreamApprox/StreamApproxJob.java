@@ -3,7 +3,6 @@ package StreamApprox;
 
 import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.NormalDistributionSource;
-import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -16,54 +15,26 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.util.Collector;
-import scala.Int;
 
 import javax.annotation.Nullable;
 
-import java.util.LinkedList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 
-public class BenchmarkJob {
+public class StreamApproxJob {
 
-    public static void main(String[] args) throws Exception {
+    public StreamApproxJob(ApproxConfiguration config, StreamExecutionEnvironment env, String configString){
 
-        long runtime;// duration in milli-seconds the source produces data
-        int throughput; // desired throughput in tuples / seconds
-        int sampleSize; // maximum reservoir size of each stratum
-        List<Tuple2<Long, Long>> gaps = new LinkedList<>(); // empty list for source
-        int stratification;
-        int parallelism;
+        StratifiedReservoirSampling oasrs = new StratifiedReservoirSampling(config.sampleSize);
+        List<Tuple2<Long, Long>> gaps = Collections.emptyList(); // TODO: check whether gaps keep beeing unimportant for my task
 
-
-        if (args.length == 5){
-            System.out.println(args[0]);
-            System.out.println(args[1]);
-            System.out.println(args[2]);
-            System.out.println(args[3]);
-            System.out.println(args[4]);
-
-            parallelism = Integer.parseInt(args[0]);
-            runtime = Long.parseLong(args[1]);
-            throughput = Integer.parseInt(args[2]);
-            sampleSize = Integer.parseInt(args[3]);
-            stratification = Integer.parseInt(args[4]);
-        }else {
-            throw new Exception("Illegal Number of Arguments!");
-        }
-
-
-        StratifiedReservoirSampling oasrs = new StratifiedReservoirSampling(sampleSize);
-
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(parallelism);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStream<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new NormalDistributionSource(runtime, throughput, gaps));
+        DataStream<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new NormalDistributionSource(config.runtime, config.throughput, gaps));
 
-        messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, "StreamApprox Config - manual"));
+        messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configString));
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
@@ -73,7 +44,7 @@ public class BenchmarkJob {
         SingleOutputStreamOperator<Tuple2<Integer, Integer>> mapped = timestamped.map(new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Integer, Integer>>() {
             @Override
             public Tuple2<Integer, Integer> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = value.f0 / 2 < stratification ? value.f0 / 2 : stratification -1;
+                int key = value.f0 / 2 < config.stratification ? value.f0 / 2 : config.stratification -1;
 
                 return new Tuple2<Integer, Integer>(key, value.f1);
             }
@@ -98,12 +69,13 @@ public class BenchmarkJob {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
     }
 
     public static class TimestampsAndWatermarks implements AssignerWithPeriodicWatermarks<Tuple3<Integer, Integer, Long>> {
         private final long maxOutOfOrderness = seconds(20).toMilliseconds(); // 5 seconds
         private long currentMaxTimestamp;
-        private long startTime = System.currentTimeMillis();
+        private long startTime = Environment.currentTimeMillis();
 
         @Override
         public long extractTimestamp(final Tuple3<Integer, Integer, Long> element, final long previousElementTimestamp) {

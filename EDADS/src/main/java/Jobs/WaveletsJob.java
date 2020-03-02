@@ -28,7 +28,7 @@ public class WaveletsJob {
     public static void main(String[] args) throws Exception {
 
 
-        // set up the streaming execution environment
+        // set up the streaming execution Environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
@@ -45,7 +45,7 @@ public class WaveletsJob {
                 DistributedSliceWaveletsManager manager = value.getAggValues().get(0);
                 result += "Elements Processed: "+manager.getElementsProcessed()+"\n";
                 for (int i = 0; i < manager.getElementsProcessed(); i++) {
-//                    System.out.println(manager.pointQuery(i));
+//                    Environment.out.println(manager.pointQuery(i));
                     result += manager.pointQuery(i)+"\n";
                 }
                 out.collect(result);

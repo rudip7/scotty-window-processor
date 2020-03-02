@@ -64,7 +64,7 @@ public class NYCScottyJob<S extends MergeableSynopsis> {
 
 			@Override
 			public void invoke(final Object value) throws Exception {
-				//System.out.println(value);
+				//Environment.out.println(value);
 			}
 		});
 

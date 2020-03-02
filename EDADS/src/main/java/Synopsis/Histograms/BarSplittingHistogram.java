@@ -227,12 +227,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                         baseUB = base.rightBoundary;
                     }
                 }
-//                System.out.println(otherLB);
-//                System.out.println(otherUB);
-//                System.out.println(baseLB);
-//                System.out.println(baseUB);
-//                System.out.println("base first");
-//                System.out.println(base.getBars());
+//                Environment.out.println(otherLB);
+//                Environment.out.println(otherUB);
+//                Environment.out.println(baseLB);
+//                Environment.out.println(baseUB);
+//                Environment.out.println("base first");
+//                Environment.out.println(base.getBars());
 
                 // loop through all base bars which cover area of the current other bar
                 while (baseLB < otherUB){

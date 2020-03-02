@@ -60,7 +60,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
 
                         @Override
                         public void invoke(final Object value) throws Exception {
-                            //System.out.println(value);
+                            //Environment.out.println(value);
                         }
                     });
                 } else {
@@ -69,7 +69,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
 
                         @Override
                         public void invoke(final Object value) throws Exception {
-                            //System.out.println(value);
+                            //Environment.out.println(value);
                         }
                     });
 
@@ -82,7 +82,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
 
                         @Override
                         public void invoke(final Object value) throws Exception {
-                            //System.out.println(value);
+                            //Environment.out.println(value);
                         }
                     });
                 } else {
@@ -91,7 +91,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
 
                         @Override
                         public void invoke(final Object value) throws Exception {
-                            //System.out.println(value);
+                            //Environment.out.println(value);
                         }
                     });
                 }

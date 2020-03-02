@@ -81,7 +81,7 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
 
         if (tuple3.f2 > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
-            //System.out.println("in Gap");
+            //Environment.out.println("in Gap");
             if (tuple3.f2 > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;
