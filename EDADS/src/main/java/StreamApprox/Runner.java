@@ -43,10 +43,11 @@ public class Runner {
 
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
 
+            String configString = config.environment + ":\t Parallelism: " + config.parallelism + " \t  Runtime: "+ config.runtime +" \t Throughput: "+ config.throughput +" \t Stratification: " + config.stratification;
+
             if(config.environment == Environment.StreamApprox){
                 for (int j = 0; j < config.iterations; j++) {
                     System.out.println("Iteration:" + j);
-                    String configString = "StreamApprox:\t Parallelism: " + config.parallelism + " \t  Runtime: "+ config.runtime +" \t Throughput: "+ config.throughput +" \t Stratification: " + config.stratification;
                     System.out.println("Starting Benchmark:");
                     System.out.println(configString);
                     new StreamApproxJob(config, env, configString);
@@ -55,7 +56,6 @@ public class Runner {
             if(config.environment == Environment.Flink){
                 for (int j = 0; j < config.iterations; j++) {
                     System.out.println("Iteration:" + j);
-                    String configString = "Flink ReservoirSampler:\t Parallelism: " + config.parallelism + " \t  Runtime: "+ config.runtime +" \t Throughput: "+ config.throughput +" \t Stratification: " + config.stratification;
                     System.out.println("Starting Benchmark:");
                     System.out.println(configString);
 
@@ -64,7 +64,11 @@ public class Runner {
             }
             if(config.environment == Environment.Scotty){
                 for (int j = 0; j < config.iterations; j++) {
+                    System.out.println("Iteration:" + j);
+                    System.out.println("Starting Benchmark:");
+                    System.out.println(configString);
 
+                    new ScottyBenchmarkJob(config, env,configString);
                 }
             }
         }
