@@ -22,7 +22,8 @@ public class Runner {
 
     public static void main(String[] args) throws Exception{
 
-        configPath = args[0];
+//        configPath = args[0];
+        configPath = "C:\\Users\\Rudi\\Documents\\EDADS\\scotty-window-processor\\EDADS\\src\\main\\java\\StreamApprox\\StreamApproxConfigs";
         System.out.println("\n\nLoading configurations: "+configPath);
 
         BenchmarkList benchmark = loadConfig();

@@ -47,7 +47,26 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+        return timeBased(inputStream,windowTime,null,mapper,synopsisClass,parameters);
+    }
+
+    /**
+     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
+     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
+     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
+     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
+     *
+     * @param inputStream   the data stream to build the MergeableSynopsis
+     * @param windowTime    the size of the time window
+     * @param mapper        A custom Map Function which takes any Tuple as Input and must have a (Key, Value) Tuple2 as output
+     * @param synopsisClass the type of MergeableSynopsis to be computed
+     * @param parameters    the initialization parameters for the MergeableSynopsis
+     * @param <T>           the type of the input elements
+     * @param <S>           the type of the MergeableSynopsis
+     * @return stream of time window based Synopses
+     */
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
@@ -85,19 +104,8 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
-            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
-        }
-        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
-        SingleOutputStreamOperator reduce = inputStream
-                .map(mapper)
-                .keyBy(0)
-                .countWindow(windowSize)
-                .aggregate(agg)
-                .returns(synopsisClass);
-
-        return reduce;
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+        return countBased(inputStream,windowSize,-1,mapper,synopsisClass,parameters);
     }
 
     /**
@@ -116,7 +124,7 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, long slideSize,MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, long slideSize,MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
@@ -140,7 +148,7 @@ public final class BuildStratifiedSynopsis {
         return result;
     }
 
-    public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
