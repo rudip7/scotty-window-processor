@@ -2,7 +2,8 @@ package StreamApprox;
 
 import Benchmark.FlinkBenchmarkJobs.NormalFlinkJob;
 import Benchmark.ParallelThroughputLogger;
-import Benchmark.Sources.NormalDistributionSource;
+import Benchmark.Sources.UniformDistributionSource;
+import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import Synopsis.Sampling.ReservoirSampler;
 import de.tub.dima.scotty.core.AggregateWindow;
@@ -16,6 +17,7 @@ import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.SinkFunction;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -23,7 +25,12 @@ public class ScottyBenchmarkJob {
     public ScottyBenchmarkJob(ApproxConfiguration config, StreamExecutionEnvironment env, String configString){
         List<Tuple2<Long, Long>> gaps = new LinkedList<>();
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new NormalDistributionSource(config.runtime, config.throughput, gaps));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = null;
+        if (config.source == Source.Zipf){
+            messageStream = env.addSource(new ZipfDistributionSource(config.runtime, config.throughput, gaps));
+        }else if (config.source == Source.Uniform){
+            messageStream = env.addSource(new UniformDistributionSource(config.runtime, config.throughput, gaps));
+        }
 
         messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configString));
 
@@ -37,8 +44,10 @@ public class ScottyBenchmarkJob {
         SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> scottyWindows = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Object, Object>>() {
             @Override
             public Tuple2<Object, Object> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = value.f0 / 2 < config.stratification ? value.f0 / 2 : config.stratification - 1;
-
+                int key = (int)(value.f0 / 100d * config.stratification);
+                if (key >= config.stratification){
+                    key = config.stratification -1;
+                }
                 return new Tuple2<>(key, value.f0);
             }
         }, ReservoirSampler.class, config.sampleSize);

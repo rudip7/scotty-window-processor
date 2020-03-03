@@ -3,6 +3,8 @@ package StreamApprox;
 
 import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.NormalDistributionSource;
+import Benchmark.Sources.UniformDistributionSource;
+import Benchmark.Sources.ZipfDistributionSource;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
@@ -10,6 +12,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
@@ -28,11 +31,14 @@ public class StreamApproxJob {
     public StreamApproxJob(ApproxConfiguration config, StreamExecutionEnvironment env, String configString){
 
         StratifiedReservoirSampling oasrs = new StratifiedReservoirSampling(config.sampleSize);
-        List<Tuple2<Long, Long>> gaps = Collections.emptyList(); // TODO: check whether gaps keep beeing unimportant for my task
+        List<Tuple2<Long, Long>> gaps = Collections.emptyList();
 
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-
-        DataStream<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new NormalDistributionSource(config.runtime, config.throughput, gaps));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = null;
+        if (config.source == Source.Zipf){
+            messageStream = env.addSource(new ZipfDistributionSource(config.runtime, config.throughput, gaps));
+        }else if (config.source == Source.Uniform){
+            messageStream = env.addSource(new UniformDistributionSource(config.runtime, config.throughput, gaps));
+        }
 
         messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configString));
 
@@ -44,9 +50,11 @@ public class StreamApproxJob {
         SingleOutputStreamOperator<Tuple2<Integer, Integer>> mapped = timestamped.map(new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Integer, Integer>>() {
             @Override
             public Tuple2<Integer, Integer> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = value.f0 / 2 < config.stratification ? value.f0 / 2 : config.stratification -1;
-
-                return new Tuple2<Integer, Integer>(key, value.f1);
+                int key = (int)(value.f0 / 100d * config.stratification);
+                if (key >= config.stratification){
+                    key = config.stratification -1;
+                }
+                return new Tuple2<>(key, value.f0);
             }
         });
 

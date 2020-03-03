@@ -1,14 +1,4 @@
-{
-  "approxConfigurationList": [
-    {
-      "runtime": "20000",
-      "throughput": 1000,
-      "sampleSize": 1000,
-      "parallelism": 1,
-      "iterations": 10,
-      "stratification": 1,
-      "environment": "StreamApprox"
-    },
+
     {
       "runtime": "20000",
       "throughput": 1000,

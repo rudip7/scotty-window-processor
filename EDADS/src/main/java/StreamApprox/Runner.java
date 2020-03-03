@@ -1,20 +1,14 @@
 package StreamApprox;
 
 
-import Benchmark.FlinkBenchmarkJobs.NormalFlinkJob;
-import Synopsis.Sampling.ReservoirSampler;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import de.tub.dima.scotty.core.windowType.Window;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.List;
 
 public class Runner {
 
@@ -29,6 +23,7 @@ public class Runner {
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setMaxParallelism(env.getParallelism());
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         for (int i = 0; i < benchmark.approxConfigurationList.size(); i++) {
             ApproxConfiguration config = benchmark.approxConfigurationList.get(i);
@@ -39,37 +34,28 @@ public class Runner {
             if (config.iterations <= 0){
                 throw new IllegalArgumentException("Illegal argument in configuration "+i+": Number of iterations must be a positive number and was "+config.iterations);
             }
+
             env.setParallelism(config.parallelism);
-
             Thread.currentThread().setPriority(Thread.MAX_PRIORITY);
+            String configString = config.environment  + "\t Parallelism: " + config.parallelism
+                    + " \t  Source: " + config.source + "\t Runtime: "+ config.runtime
+                    + " \t Throughput: "+ config.throughput +" \t Stratification: " + config.stratification
+                    + " \t Iterations: " + config.iterations;
 
-            String configString = config.environment + ":\t Parallelism: " + config.parallelism + " \t  Runtime: "+ config.runtime +" \t Throughput: "+ config.throughput +" \t Stratification: " + config.stratification;
-
-            if(config.environment == Environment.StreamApprox){
-                for (int j = 0; j < config.iterations; j++) {
-                    System.out.println("Iteration:" + j);
-                    System.out.println("Starting Benchmark:");
-                    System.out.println(configString);
+            for (int j = 0; j < config.iterations; j++) {
+                System.out.println("Iteration: " + j);
+                System.out.println("Starting Benchmark:");
+                System.out.println(configString);
+                if(config.environment == Environment.StreamApprox){
                     new StreamApproxJob(config, env, configString);
                 }
-            }
-            if(config.environment == Environment.Flink){
-                for (int j = 0; j < config.iterations; j++) {
-                    System.out.println("Iteration:" + j);
-                    System.out.println("Starting Benchmark:");
-                    System.out.println(configString);
-
+                if(config.environment == Environment.Flink){
                     new FlinkBenchmarkJob(config, env,configString);
                 }
-            }
-            if(config.environment == Environment.Scotty){
-                for (int j = 0; j < config.iterations; j++) {
-                    System.out.println("Iteration:" + j);
-                    System.out.println("Starting Benchmark:");
-                    System.out.println(configString);
-
-                    new ScottyBenchmarkJob(config, env,configString);
+                if(config.environment == Environment.Scotty) {
+                    new ScottyBenchmarkJob(config, env, configString);
                 }
+
             }
         }
     }

@@ -3,8 +3,11 @@ package StreamApprox;
 import Benchmark.FlinkBenchmarkJobs.NormalFlinkJob;
 import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.NormalDistributionSource;
+import Benchmark.Sources.UniformDistributionSource;
+import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import Synopsis.Sampling.ReservoirSampler;
+import akka.stream.scaladsl.Zip;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -21,9 +24,13 @@ public class FlinkBenchmarkJob {
     public FlinkBenchmarkJob(ApproxConfiguration config, StreamExecutionEnvironment env, String configString){
         List<Tuple2<Long, Long>> gaps = new LinkedList<>();
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new NormalDistributionSource(config.runtime, config.throughput, gaps));
 
-        messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configString));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = null;
+        if (config.source == Source.Zipf){
+            messageStream = env.addSource(new ZipfDistributionSource(config.runtime, config.throughput, gaps));
+        }else if (config.source == Source.Uniform){
+            messageStream = env.addSource(new UniformDistributionSource(config.runtime, config.throughput, gaps));
+        }
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new NormalFlinkJob.TimestampsAndWatermarks());
@@ -31,8 +38,10 @@ public class FlinkBenchmarkJob {
         SingleOutputStreamOperator<ReservoirSampler> synopsisStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.seconds(6), Time.seconds(3), new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Object, Object>>() {
             @Override
             public Tuple2<Object, Object> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = value.f0 / 2 < config.stratification ? value.f0 / 2 : config.stratification - 1;
-
+                int key = (int)(value.f0 / 100d * config.stratification);
+                if (key >= config.stratification){
+                    key = config.stratification -1;
+                }
                 return new Tuple2<>(key, value.f0);
             }
         }, ReservoirSampler.class, config.sampleSize);

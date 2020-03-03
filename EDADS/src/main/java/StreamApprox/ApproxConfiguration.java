@@ -12,5 +12,6 @@ public class ApproxConfiguration {
     public int iterations; // amount of times the job should run
     public int stratification; // amount of stratums the source should be split - 1 == no stratification
     public Environment environment; // StreamApprox, Scotty or Flink
+    public Source source;
 
 }
