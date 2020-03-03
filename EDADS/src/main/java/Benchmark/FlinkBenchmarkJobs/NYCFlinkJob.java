@@ -51,8 +51,6 @@ public class NYCFlinkJob<S extends MergeableSynopsis> {
 		final SingleOutputStreamOperator<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
-
-		/*
 		if (assigners.size() == 1) {
 			SingleOutputStreamOperator<S> synopsesStream;
 			if (assigners.get(0) instanceof TumblingWindow) {
@@ -98,7 +96,7 @@ public class NYCFlinkJob<S extends MergeableSynopsis> {
 			e.printStackTrace();
 		}
 
-		 */
+
 
 	}
 

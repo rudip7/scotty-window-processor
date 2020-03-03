@@ -33,8 +33,6 @@ public class NYCScottyJob<S extends MergeableSynopsis> {
 	public NYCScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
 						final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
-		/*
-
 		Map<String, String> configMap = new HashMap<>();
 		ParameterTool parametersTool = ParameterTool.fromMap(configMap);
 
@@ -87,9 +85,6 @@ public class NYCScottyJob<S extends MergeableSynopsis> {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-		 */
-
 	}
 
 
