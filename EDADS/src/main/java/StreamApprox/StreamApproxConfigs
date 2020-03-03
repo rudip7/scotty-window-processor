@@ -1,0 +1,247 @@
+{
+  "approxConfigurationList": [
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 1,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 1,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 1,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 4,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 4,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 4,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 8,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 8,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 8,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 16,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 16,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 16,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 32,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 32,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 32,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 64,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 64,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 64,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 128,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 128,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 128,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 256,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 256,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 256,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink"
+    }
+  ]
+}
