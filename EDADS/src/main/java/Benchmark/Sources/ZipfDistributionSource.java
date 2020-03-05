@@ -104,6 +104,7 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
      */
     public ZipfDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = "/share/hadoop/EDADS/zipfTimestamped.gz";
+        // this.dataFilePath = "/Users/joschavonhein/Downloads/zipfTimestamped.gz";
         this.throughput = throughput;
         this.gaps = gaps;
         this.runtime = runtime;
