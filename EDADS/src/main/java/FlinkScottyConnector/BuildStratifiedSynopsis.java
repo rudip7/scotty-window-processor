@@ -1,8 +1,10 @@
 package FlinkScottyConnector;
 
+import StreamApprox.RichStratifier;
 import Synopsis.CommutativeSynopsis;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.Sampling.ReservoirSampler;
 import Synopsis.Sampling.SampleElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
 import Synopsis.StratifiedSynopsis;
@@ -13,6 +15,7 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -47,7 +50,7 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, RichMapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         return timeBased(inputStream,windowTime,null,mapper,synopsisClass,parameters);
     }
 
@@ -66,7 +69,7 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of time window based Synopses
      */
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
@@ -104,7 +107,7 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, RichMapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         return countBased(inputStream,windowSize,-1,mapper,synopsisClass,parameters);
     }
 
@@ -124,7 +127,7 @@ public final class BuildStratifiedSynopsis {
      * @param <S>           the type of the MergeableSynopsis
      * @return stream of count window based Synopses
      */
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, long slideSize,MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, long slideSize, RichMapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
@@ -148,7 +151,7 @@ public final class BuildStratifiedSynopsis {
         return result;
     }
 
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, MapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, RichMapFunction<T, Tuple2<Object, Object>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }

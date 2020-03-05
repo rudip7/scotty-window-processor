@@ -5,11 +5,16 @@ import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.NormalDistributionSource;
 import Benchmark.Sources.UniformDistributionSource;
 import Benchmark.Sources.ZipfDistributionSource;
+import de.tub.dima.scotty.state.ValueState;
+import org.apache.flink.api.common.functions.IterationRuntimeContext;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
@@ -47,16 +52,7 @@ public class StreamApproxJob {
 
 
         // separate the values into groups
-        SingleOutputStreamOperator<Tuple2<Integer, Integer>> mapped = timestamped.map(new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Integer, Integer>>() {
-            @Override
-            public Tuple2<Integer, Integer> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = (int)(value.f0 / 100d * config.stratification);
-                if (key >= config.stratification){
-                    key = config.stratification -1;
-                }
-                return new Tuple2<>(key, value.f0);
-            }
-        });
+        SingleOutputStreamOperator<Tuple2<Integer, Integer>> mapped = timestamped.map(new RichStratifier());
 
 
         // build reservoir sample

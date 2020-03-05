@@ -3,21 +3,23 @@ package StreamApprox;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-
 public class Runner {
 
     private static String configPath;
 
     public static void main(String[] args) throws Exception{
 
+
+
 //        configPath = args[0];
-        configPath = "C:\\Users\\Rudi\\Documents\\EDADS\\scotty-window-processor\\EDADS\\src\\main\\java\\StreamApprox\\StreamApproxConfigs";
+        configPath = "/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/src/main/java/StreamApprox/testLocal.json";
         System.out.println("\n\nLoading configurations: "+configPath);
 
         BenchmarkList benchmark = loadConfig();
@@ -27,7 +29,13 @@ public class Runner {
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         for (int i = 0; i < benchmark.approxConfigurationList.size(); i++) {
+
             ApproxConfiguration config = benchmark.approxConfigurationList.get(i);
+
+            // set stratification as a global job parameter
+            Configuration conf = new Configuration();
+            conf.setInteger("stratification", config.stratification);
+            env.getConfig().setGlobalJobParameters(conf);
 
             if (config.parallelism <= 0 || config.parallelism > env.getMaxParallelism()) {
                 throw new IllegalArgumentException("Illegal argument in configuration "+i+": Parallelism must be at least 1 and be less than "+env.getMaxParallelism()+" and was "+config.parallelism);
@@ -60,7 +68,6 @@ public class Runner {
             }
         }
     }
-
 
     private static BenchmarkList loadConfig() throws Exception{
         try (Reader reader = new InputStreamReader(new FileInputStream(configPath), "UTF-8")){

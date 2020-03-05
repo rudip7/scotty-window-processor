@@ -41,16 +41,7 @@ public class ScottyBenchmarkJob {
         Window[] windows = {window};
 
 
-        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> scottyWindows = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Object, Object>>() {
-            @Override
-            public Tuple2<Object, Object> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = (int)(value.f0 / 100d * config.stratification);
-                if (key >= config.stratification){
-                    key = config.stratification -1;
-                }
-                return new Tuple2<>(key, value.f0);
-            }
-        }, ReservoirSampler.class, config.sampleSize);
+        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> scottyWindows = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, new RichStratifier(), ReservoirSampler.class, config.sampleSize);
 
         scottyWindows.addSink(new SinkFunction<AggregateWindow<ReservoirSampler>>() {
             @Override

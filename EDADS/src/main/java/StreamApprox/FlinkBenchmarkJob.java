@@ -35,16 +35,7 @@ public class FlinkBenchmarkJob {
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new NormalFlinkJob.TimestampsAndWatermarks());
 
-        SingleOutputStreamOperator<ReservoirSampler> synopsisStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.seconds(6), Time.seconds(3), new MapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Object, Object>>() {
-            @Override
-            public Tuple2<Object, Object> map(Tuple3<Integer, Integer, Long> value) throws Exception {
-                int key = (int)(value.f0 / 100d * config.stratification);
-                if (key >= config.stratification){
-                    key = config.stratification -1;
-                }
-                return new Tuple2<>(key, value.f0);
-            }
-        }, ReservoirSampler.class, config.sampleSize);
+        SingleOutputStreamOperator<ReservoirSampler> synopsisStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.seconds(6), Time.seconds(3), new RichStratifier(), ReservoirSampler.class, config.sampleSize);
 
         synopsisStream.addSink(new SinkFunction<ReservoirSampler>() {
             @Override
