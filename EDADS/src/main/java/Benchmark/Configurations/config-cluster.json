@@ -1,0 +1,137 @@
+{
+  "benchmarkConfigurations": [
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 10000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    },
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 20000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    },
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 50000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    },
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 100000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    },
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    },
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 500000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    },
+    {
+      "name": "Reservoir_benchmark_zipf_Flink",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 1000000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "ReservoirSampler"
+      ]
+    }
+  ]
+}
