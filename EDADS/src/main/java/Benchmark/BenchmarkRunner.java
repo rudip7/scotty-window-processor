@@ -40,7 +40,7 @@ public class BenchmarkRunner {
 
 
 //        configPath = "EDADS/src/main/java/Benchmark/Configurations/config-cluster.json";
-        
+
         Benchmark benchmark = loadConfig();
 
 
