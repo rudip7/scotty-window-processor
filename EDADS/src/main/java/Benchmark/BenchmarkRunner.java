@@ -35,16 +35,12 @@ public class BenchmarkRunner {
 
     public static void main(String[] args) throws Exception {
 
-//        configPath = args[0];
-//        System.out.println("\n\nLoading configurations: " + configPath);
+        configPath = args[0];
+        System.out.println("\n\nLoading configurations: " + configPath);
 
 
-        configPath = "EDADS/src/main/java/Benchmark/Configurations/newPipeline.json";
-
-//        outputPath = "EDADS/Results";
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/rudiConfig.json";
-
-//        configPath = "EDADS/src/main/java/Benchmark/Configurations/benchmark_ReservoirSampler.json";
+//        configPath = "EDADS/src/main/java/Benchmark/Configurations/config-cluster.json";
+        
         Benchmark benchmark = loadConfig();
 
 
