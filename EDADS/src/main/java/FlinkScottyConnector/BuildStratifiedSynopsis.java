@@ -3,14 +3,13 @@ package FlinkScottyConnector;
 import Synopsis.CommutativeSynopsis;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
-import Synopsis.Sampling.SampleElement;
+import Synopsis.Sampling.TimestampedElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
 import Synopsis.StratifiedSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -230,8 +229,8 @@ public final class BuildStratifiedSynopsis {
             throw new IllegalArgumentException("Partition field to execute the stratified sampling is not valid.");
         }
         if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
-            KeyedStream<Tuple2<String, SampleElement>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(partitionField, keyField)).keyBy(0);
-            KeyedScottyWindowOperator<Tuple, Tuple2<String, SampleElement>, S> processingFunction =
+            KeyedStream<Tuple2<String, TimestampedElement>, Tuple> keyedStream = inputStream.process(new ConvertToSample<>(partitionField, keyField)).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<String, TimestampedElement>, S> processingFunction =
                     new KeyedScottyWindowOperator<>(new SynopsisFunction(true, synopsisClass, parameters));
             for (int i = 0; i < windows.length; i++) {
                 processingFunction.addWindow(windows[i]);
@@ -264,7 +263,7 @@ public final class BuildStratifiedSynopsis {
 
 
     public static class ConvertToSample<T extends Tuple>
-            extends ProcessFunction<T, Tuple2<String, SampleElement>> {
+            extends ProcessFunction<T, Tuple2<String, TimestampedElement>> {
         private int keyField = -1;
         private int partitionField;
 
@@ -278,12 +277,12 @@ public final class BuildStratifiedSynopsis {
         }
 
         @Override
-        public void processElement(T value, Context ctx, Collector<Tuple2<String, SampleElement>> out) throws Exception {
+        public void processElement(T value, Context ctx, Collector<Tuple2<String, TimestampedElement>> out) throws Exception {
             if (keyField >= 0) {
-                SampleElement sample = new SampleElement<>(value.getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
+                TimestampedElement sample = new TimestampedElement<>(value.getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
                 out.collect(new Tuple2(value.getField(partitionField).toString(), sample));
             } else {
-                SampleElement<T> sample = new SampleElement<>(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
+                TimestampedElement<T> sample = new TimestampedElement<>(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
                 out.collect(new Tuple2(value.getField(partitionField).toString(), sample));
             }
         }
@@ -292,7 +291,7 @@ public final class BuildStratifiedSynopsis {
     /**
      * The Custom TimeStampExtractor which is used to assign Timestamps and Watermarks for our data
      */
-    public static class SampleTimeStampExtractor implements AssignerWithPunctuatedWatermarks<Tuple2<Object, SampleElement>> {
+    public static class SampleTimeStampExtractor implements AssignerWithPunctuatedWatermarks<Tuple2<Object, TimestampedElement>> {
         /**
          * Asks this implementation if it wants to emit a watermark. This method is called right after
          * the    method.
@@ -312,7 +311,7 @@ public final class BuildStratifiedSynopsis {
          */
         @Nullable
         @Override
-        public Watermark checkAndGetNextWatermark(Tuple2<Object, SampleElement> lastElement, long extractedTimestamp) {
+        public Watermark checkAndGetNextWatermark(Tuple2<Object, TimestampedElement> lastElement, long extractedTimestamp) {
             return new Watermark(extractedTimestamp);
         }
 
@@ -330,7 +329,7 @@ public final class BuildStratifiedSynopsis {
          * @return The new timestamp.
          */
         @Override
-        public long extractTimestamp(Tuple2<Object, SampleElement> element, long previousElementTimestamp) {
+        public long extractTimestamp(Tuple2<Object, TimestampedElement> element, long previousElementTimestamp) {
             return element.f1.getTimeStamp();
         }
     }
