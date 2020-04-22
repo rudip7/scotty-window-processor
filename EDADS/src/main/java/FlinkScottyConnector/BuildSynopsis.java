@@ -4,19 +4,18 @@ import Synopsis.MergeableSynopsis;
 import Synopsis.NonMergeableSynopsisManager;
 import Synopsis.Sampling.TimestampedElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
+import Synopsis.Sketches.CountMinSketch;
 import Synopsis.Synopsis;
 import Synopsis.CommutativeSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
-import org.apache.flink.api.common.functions.AggregateFunction;
-import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.api.common.functions.RichFlatMapFunction;
-import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.functions.*;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.java.tuple.*;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
@@ -41,7 +40,7 @@ import java.util.*;
  */
 public final class BuildSynopsis {
 
-    static int parallelismKeys = -1;
+    private static int parallelismKeys = -1;
 
     public static void setParallelismKeys(int newParallelismKeys) {
         parallelismKeys = newParallelismKeys;
@@ -161,20 +160,7 @@ public final class BuildSynopsis {
         SingleOutputStreamOperator preAggregated = windowedStream
                 .aggregate(agg);
 
-        AllWindowedStream allWindowedStream;
-        if (slideSize == -1) {
-            allWindowedStream = preAggregated.countWindowAll(windowSize);
-        } else {
-            allWindowedStream = preAggregated.countWindowAll(windowSize, slideSize);
-        }
-
-        SingleOutputStreamOperator result = allWindowedStream.reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
-            @Override
-            public MergeableSynopsis reduce(MergeableSynopsis value1, MergeableSynopsis value2) throws Exception {
-                MergeableSynopsis merged = value1.merge(value2);
-                return merged;
-            }
-        }).returns(synopsisClass);
+        SingleOutputStreamOperator result = preAggregated.flatMap(new MergeCountPreAggregates()).returns(synopsisClass);
         return result;
     }
 
@@ -319,7 +305,6 @@ public final class BuildSynopsis {
      * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
      *
      * @param inputStream   the data stream to build the MergeableSynopsis
-     * @param windowSize    the size of the count window
      * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
      * @param synopsisClass the type of MergeableSynopsis to be computed
      * @param parameters    the initialization parameters for the MergeableSynopsis
@@ -371,7 +356,6 @@ public final class BuildSynopsis {
      * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
      *
      * @param inputStream   the data stream to build the MergeableSynopsis
-     * @param windowSize    the size of the count window
      * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
      * @param synopsisClass the type of MergeableSynopsis to be computed
      * @param parameters    the initialization parameters for the MergeableSynopsis
@@ -537,6 +521,34 @@ public final class BuildSynopsis {
     }
 
 
+    public static class MergeCountPreAggregates<S extends MergeableSynopsis> extends RichFlatMapFunction<S, S> {
+
+        private int count;
+        private S currentMerged;
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            count = 0;
+        }
+
+        @Override
+        public void flatMap(S value, Collector<S> out) throws Exception {
+            if (count < parallelismKeys){
+                if (count == 0){
+                    currentMerged = value;
+                }else {
+                    currentMerged.merge(value);
+                }
+                count++;
+            } else{
+                count = 0;
+                out.collect(currentMerged);
+            }
+        }
+
+    }
+
+
     public static class UnifyToManager<M extends NonMergeableSynopsisManager> extends RichFlatMapFunction<AggregateWindow<NonMergeableSynopsisManager>, AggregateWindow<M>> {
 
         WindowState state;
@@ -641,7 +653,7 @@ public final class BuildSynopsis {
      * @param <T0> type of input elements
      */
     public static class AddParallelismIndex<T0> extends RichMapFunction<T0, Tuple2<Integer, Object>> {
-
+    //TODO: try the getIndexOfThisSubtask() as parallelism index
         private transient ValueState<Integer> state;
         public int keyField;
         private Tuple2<Integer, Object> newTuple;
@@ -811,12 +823,13 @@ public final class BuildSynopsis {
         @Override
         public void open(Configuration parameters) throws Exception {
             if (parallelismKeys < 1) {
-                setParallelismKeys(this.getRuntimeContext().getNumberOfParallelSubtasks());
+                throw new IllegalArgumentException("The parallelism for the synopsis construction needs to be set with the BuildSynopsis.setParallelismKeys() method.");
             }
             state = new IntegerState();
             if (miniBatchSize > 1) {
                 dispatchList = new PriorityQueue<>();
             }
+            newTuple = new Tuple2<>();
         }
 
         @Override
@@ -835,7 +848,9 @@ public final class BuildSynopsis {
                         next = next % parallelismKeys;
                         state.update(next);
 
-                        newTuple.setField(dispatchList.poll().getValue(), 1);
+                        Object tupleValue = dispatchList.poll().getValue();
+
+                        newTuple.setField(tupleValue, 1);
                         newTuple.setField(currentNode, 0);
                         out.collect(newTuple);
                     }
