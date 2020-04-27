@@ -41,7 +41,7 @@ public class CountWindowJob {
         Window[] windows = {new SlidingWindow(WindowMeasure.Count, 800, 400)};
 //        Window[] windows = {new SlidingWindow(WindowMeasure.Time, 1000,500)};
 
-//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped,windows,0,CountMinSketch.class,10,10,1L);
+//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped,windows,0,CountMinSketch.class,10,10,1L);
         SingleOutputStreamOperator<CountMinSketch> finalSketch = BuildSynopsis.countBased(timestamped, 80,40,0,CountMinSketch.class,10, 10, 1L);
 
 
