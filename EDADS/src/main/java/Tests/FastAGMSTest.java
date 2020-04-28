@@ -51,7 +51,7 @@ public class FastAGMSTest {
 /*
 <<<<<<< HEAD:EDADS/src/main/java/Tests/FastAMSTest.java
 =======
-        SingleOutputStreamOperator<FastAGMS> fastAMS = BuildSynopsis.timeBased(timestamped, windowTime, keyField, sketchClass, parameters);
+        SingleOutputStreamOperator<FastAGMS> fastAMS = BuildSynopsis.timeBasedRebalanced(timestamped, windowTime, keyField, sketchClass, parameters);
 >>>>>>> be65f853870a90847f1e5b9e6d956d878a141ee7:EDADS/src/main/java/Tests/FastAGMSTest.java
 
 public class FastAMSTest {

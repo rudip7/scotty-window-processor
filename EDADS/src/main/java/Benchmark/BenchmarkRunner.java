@@ -1,13 +1,11 @@
 package Benchmark;
 
-import Benchmark.FlinkBenchmarkJobs.NYCFlinkJob;
-import Benchmark.FlinkBenchmarkJobs.NormalFlinkJob;
-import Benchmark.FlinkBenchmarkJobs.UniformFlinkJob;
-import Benchmark.FlinkBenchmarkJobs.ZipfFlinkJob;
-import Benchmark.ScottyBenchmarkJobs.NYCScottyJob;
-import Benchmark.ScottyBenchmarkJobs.NormalScottyJob;
-import Benchmark.ScottyBenchmarkJobs.UniformScottyJob;
-import Benchmark.ScottyBenchmarkJobs.ZipfScottyJob;
+import Benchmark.FlinkBenchmarkJobs.*;
+import Benchmark.Old.RebalancedFlinkJob;
+import Benchmark.Old.RebalancedScottyJob;
+import Benchmark.Old.RescaleFlinkJob;
+import Benchmark.Old.RescaleScottyJob;
+import Benchmark.ScottyBenchmarkJobs.*;
 import Synopsis.Histograms.EquiWidthHistogram;
 import Synopsis.MergeableSynopsis;
 import Synopsis.Sampling.BiasedReservoirSampler;
@@ -18,7 +16,6 @@ import com.google.gson.GsonBuilder;
 import de.tub.dima.scotty.core.TimeMeasure;
 import de.tub.dima.scotty.core.windowType.*;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import java.io.*;
@@ -26,8 +23,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 
 public class BenchmarkRunner {
 
@@ -51,21 +46,21 @@ public class BenchmarkRunner {
 //        final StreamExecutionEnvironment env = StreamExecutionEnvironment.createLocalEnvironmentWithWebUI(conf);
 //        final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setMaxParallelism(env.getParallelism());
+        int maxParallelism = env.getParallelism();
+
         for (int k = 0; k < benchmark.benchmarkConfigurations.size(); k++) {
             BenchmarkConfig config = benchmark.benchmarkConfigurations.get(k);
-            if (config.parallelism < 0 || config.parallelism > env.getMaxParallelism()) {
-                throw new IllegalArgumentException("Illegal argument in configuration " + k + ": Parallelism must be at least 1 and be less than " + env.getMaxParallelism() + " and was " + config.parallelism);
-            }
             if (config.iterations < 0) {
                 throw new IllegalArgumentException("Illegal argument in configuration " + k + ": Number of iterations must be a positive number and was " + config.iterations);
             } else if (config.iterations == 0) {
                 config.iterations = 1;
             }
             if (config.parallelism == 0) {
-                env.setParallelism(env.getMaxParallelism());
+                env.setParallelism(maxParallelism);
+                env.setMaxParallelism(maxParallelism);
             } else {
                 env.setParallelism(config.parallelism);
+                env.setMaxParallelism(config.parallelism);
             }
 
             List<Tuple2<Long, Long>> gaps = Collections.emptyList();

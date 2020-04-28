@@ -36,7 +36,7 @@ public class StratifiedSynopsisJob {
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 5000, 1000)};
 
         SingleOutputStreamOperator<AggregateWindow<BiasedReservoirSampler>> finalSketch = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0,0, BiasedReservoirSampler.class, 10);
-//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildStratifiedSynopsis.scottyWindowsRescale(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 
 
         finalSketch
