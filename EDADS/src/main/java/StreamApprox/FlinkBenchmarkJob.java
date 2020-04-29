@@ -32,6 +32,8 @@ public class FlinkBenchmarkJob {
             messageStream = env.addSource(new UniformDistributionSource(config.runtime, config.throughput, gaps));
         }
 
+        messageStream.flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configString));
+
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new NormalFlinkJob.TimestampsAndWatermarks());
 
