@@ -25,9 +25,7 @@ import java.util.Map;
 
 import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 
-/**
- * Created by philipp on 5/28/17.
- */
+
 public class NormalScottyJob<S extends MergeableSynopsis> {
 
 	public NormalScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
