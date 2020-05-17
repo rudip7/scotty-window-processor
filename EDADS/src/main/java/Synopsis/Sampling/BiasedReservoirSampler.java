@@ -3,14 +3,12 @@ package Synopsis.Sampling;
 import Synopsis.MergeableSynopsis;
 import Synopsis.StratifiedSynopsis;
 import org.apache.flink.util.XORShiftRandom;
-import sun.reflect.generics.tree.Tree;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.TreeMap;
 
 /**
@@ -27,7 +25,7 @@ import java.util.TreeMap;
  */
 public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements SamplerWithTimestamps<T>, Serializable {
 
-    private SampleElement sample[];
+    private TimestampedElement sample[];
     private int sampleSize;
     private XORShiftRandom rand;
     private int actualSize;
@@ -40,7 +38,7 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
      * @param sampleSize
      */
     public BiasedReservoirSampler(Integer sampleSize) {
-        this.sample = new SampleElement[sampleSize];
+        this.sample = new TimestampedElement[sampleSize];
         this.sampleSize = sampleSize;
         this.rand = new XORShiftRandom();
         this.actualSize = 0;
@@ -56,7 +54,7 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
      * @param element
      */
     @Override
-    public void update(SampleElement element) {
+    public void update(TimestampedElement element) {
 //        if (latestPositions.isEmpty() || latestPositions.oldestTimestamp() < element.getTimeStamp()) {
         if (actualSize < sampleSize) {
             sample[actualSize] = element;
@@ -71,7 +69,7 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
 //        }
     }
 
-    public SampleElement[] getSample() {
+    public TimestampedElement[] getSample() {
         return sample;
     }
 
@@ -172,7 +170,7 @@ public class BiasedReservoirSampler<T> extends StratifiedSynopsis implements Sam
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         sampleSize = in.readInt();
         for (int i = 0; i < sampleSize; i++) {
-            sample[i] = (SampleElement) in.readObject();
+            sample[i] = (TimestampedElement) in.readObject();
         }
         actualSize = in.readInt();
         this.setPartitionValue(in.readObject());

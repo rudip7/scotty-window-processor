@@ -82,6 +82,7 @@ public class WaveletTestSource extends RichParallelSourceFunction<Tuple3<Integer
         while (newKey < 0){
             newKey = (int) (standardDeviation*key.nextGaussian() + median);
         }
+//        newKey = 7;
         int v = value.value();
         value.update(v+1);
         return new Tuple3<>(newKey, v, System.currentTimeMillis());

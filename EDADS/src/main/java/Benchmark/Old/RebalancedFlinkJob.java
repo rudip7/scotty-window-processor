@@ -1,10 +1,10 @@
-package Benchmark.FlinkBenchmarkJobs;
+package Benchmark.Old;
 
 import Benchmark.ParallelThroughputLogger;
-import Benchmark.Sources.NormalDistributionSource;
 import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
+import Benchmark.Old.BuildSynopsisRescale;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.TumblingWindow;
@@ -19,7 +19,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
-import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
@@ -34,10 +33,10 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 /**
  * Created by philipp on 5/28/17.
  */
-public class UniformFlinkJob<S extends MergeableSynopsis> {
+public class RebalancedFlinkJob<S extends MergeableSynopsis> {
 
-	public UniformFlinkJob(String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
-                           final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
+	public RebalancedFlinkJob(String configuration, List<Window> assigners, StreamExecutionEnvironment env, final long runtime,
+                              final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
 
 		Map<String, String> configMap = new HashMap<>();
@@ -68,7 +67,7 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 				if (stratified){
 					synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0,0, synopsisClass, parameters);
 				} else {
-					synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, synopsisClass, parameters);
+					synopsesStream = BuildSynopsisRescale.timeBasedRebalanced(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, synopsisClass, parameters);
 				}
 			} else {
 				throw new IllegalArgumentException("Window not supported in benchmark.");
@@ -100,7 +99,6 @@ public class UniformFlinkJob<S extends MergeableSynopsis> {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 
 	}
 

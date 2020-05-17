@@ -184,7 +184,8 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
         try {
             tuple.f0 = Integer.parseInt(tokens[0]);
             tuple.f1 = Integer.parseInt(tokens[1]);
-            tuple.f2 = Long.parseLong(tokens[2]);
+//            tuple.f2 = Long.parseLong(tokens[2]);
+            tuple.f2 = System.currentTimeMillis();
         } catch (NumberFormatException nfe) {
             throw new RuntimeException("Invalid record: " + line, nfe);
         }
