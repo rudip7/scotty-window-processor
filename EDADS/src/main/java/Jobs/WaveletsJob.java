@@ -20,7 +20,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
@@ -29,48 +28,26 @@ public class WaveletsJob {
     public static void main(String[] args) throws Exception {
 
 
-        // set up the streaming execution environment
+        // set up the streaming execution Environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000, 10))
-                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor());
-        
+        DataStreamSource<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000,10));
 
         Window[] windows = {new SlidingWindow(WindowMeasure.Time, 2000, 1000)};
-        BuildSynopsis.setParallelismKeys(env.getParallelism());
-
-//        SingleOutputStreamOperator<AggregateWindow<DistributedSliceWaveletsManager>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped, windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, DistributedSliceWaveletsManager.class, 1000);
-        SingleOutputStreamOperator<DistributedWaveletsManager> finalSketch = BuildSynopsis.timeBased(timestamped, 20, Time.seconds(1), null, 0, WaveletSynopsis.class, DistributedWaveletsManager.class, 2);
+        SingleOutputStreamOperator<AggregateWindow<DistributedSliceWaveletsManager>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, DistributedSliceWaveletsManager.class, 1000);
 
 
-//        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<DistributedSliceWaveletsManager>, String>() {
-//            @Override
-//            public void flatMap(AggregateWindow<DistributedSliceWaveletsManager> value, Collector<String> out) throws Exception {
-//                String result = value.getStart()+" ---> "+value.getEnd()+"\n";//+value.getAggValues().get(0).toString();
-//                DistributedSliceWaveletsManager manager = value.getAggValues().get(0);
-//                result += "Elements Processed: "+manager.getElementsProcessed()+"\n";
-//                for (int i = 0; i < manager.getElementsProcessed(); i++) {
-////                    System.out.println(manager.pointQuery(i));
-//                    result += manager.pointQuery(i)+"\n";
-//                }
-//                out.collect(result);
-////                for (CountMinSketch w: value.getAggValues()){
-////                    out.collect(w.toString());
-////                }
-//            }
-//        }).print();
-
-        finalSketch.flatMap(new FlatMapFunction<DistributedWaveletsManager, String>() {
+        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<DistributedSliceWaveletsManager>, String>() {
             @Override
-            public void flatMap(DistributedWaveletsManager manager, Collector<String> out) throws Exception {
-                String result = "Elements Processed: "+manager.getElementsProcessed()+"\n";
+            public void flatMap(AggregateWindow<DistributedSliceWaveletsManager> value, Collector<String> out) throws Exception {
+                String result = value.getStart()+" ---> "+value.getEnd()+"\n";//+value.getAggValues().get(0).toString();
+                DistributedSliceWaveletsManager manager = value.getAggValues().get(0);
+                result += "Elements Processed: "+manager.getElementsProcessed()+"\n";
                 for (int i = 0; i < manager.getElementsProcessed(); i++) {
-                    double pq = manager.pointQuery(i);
-//                    System.out.println(pq);
-                    result += pq +"\n";
+//                    Environment.out.println(manager.pointQuery(i));
+                    result += manager.pointQuery(i)+"\n";
                 }
-                result += "--------------------------------------------------\n\n";
                 out.collect(result);
 //                for (CountMinSketch w: value.getAggValues()){
 //                    out.collect(w.toString());

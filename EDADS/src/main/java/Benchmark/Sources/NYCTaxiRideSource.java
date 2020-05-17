@@ -201,19 +201,13 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
             switch (tokens[1]) {
                 case "START":
                     ride.f3 = true;
-//                    ride.f4 = DateTime.parse(tokens[2], timeFormatter).getMillis();
-//                    ride.f5 = DateTime.parse(tokens[3], timeFormatter).getMillis();
-
-                    ride.f4 = System.currentTimeMillis();
-                    ride.f5 = System.currentTimeMillis();
+                    ride.f4 = DateTime.parse(tokens[2], timeFormatter).getMillis();
+                    ride.f5 = DateTime.parse(tokens[3], timeFormatter).getMillis();
                     break;
                 case "END":
                     ride.f3 = false;
-//                    ride.f5 = DateTime.parse(tokens[2], timeFormatter).getMillis();
-//                    ride.f4 = DateTime.parse(tokens[3], timeFormatter).getMillis();
-
-                    ride.f4 = System.currentTimeMillis();
-                    ride.f5 = System.currentTimeMillis();
+                    ride.f5 = DateTime.parse(tokens[2], timeFormatter).getMillis();
+                    ride.f4 = DateTime.parse(tokens[3], timeFormatter).getMillis();
                     break;
                 default:
                     throw new RuntimeException("Invalid record: " + line);

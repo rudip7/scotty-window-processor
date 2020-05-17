@@ -80,7 +80,7 @@ public class NYCScottyJob<S extends MergeableSynopsis> {
 
 
 		try {
-			env.execute(configuration);
+			env.execute();
 
 		} catch (Exception e) {
 			e.printStackTrace();

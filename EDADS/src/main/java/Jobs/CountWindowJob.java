@@ -1,13 +1,7 @@
 package Jobs;
 
 import FlinkScottyConnector.BuildSynopsis;
-import Source.WaveletTestSource;
 import Synopsis.Sketches.CountMinSketch;
-import de.tub.dima.scotty.core.AggregateWindow;
-import de.tub.dima.scotty.core.windowType.SlidingWindow;
-import de.tub.dima.scotty.core.windowType.TumblingWindow;
-import de.tub.dima.scotty.core.windowType.Window;
-import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
@@ -21,7 +15,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
@@ -34,48 +27,28 @@ public class CountWindowJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000, 80))
-                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor());
+        int keyField = 0;
 
+        int width = 10;
+        int height = 5;
+        long seed = 1;
+        Object[] parameters = new Object[]{width,height,seed};
+        Class<CountMinSketch> sketchClass = CountMinSketch.class;
 
-        Window[] windows = {new SlidingWindow(WindowMeasure.Count, 800, 400)};
-//        Window[] windows = {new SlidingWindow(WindowMeasure.Time, 1000,500)};
+//        int logRegNum = 10;
+//        long seed = 1;
+//
+//        Object[] parameters = new Object[]{logRegNum,seed};
+//        Class<HyperLogLogSketch> sketchClass = HyperLogLogSketch.class;
 
-//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped,windows,0,CountMinSketch.class,10,10,1L);
-        SingleOutputStreamOperator<CountMinSketch> finalSketch = BuildSynopsis.countBased(timestamped, 80,40,0,CountMinSketch.class,10, 10, 1L);
+        long windowSize = 20000;
 
+        DataStream<String> line = env.readTextFile("EDADS/data/timestamped.csv");
+        DataStream<Tuple3<Integer, Integer, Long>> timestamped = line.flatMap(new CreateTuplesFlatMap()) // Create the tuples from the incoming Data
+                .assignTimestampsAndWatermarks(new CustomTimeStampExtractor()); // extract the timestamps and add watermarks
 
-//        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
-//            @Override
-//            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
-//                String result = value.getStart()+" ---> "+value.getEnd()+"\n";//+value.getAggValues().get(0).toString();
-//                CountMinSketch manager = value.getAggValues().get(0);
-//                result += "Elements Processed: "+manager.getElementsProcessed()+"\n";
-//                out.collect(result);
-////                for (CountMinSketch w: value.getAggValues()){
-////                    out.collect(w.toString());
-////                }
-//            }
-//        }).print();
-
-        finalSketch.flatMap(new FlatMapFunction<CountMinSketch, String>() {
-            @Override
-            public void flatMap(CountMinSketch manager, Collector<String> out) throws Exception {
-                String result = "Elements Processed: "+manager.getElementsProcessed()+"\n";
-//                for (int i = 0; i < manager.getElementsProcessed(); i++) {
-//                    double pq = manager.pointQuery(i);
-////                    System.out.println(pq);
-//                    result += pq +"\n";
-//                }
-                result += "--------------------------------------------------\n\n";
-                out.collect(result);
-//                for (CountMinSketch w: value.getAggValues()){
-//                    out.collect(w.toString());
-//                }
-            }
-        }).print();
-
-//        .writeAsText("EDADS/output/scottyTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        SingleOutputStreamOperator<CountMinSketch> finalSketch = BuildSynopsis.countBased(timestamped, windowSize, keyField, sketchClass, width,height,seed);
+        finalSketch.writeAsText("EDADS/output/countCountMinSketch.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("Flink Streaming Java API Skeleton");
     }

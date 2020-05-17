@@ -15,17 +15,17 @@ import java.io.Serializable;
  *
  * @author Rudi Poepsel Lemaitre
  */
-public class TimestampedElement<T> implements Serializable, Comparable<TimestampedElement> {
+public class SampleElement<T> implements Serializable, Comparable<SampleElement> {
     private T value;
     private long timeStamp;
 
     /**
-     * Construct a TimestampedElement with a given timestamp
+     * Construct a SampleElement with a given timestamp
      *
      * @param value value of the element
      * @param timeStamp of the element (It can be the Event-timestamp or Process-Timestamp)
      */
-    public TimestampedElement(T value, long timeStamp) {
+    public SampleElement(T value, long timeStamp) {
         this.value = value;
         this.timeStamp = timeStamp;
     }
@@ -44,7 +44,7 @@ public class TimestampedElement<T> implements Serializable, Comparable<Timestamp
 
 
     @Override
-    public int compareTo(TimestampedElement o) {
+    public int compareTo(SampleElement o) {
         int diff = (int) (this.timeStamp - o.timeStamp);
         if(diff == 0 && !o.getValue().equals(this.value)){
                 return -1;
@@ -61,15 +61,15 @@ public class TimestampedElement<T> implements Serializable, Comparable<Timestamp
 
         /* Check if o is an instance of Complex or not
           "null instanceof [type]" also returns false */
-        if (!(o instanceof TimestampedElement)) {
+        if (!(o instanceof SampleElement)) {
             return false;
         }
 
         // typecast o to Complex so that we can compare data members
-        TimestampedElement c = (TimestampedElement) o;
+        SampleElement c = (SampleElement) o;
         boolean equal=false;
-        int diff = (int) (this.timeStamp - ((TimestampedElement) o).timeStamp);
-        if(diff == 0 && ((TimestampedElement) o).getValue().equals(this.value)){
+        int diff = (int) (this.timeStamp - ((SampleElement) o).timeStamp);
+        if(diff == 0 && ((SampleElement) o).getValue().equals(this.value)){
             equal=true;
         }
         return equal;

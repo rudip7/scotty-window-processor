@@ -12,9 +12,7 @@ import java.util.Iterator;
 import java.util.TreeSet;
 
 public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTimestamps<T>, Serializable {
-    //TODO: change treeset to priorityQueue due duplicated timestamps
-
-    private TreeSet<TimestampedElement<T>> sample;
+    private TreeSet<SampleElement<T>> sample;
     private int sampleSize;
     private boolean eventTime;
 
@@ -39,7 +37,7 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
      * @param element
      */
     @Override
-    public void update(TimestampedElement element) {
+    public void update(SampleElement element) {
         if (sample.size() < sampleSize) {
             sample.add(element);
         } else if(sample.first().getTimeStamp() < element.getTimeStamp()){
@@ -49,7 +47,7 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
 
     }
 
-    public TreeSet<TimestampedElement<T>> getSample() {
+    public TreeSet<SampleElement<T>> getSample() {
         return sample;
     }
 
@@ -74,8 +72,8 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
                 && ((FiFoSampler) other).getSampleSize() == this.sampleSize
                 && ((FiFoSampler) other).isEventTime() == this.eventTime) {
 
-            TreeSet<TimestampedElement<T>> otherSample = ((FiFoSampler) other).getSample();
-            TreeSet<TimestampedElement<T>> mergeResult = new TreeSet<>();
+            TreeSet<SampleElement<T>> otherSample = ((FiFoSampler) other).getSample();
+            TreeSet<SampleElement<T>> mergeResult = new TreeSet<>();
             while (mergeResult.size() != sampleSize && !(otherSample.isEmpty() && this.sample.isEmpty())) {
                 if (!otherSample.isEmpty() && !this.sample.isEmpty()){
                     if (otherSample.last().compareTo(this.sample.last()) > 0){
@@ -99,7 +97,7 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
     @Override
     public String toString(){
         String s = new String("FiFo sample size: " + this.sampleSize+"\n");
-        Iterator<TimestampedElement<T>> iterator = this.sample.iterator();
+        Iterator<SampleElement<T>> iterator = this.sample.iterator();
         while (iterator.hasNext()){
             s += iterator.next().toString()+", ";
         }
@@ -117,7 +115,7 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         sampleSize = in.readInt();
-        sample = (TreeSet<TimestampedElement<T>>) in.readObject();
+        sample = (TreeSet<SampleElement<T>>) in.readObject();
         eventTime = in.readBoolean();
         this.setPartitionValue(in.readObject());
     }

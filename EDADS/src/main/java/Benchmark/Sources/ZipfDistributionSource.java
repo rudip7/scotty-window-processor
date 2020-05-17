@@ -104,7 +104,7 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
      */
     public ZipfDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = "/share/hadoop/EDADS/zipfTimestamped.gz";
-//        this.dataFilePath = "EDADS/Data/zipfTimestamped.gz";
+        // this.dataFilePath = "/Users/joschavonhein/Downloads/zipfTimestamped.gz";
         this.throughput = throughput;
         this.gaps = gaps;
         this.runtime = runtime;
@@ -149,7 +149,7 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
 
         if (tuple.f2 > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
-            //System.out.println("in Gap");
+            //Environment.out.println("in Gap");
             if (tuple.f2 > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;
@@ -176,7 +176,7 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
     /**
      * f0:  key            : Integer      // a random integer selected from a ZIPF distribution
      * f1:  value          : Integer      // a random integer
-     * f2:  eventTime      : Long
+     * f2:  eventTime      : Long      // a unique id for each driver
      */
     public Tuple3<Integer, Integer, Long> fromString(String line) {
 
@@ -190,8 +190,7 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
         try {
             tuple.f0 = Integer.parseInt(tokens[0]);
             tuple.f1 = Integer.parseInt(tokens[1]);
-//            tuple.f2 = Long.parseLong(tokens[2]);
-            tuple.f2 = System.currentTimeMillis();
+            tuple.f2 = Long.parseLong(tokens[2]);
         } catch (NumberFormatException nfe) {
             throw new RuntimeException("Invalid record: " + line, nfe);
         }
