@@ -21,6 +21,9 @@ import org.apache.flink.util.Collector;
 import javax.annotation.Nullable;
 import java.util.PriorityQueue;
 
+
+// simple comment to let me commit for new merge
+
 /**
  * Class to organize the static functions to generate window based Synopses.
  *
