@@ -91,7 +91,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
         }
 
         try {
-            env.execute();
+            env.execute(configuration);
 
         } catch (Exception e) {
             e.printStackTrace();

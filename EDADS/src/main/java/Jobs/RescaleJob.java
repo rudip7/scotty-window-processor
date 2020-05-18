@@ -1,21 +1,18 @@
 package Jobs;
 
-import FlinkScottyConnector.BuildSynopsis;
-import Source.DemoSource;
+import Benchmark.Old.BuildSynopsisRescale;
 import Source.WaveletTestSource;
 import Synopsis.Sketches.CountMinSketch;
-import Synopsis.Wavelets.DistributedSliceWaveletsManager;
-import Synopsis.Wavelets.DistributedWaveletsManager;
-import Synopsis.Wavelets.SliceWaveletsManager;
-import Synopsis.Wavelets.WaveletSynopsis;
-import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
@@ -24,36 +21,34 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 
-public class WaveletsJob {
+public class RescaleJob {
     public static void main(String[] args) throws Exception {
-
 
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setMaxParallelism(8);
 
-        SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000, 10))
+        SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = env.addSource(new WaveletTestSource(10000, 80))
                 .assignTimestampsAndWatermarks(new CustomTimeStampExtractor());
-        
-
-        Window[] windows = {new SlidingWindow(WindowMeasure.Time, 2000, 1000)};
-        BuildSynopsis.setParallelismKeys(env.getParallelism());
-
-//        SingleOutputStreamOperator<AggregateWindow<DistributedSliceWaveletsManager>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped, windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, DistributedSliceWaveletsManager.class, 1000);
-        SingleOutputStreamOperator<DistributedWaveletsManager> finalSketch = BuildSynopsis.timeBased(timestamped, 20, Time.seconds(1), null, 0, WaveletSynopsis.class, DistributedWaveletsManager.class, 2);
 
 
-//        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<DistributedSliceWaveletsManager>, String>() {
+        Window[] windows = {new SlidingWindow(WindowMeasure.Count, 800, 400)};
+//        Window[] windows = {new SlidingWindow(WindowMeasure.Time, 1000,500)};
+
+//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped,windows,0,CountMinSketch.class,10,10,1L);
+        SingleOutputStreamOperator<CountMinSketch> finalSketch = BuildSynopsisRescale.timeBasedRebalanced(timestamped, Time.seconds(2),Time.seconds(1),0,CountMinSketch.class,10, 10, 1L);
+//        SingleOutputStreamOperator<CountMinSketch> finalSketch = BuildSynopsisRescale.timeBasedRescaled(timestamped, Time.seconds(2),Time.seconds(1),0,CountMinSketch.class,10, 10, 1L);
+
+
+//        finalSketch.flatMap(new FlatMapFunction<AggregateWindow<CountMinSketch>, String>() {
 //            @Override
-//            public void flatMap(AggregateWindow<DistributedSliceWaveletsManager> value, Collector<String> out) throws Exception {
+//            public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
 //                String result = value.getStart()+" ---> "+value.getEnd()+"\n";//+value.getAggValues().get(0).toString();
-//                DistributedSliceWaveletsManager manager = value.getAggValues().get(0);
+//                CountMinSketch manager = value.getAggValues().get(0);
 //                result += "Elements Processed: "+manager.getElementsProcessed()+"\n";
-//                for (int i = 0; i < manager.getElementsProcessed(); i++) {
-////                    System.out.println(manager.pointQuery(i));
-//                    result += manager.pointQuery(i)+"\n";
-//                }
 //                out.collect(result);
 ////                for (CountMinSketch w: value.getAggValues()){
 ////                    out.collect(w.toString());
@@ -61,15 +56,15 @@ public class WaveletsJob {
 //            }
 //        }).print();
 
-        finalSketch.flatMap(new FlatMapFunction<DistributedWaveletsManager, String>() {
+        finalSketch.flatMap(new FlatMapFunction<CountMinSketch, String>() {
             @Override
-            public void flatMap(DistributedWaveletsManager manager, Collector<String> out) throws Exception {
+            public void flatMap(CountMinSketch manager, Collector<String> out) throws Exception {
                 String result = "Elements Processed: "+manager.getElementsProcessed()+"\n";
-                for (int i = 0; i < manager.getElementsProcessed(); i++) {
-                    double pq = manager.pointQuery(i);
-//                    System.out.println(pq);
-                    result += pq +"\n";
-                }
+//                for (int i = 0; i < manager.getElementsProcessed(); i++) {
+//                    double pq = manager.pointQuery(i);
+////                    System.out.println(pq);
+//                    result += pq +"\n";
+//                }
                 result += "--------------------------------------------------\n\n";
                 out.collect(result);
 //                for (CountMinSketch w: value.getAggValues()){
@@ -83,12 +78,53 @@ public class WaveletsJob {
         env.execute("Flink Streaming Java API Skeleton");
     }
 
+    /**
+     *  Stateful map function to add the parallelism variable
+     */
+    public static class AddParallelismRichFlatMapFunction extends RichMapFunction<Tuple3<Integer, Integer, Long>, Tuple4<Integer, Integer, Integer, Long>> {
 
+        ValueState<Integer> state;
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            state = new ValueState<Integer>() {
+                int value;
+
+                @Override
+                public Integer value() throws IOException {
+                    return value;
+                }
+
+                @Override
+                public void update(Integer value) throws IOException {
+                    this.value = value;
+                }
+
+                @Override
+                public void clear() {
+                    value = 0;
+                }
+            };
+            state.update(0);
+        }
+
+        @Override
+        public Tuple4<Integer, Integer, Integer, Long> map(Tuple3<Integer, Integer, Long> value) throws Exception {
+
+            int currentNode = state.value();
+            int next = currentNode +1;
+            next = next % this.getRuntimeContext().getNumberOfParallelSubtasks();
+            state.update(next);
+
+            return new Tuple4<>(currentNode, value.f0, value.f1, value.f2);
+
+        }
+    }
 
     /**
      * FlatMap to create Tuples from the incoming data
      */
-    static class CreateTuplesFlatMap implements FlatMapFunction<String, Tuple3<Integer, Integer, Long>> {
+    public static class CreateTuplesFlatMap implements FlatMapFunction<String, Tuple3<Integer, Integer, Long>>{
         @Override
         public void flatMap(String value, Collector<Tuple3<Integer, Integer, Long>> out) throws Exception {
             String[] tuples = value.split(",");
@@ -109,7 +145,7 @@ public class WaveletsJob {
     /**
      * The Custom TimeStampExtractor which is used to assign Timestamps and Watermarks for our data
      */
-    public static class CustomTimeStampExtractor implements AssignerWithPunctuatedWatermarks<Tuple3<Integer, Integer, Long>> {
+    public static class CustomTimeStampExtractor implements AssignerWithPunctuatedWatermarks<Tuple3<Integer, Integer, Long>>{
         /**
          * Asks this implementation if it wants to emit a watermark. This method is called right after
          * the {@link #extractTimestamp(Tuple3, long)}   method.
@@ -130,7 +166,7 @@ public class WaveletsJob {
         @Nullable
         @Override
         public Watermark checkAndGetNextWatermark(Tuple3<Integer, Integer, Long> lastElement, long extractedTimestamp) {
-            return new Watermark(extractedTimestamp-1000);
+            return new Watermark(extractedTimestamp);
         }
 
         /**

@@ -28,4 +28,9 @@ public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Inpu
         elementsProcessed += other.getElementsProcessed();
         unifiedSynopses.addAll(other.getUnifiedSynopses());
     }
+
+    public void cleanManager(){
+        unifiedSynopses = new ArrayList<>();
+        elementsProcessed = 0;
+    }
 }

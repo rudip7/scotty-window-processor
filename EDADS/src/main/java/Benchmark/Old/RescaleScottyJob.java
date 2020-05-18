@@ -1,10 +1,9 @@
-package Benchmark.ScottyBenchmarkJobs;
+package Benchmark.Old;
 
 import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.UniformDistributionSource;
-import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
-import FlinkScottyConnector.BuildSynopsis;
+import Benchmark.Old.BuildSynopsisRescale;
 import Synopsis.MergeableSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
@@ -29,10 +28,11 @@ import static org.apache.flink.streaming.api.windowing.time.Time.seconds;
 /**
  * Created by philipp on 5/28/17.
  */
-public class ZipfScottyJob<S extends MergeableSynopsis> {
+public class RescaleScottyJob<S extends MergeableSynopsis> {
 
-	public ZipfScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
-                         final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
+	public RescaleScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
+                            final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
+
 
 		Map<String, String> configMap = new HashMap<>();
 		ParameterTool parametersTool = ParameterTool.fromMap(configMap);
@@ -46,7 +46,7 @@ public class ZipfScottyJob<S extends MergeableSynopsis> {
 		}
 
 		DataStream<Tuple3<Integer, Integer, Long>> messageStream = env
-				.addSource(new ZipfDistributionSource(runtime, throughput, gaps));
+				.addSource(new UniformDistributionSource(runtime, throughput, gaps));
 
 		final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
 				.assignTimestampsAndWatermarks(new TimestampsAndWatermarks()).flatMap(new ParallelThroughputLogger<Tuple3<Integer, Integer, Long>>(1000, configuration));
@@ -55,24 +55,24 @@ public class ZipfScottyJob<S extends MergeableSynopsis> {
 		if (stratified){
 			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
 		} else {
-			synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
+			synopsesStream = BuildSynopsisRescale.scottyWindowsRescale(timestamped, windows, 0, synopsisClass, parameters);
 		}
 		synopsesStream.addSink(new SinkFunction() {
 
 			@Override
 			public void invoke(final Object value) throws Exception {
-				//Environment.out.println(value);
+				//System.out.println(value);
 			}
 		});
 
 
 //		synopsesStream.flatMap(new FlatMapFunction<AggregateWindow<S>, String>() {
 //			@Override
-//			public void flatMap(AggregateWindow<CountMinSketch> value, Collector<String> out) throws Exception {
-//				String result = value.getStart()+" ---> "+value.getEnd()+"\n\n"+value.getAggValues().get(0).toString();
+//			public void flatMap(AggregateWindow<S> value, Collector<String> out) throws Exception {
+//				String result = value.getStart()+" ---> "+value.getEnd()+"\n"+value.getAggValues().get(0).toString()+"\n";
 //				out.collect(result);
 //			}
-//		}).print();
+//		}).writeAsText("EDADS/output/rudiTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
 //		finalSketch.writeAsText("EDADS/output/BenchmarkTest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 

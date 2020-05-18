@@ -36,12 +36,12 @@ public class BuildSynopsisJob {
 //        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyStratifiedSampling(timestamped, windows, 0, ReservoirSampler.class, 10);
         SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 
-        //        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, ReservoirSampler.class, 10);
+        //        SingleOutputStreamOperator<AggregateWindow<ReservoirSampler>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped, windows, 0, ReservoirSampler.class, 10);
 
-//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
+//        SingleOutputStreamOperator<AggregateWindow<CountMinSketch>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped, windows, 0, CountMinSketch.class, 10, 10, 1L);
 //        BuildSynopsis.setParallelismKeys(env.getParallelism()*2);
-//        SingleOutputStreamOperator<AggregateWindow<BloomFilter>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BloomFilter.class, 25, 20, 1L);
-//        SingleOutputStreamOperator<AggregateWindow<BiasedReservoirSampler>> finalSketch = BuildSynopsis.scottyWindows(timestamped, windows, 0, BiasedReservoirSampler.class, 20);
+//        SingleOutputStreamOperator<AggregateWindow<BloomFilter>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped, windows, 0, BloomFilter.class, 25, 20, 1L);
+//        SingleOutputStreamOperator<AggregateWindow<BiasedReservoirSampler>> finalSketch = BuildSynopsis.scottyWindowsRescale(timestamped, windows, 0, BiasedReservoirSampler.class, 20);
 
 //        KeyedStream<Tuple2<Integer, Tuple3<Integer, Integer, Long>>, Tuple> keyedStream = timestamped.map(new BuildSynopsis.AddParallelismIndex<>()).keyBy(0);
 //        KeyedScottyWindowOperator windowOperator = new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(0, CountMinSketch.class, 10, 10, 1L));
