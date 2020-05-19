@@ -1,21 +1,17 @@
 package FlinkScottyConnector;
 
-import Synopsis.CommutativeSynopsis;
-import Synopsis.InvertibleSynopsis;
-import Synopsis.MergeableSynopsis;
+import Synopsis.*;
 import Synopsis.Sampling.TimestampedElement;
 import Synopsis.Sampling.SamplerWithTimestamps;
-import Synopsis.StratifiedSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.MapFunction;
+import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
-import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.datastream.WindowedStream;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
@@ -23,6 +19,10 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
+import java.util.PriorityQueue;
+
+
+// simple comment to let me commit for new merge
 
 /**
  * Class to organize the static functions to generate window based Synopses.
@@ -30,6 +30,61 @@ import javax.annotation.Nullable;
  * @author Rudi Poepsel Lemaitre
  */
 public final class BuildStratifiedSynopsis {
+
+    private static int parallelismKeys = -1;
+
+    public static void setParallelismKeys(int newParallelismKeys) {
+        parallelismKeys = newParallelismKeys;
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
+        KeyedStream keyBy = inputStream
+                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+                .keyBy(0);
+
+        WindowedStream windowedStream;
+        if (slideTime == null) {
+            windowedStream = keyBy.timeWindow(windowTime);
+        } else {
+            windowedStream = keyBy.timeWindow(windowTime, slideTime);
+        }
+
+        return windowedStream
+                .aggregate(agg).returns(synopsisClass);
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, Class<S> synopsisClass, Object... parameters) {
+        return timeBased(inputStream, 0, windowTime, slideTime, -1, synopsisClass, parameters);
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, Class<S> synopsisClass, Object... parameters) {
+        return timeBased(inputStream, miniBatchSize, windowTime, slideTime, -1, synopsisClass, parameters);
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+        return timeBased(inputStream, 0, windowTime, slideTime, keyField, synopsisClass, parameters);
+    }
+
+    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Object... parameters) {
+        return timeBased(inputStream, 0, windowTime, null, -1, synopsisClass, parameters);
+    }
+
+
+    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager> SingleOutputStreamOperator<AggregateWindow<SM>> scottyWindows(DataStream<T> inputStream, int miniBatchSize, Window[] windows, int keyField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object... parameters) {
+
+        KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = inputStream
+                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+                .keyBy(0);
+
+        KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Object>, SM> processingFunction =
+                new KeyedScottyWindowOperator<>(new NonMergeableSynopsisFunction(keyField, -1, synopsisClass, sliceManagerClass, parameters));
+
+        for (int i = 0; i < windows.length; i++) {
+            processingFunction.addWindow(windows[i]);
+        }
+        return keyedStream.process(processingFunction);
+    }
 
     /**
      * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
@@ -361,6 +416,73 @@ public final class BuildStratifiedSynopsis {
             }
             newTuple.setField(value.getField(partitionField).toString(), 0);
             return newTuple;
+        }
+    }
+
+
+    private static class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Object>> {
+        private int keyField;
+        private int miniBatchSize;
+
+        private transient ValueState<Integer> state;
+        private Tuple2<Integer, Object> newTuple;
+
+        private PriorityQueue<TimestampedElement> dispatchList;
+
+        public OrderAndIndex(int keyField, int miniBatchSize) {
+            this.keyField = keyField;
+            this.miniBatchSize = miniBatchSize;
+        }
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            if (parallelismKeys < 1) {
+                throw new IllegalArgumentException("The parallelism for the synopsis construction needs to be set with the BuildSynopsis.setParallelismKeys() method.");
+            }
+            state = new BuildSynopsis.IntegerState();
+            if (miniBatchSize > 1) {
+                dispatchList = new PriorityQueue<>();
+            }
+            newTuple = new Tuple2<>();
+        }
+
+        @Override
+        public void processElement(T0 value, Context ctx, Collector<Tuple2<Integer, Object>> out) throws Exception {
+            if (miniBatchSize > 1) {
+                if (value instanceof Tuple && keyField != -1) {
+                    dispatchList.add(new TimestampedElement(((Tuple) value).getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
+                } else {
+                    dispatchList.add(new TimestampedElement(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
+                }
+
+                if (dispatchList.size() == miniBatchSize) {
+                    while (!dispatchList.isEmpty()) {
+                        int currentNode = state.value();
+                        int next = currentNode + 1;
+                        next = next % parallelismKeys;
+                        state.update(next);
+
+                        Object tupleValue = dispatchList.poll().getValue();
+
+                        newTuple.setField(tupleValue, 1);
+                        newTuple.setField(currentNode, 0);
+                        out.collect(newTuple);
+                    }
+                }
+            } else {
+                int currentNode = state.value();
+                int next = currentNode + 1;
+                next = next % parallelismKeys;
+                state.update(next);
+
+                if (value instanceof Tuple && keyField != -1) {
+                    newTuple.setField(((Tuple) value).getField(keyField), 1);
+                } else {
+                    newTuple.setField(value, 1);
+                }
+                newTuple.setField(currentNode, 0);
+                out.collect(newTuple);
+            }
         }
     }
 }
