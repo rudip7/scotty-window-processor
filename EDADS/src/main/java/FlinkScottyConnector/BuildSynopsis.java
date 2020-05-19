@@ -42,6 +42,8 @@ public final class BuildSynopsis {
 
     public static void setParallelismKeys(int newParallelismKeys) {
         parallelismKeys = newParallelismKeys;
+        System.out.println("Parallelism Keys changed to: "+parallelismKeys);
+
     }
 
     /**

@@ -34,7 +34,9 @@ public final class BuildStratifiedSynopsis {
     private static int parallelismKeys = -1;
 
     public static void setParallelismKeys(int newParallelismKeys) {
+
         parallelismKeys = newParallelismKeys;
+        System.out.println("Parallelism Keys changed to: "+parallelismKeys);
     }
 
     public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
