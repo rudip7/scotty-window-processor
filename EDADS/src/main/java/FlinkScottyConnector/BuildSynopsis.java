@@ -42,8 +42,11 @@ public final class BuildSynopsis {
 
     public static void setParallelismKeys(int newParallelismKeys) {
         parallelismKeys = newParallelismKeys;
-        System.out.println("Parallelism Keys changed to: "+parallelismKeys);
+        System.out.println("BuildSynopsis Parallelism Keys changed to: "+parallelismKeys);
+    }
 
+    public static int getParallelismKeys(){
+        return parallelismKeys;
     }
 
     /**
@@ -159,7 +162,7 @@ public final class BuildSynopsis {
         SingleOutputStreamOperator preAggregated = windowedStream
                 .aggregate(agg);
 
-        SingleOutputStreamOperator result = preAggregated.flatMap(new MergeCountPreAggregates()).returns(synopsisClass);
+        SingleOutputStreamOperator result = preAggregated.flatMap(new MergeCountPreAggregates(getParallelismKeys())).returns(synopsisClass);
         return result;
     }
 
@@ -193,7 +196,7 @@ public final class BuildSynopsis {
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
         KeyedStream keyBy = inputStream
-                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+                .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);
 
         WindowedStream windowedStream;
@@ -259,7 +262,7 @@ public final class BuildSynopsis {
 
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
         KeyedStream keyBy = inputStream
-                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+                .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);
 
         WindowedStream windowedStream;
@@ -272,7 +275,7 @@ public final class BuildSynopsis {
         SingleOutputStreamOperator preAggregated = windowedStream
                 .aggregate(agg);
 
-        SingleOutputStreamOperator returns = preAggregated.flatMap(new NonMergeableSynopsisCountUnifier(managerClass))
+        SingleOutputStreamOperator returns = preAggregated.flatMap(new NonMergeableSynopsisCountUnifier(managerClass, getParallelismKeys()))
                 .returns(managerClass);
         return returns;
     }
@@ -314,7 +317,7 @@ public final class BuildSynopsis {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
+                    .flatMap(new MergePreAggregates(getParallelismKeys()))
                     .setParallelism(1);
         } else {
             KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = rescaled.map(new AddParallelismIndex<>(keyField)).keyBy(0);
@@ -333,7 +336,7 @@ public final class BuildSynopsis {
                 processingFunction.addWindow(windows[i]);
             }
             return keyedStream.process(processingFunction)
-                    .flatMap(new MergePreAggregates())
+                    .flatMap(new MergePreAggregates(getParallelismKeys()))
                     .setParallelism(1);
         }
     }
@@ -359,7 +362,7 @@ public final class BuildSynopsis {
     public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<AggregateWindow<M>> scottyWindows(DataStream<T> inputStream, int miniBatchSize, Window[] windows, int keyField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Class<M> managerClass, Object... parameters) {
 
         KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = inputStream
-                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+                .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);
 
         KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Object>, NonMergeableSynopsisManager> processingFunction =
@@ -487,10 +490,15 @@ public final class BuildSynopsis {
     public static class MergePreAggregates<S extends MergeableSynopsis> extends RichFlatMapFunction<AggregateWindow<S>, AggregateWindow<S>> {
 
         WindowState state;
+        int parKeys;
+
+        public MergePreAggregates(int parKeys) {
+            this.parKeys = parKeys;
+        }
 
         @Override
         public void open(Configuration parameters) throws Exception {
-            state = new WindowState(parallelismKeys);
+            state = new WindowState(parKeys);
         }
 
         @Override
@@ -500,7 +508,7 @@ public final class BuildSynopsis {
             Tuple2<Integer, AggregateWindow<S>> synopsisAggregateWindow = openWindows.get(windowID);
             if (synopsisAggregateWindow == null) {
                 openWindows.put(windowID, new Tuple2<>(1, value));
-            } else if (synopsisAggregateWindow.f0 == parallelismKeys - 1) {
+            } else if (synopsisAggregateWindow.f0 == parKeys - 1) {
                 synopsisAggregateWindow.f1.getAggValues().get(0).merge(value.getAggValues().get(0));
                 out.collect(synopsisAggregateWindow.f1);
                 openWindows.remove(windowID);
@@ -519,6 +527,12 @@ public final class BuildSynopsis {
         private int count;
         private S currentMerged;
 
+        int parKeys;
+
+        public MergeCountPreAggregates(int parKeys) {
+            this.parKeys = parKeys;
+        }
+
         @Override
         public void open(Configuration parameters) throws Exception {
             count = 0;
@@ -526,7 +540,7 @@ public final class BuildSynopsis {
 
         @Override
         public void flatMap(S value, Collector<S> out) throws Exception {
-            if (count < parallelismKeys-1) {
+            if (count < parKeys-1) {
                 if (count == 0) {
                     currentMerged = value;
                 } else {
@@ -547,6 +561,11 @@ public final class BuildSynopsis {
 
         WindowState state;
         Class<M> managerClass;
+        int parKeys;
+
+        public UnifyToManager(int parKeys) {
+            this.parKeys = parKeys;
+        }
 
         public UnifyToManager(Class<M> managerClass) {
             this.managerClass = managerClass;
@@ -554,7 +573,7 @@ public final class BuildSynopsis {
 
         @Override
         public void open(Configuration parameters) throws Exception {
-            state = new WindowState(parallelismKeys);
+            state = new WindowState(parKeys);
         }
 
         @Override
@@ -565,7 +584,7 @@ public final class BuildSynopsis {
             if (synopsisAggregateWindow == null) {
                 NonMergeableSynopsisWindowState<M> aggWindow = new NonMergeableSynopsisWindowState(value, managerClass);
                 openWindows.put(windowID, new Tuple2<>(1, aggWindow));
-            } else if (synopsisAggregateWindow.f0 == parallelismKeys - 1) {
+            } else if (synopsisAggregateWindow.f0 == parKeys - 1) {
                 synopsisAggregateWindow.f1.getAggValues().get(0).addSynopsis(value.getAggValues().get(0));
                 out.collect(synopsisAggregateWindow.f1);
                 openWindows.remove(windowID);
@@ -649,6 +668,7 @@ public final class BuildSynopsis {
     public static class AddParallelismIndex<T0> extends RichMapFunction<T0, Tuple2<Integer, Object>> {
         public int keyField;
         private Tuple2<Integer, Object> newTuple;
+
 
         public AddParallelismIndex(int keyField) {
             this.keyField = keyField;
@@ -750,9 +770,11 @@ public final class BuildSynopsis {
         private NonMergeableSynopsisManager currentManager;
 
         private Class<? extends NonMergeableSynopsisManager> managerClass;
+        private int parKeys;
 
-        public NonMergeableSynopsisCountUnifier(Class<? extends NonMergeableSynopsisManager> managerClass) {
+        public NonMergeableSynopsisCountUnifier(Class<? extends NonMergeableSynopsisManager> managerClass, int parKeys) {
             this.managerClass = managerClass;
+            this.parKeys = parKeys;
         }
 
         public NonMergeableSynopsisManager newManager() {
@@ -782,7 +804,7 @@ public final class BuildSynopsis {
 
         @Override
         public void flatMap(S value, Collector<NonMergeableSynopsisManager> out) throws Exception {
-            if (currentManager.getUnifiedSynopses().size() < parallelismKeys-1) {
+            if (currentManager.getUnifiedSynopses().size() < parKeys-1) {
                 currentManager.addSynopsis(value);
             } else {
                 currentManager.addSynopsis(value);
@@ -844,21 +866,23 @@ public final class BuildSynopsis {
     private static class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Object>> {
         private int keyField;
         private int miniBatchSize;
+        private int parKeys;
 
         private transient ValueState<Integer> state;
         private Tuple2<Integer, Object> newTuple;
 
         private PriorityQueue<TimestampedElement> dispatchList;
 
-        public OrderAndIndex(int keyField, int miniBatchSize) {
+        public OrderAndIndex(int keyField, int miniBatchSize, int parKeys) {
             this.keyField = keyField;
             this.miniBatchSize = miniBatchSize;
+            this.parKeys = parKeys;
         }
 
         @Override
         public void open(Configuration parameters) throws Exception {
-            if (parallelismKeys < 1) {
-                throw new IllegalArgumentException("The parallelism for the synopsis construction needs to be set with the BuildSynopsis.setParallelismKeys() method.");
+            if (parKeys < 1) {
+                throw new IllegalArgumentException("The parallelism for the synopsis construction needs to be set with the BuildSynopsis.setParallelismKeys() method. "+parKeys);
             }
             state = new IntegerState();
             if (miniBatchSize > 1) {
@@ -880,7 +904,7 @@ public final class BuildSynopsis {
                     while (!dispatchList.isEmpty()) {
                         int currentNode = state.value();
                         int next = currentNode + 1;
-                        next = next % parallelismKeys;
+                        next = next % parKeys;
                         state.update(next);
 
                         Object tupleValue = dispatchList.poll().getValue();
@@ -893,7 +917,7 @@ public final class BuildSynopsis {
             } else {
                 int currentNode = state.value();
                 int next = currentNode + 1;
-                next = next % parallelismKeys;
+                next = next % parKeys;
                 state.update(next);
 
                 if (value instanceof Tuple && keyField != -1) {
