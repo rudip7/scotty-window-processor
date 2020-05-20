@@ -46,10 +46,10 @@ public final class BuildStratifiedSynopsis {
         parallelismKeys = newParallelismKeys;
     }
 
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends Synopsis, Key, Value> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
         KeyedStream keyBy = inputStream
-                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+                .map(mapper)
                 .keyBy(0);
 
         WindowedStream windowedStream;
@@ -63,30 +63,17 @@ public final class BuildStratifiedSynopsis {
                 .aggregate(agg).returns(synopsisClass);
     }
 
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, Class<S> synopsisClass, Object... parameters) {
-        return timeBased(inputStream, 0, windowTime, slideTime, -1, synopsisClass, parameters);
-    }
 
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, Class<S> synopsisClass, Object... parameters) {
-        return timeBased(inputStream, miniBatchSize, windowTime, slideTime, -1, synopsisClass, parameters);
-    }
-
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Object... parameters) {
-        return timeBased(inputStream, 0, windowTime, slideTime, keyField, synopsisClass, parameters);
-    }
-
-    public static <T, S extends Synopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Object... parameters) {
-        return timeBased(inputStream, 0, windowTime, null, -1, synopsisClass, parameters);
-    }
+  //TODO: Support NonMergeableSynopsis with TransformStratified<>(partitionField, keyField)
 
 
-    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager> SingleOutputStreamOperator<AggregateWindow<SM>> scottyWindows(DataStream<T> inputStream, int miniBatchSize, Window[] windows, int keyField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object... parameters) {
+    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager, Key, Value> SingleOutputStreamOperator<AggregateWindow<SM>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object... parameters) {
 
-        KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = inputStream
-                .process(new OrderAndIndex(keyField, miniBatchSize)).setParallelism(1)
+        KeyedStream<Tuple2<Key, Value>, Tuple> keyedStream = inputStream
+                .map(mapper)
                 .keyBy(0);
 
-        KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Object>, SM> processingFunction =
+        KeyedScottyWindowOperator<Tuple, Tuple2<Key, Value>, SM> processingFunction =
                 new KeyedScottyWindowOperator<>(new NonMergeableSynopsisFunction(keyField, -1, synopsisClass, sliceManagerClass, parameters));
 
         for (Window window : windows) {
@@ -562,73 +549,6 @@ public final class BuildStratifiedSynopsis {
             }
             newTuple.setField(value.getField(partitionField).toString(), 0);
             return newTuple;
-        }
-    }
-
-
-    private static class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Object>> {
-        private int keyField;
-        private int miniBatchSize;
-
-        private transient ValueState<Integer> state;
-        private Tuple2<Integer, Object> newTuple;
-
-        private PriorityQueue<TimestampedElement> dispatchList;
-
-        public OrderAndIndex(int keyField, int miniBatchSize) {
-            this.keyField = keyField;
-            this.miniBatchSize = miniBatchSize;
-        }
-
-        @Override
-        public void open(Configuration parameters) throws Exception {
-            if (parallelismKeys < 1) {
-                throw new IllegalArgumentException("The parallelism for the synopsis construction needs to be set with the BuildSynopsis.setParallelismKeys() method.");
-            }
-            state = new BuildSynopsis.IntegerState();
-            if (miniBatchSize > 1) {
-                dispatchList = new PriorityQueue<>();
-            }
-            newTuple = new Tuple2<>();
-        }
-
-        @Override
-        public void processElement(T0 value, Context ctx, Collector<Tuple2<Integer, Object>> out) throws Exception {
-            if (miniBatchSize > 1) {
-                if (value instanceof Tuple && keyField != -1) {
-                    dispatchList.add(new TimestampedElement(((Tuple) value).getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
-                } else {
-                    dispatchList.add(new TimestampedElement(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
-                }
-
-                if (dispatchList.size() == miniBatchSize) {
-                    while (!dispatchList.isEmpty()) {
-                        int currentNode = state.value();
-                        int next = currentNode + 1;
-                        next = next % parallelismKeys;
-                        state.update(next);
-
-                        Object tupleValue = dispatchList.poll().getValue();
-
-                        newTuple.setField(tupleValue, 1);
-                        newTuple.setField(currentNode, 0);
-                        out.collect(newTuple);
-                    }
-                }
-            } else {
-                int currentNode = state.value();
-                int next = currentNode + 1;
-                next = next % parallelismKeys;
-                state.update(next);
-
-                if (value instanceof Tuple && keyField != -1) {
-                    newTuple.setField(((Tuple) value).getField(keyField), 1);
-                } else {
-                    newTuple.setField(value, 1);
-                }
-                newTuple.setField(currentNode, 0);
-                out.collect(newTuple);
-            }
         }
     }
 }
