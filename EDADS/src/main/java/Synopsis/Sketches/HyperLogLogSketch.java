@@ -73,7 +73,7 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
      */
     public HyperLogLogSketch merge(MergeableSynopsis synopsis){
 
-        if (synopsis.getClass().isInstance(HyperLogLogSketch.class)){
+        if (!(synopsis instanceof HyperLogLogSketch)){
             throw new IllegalArgumentException("MergeableSynopsis.Sketches can only be merged with other MergeableSynopsis.Sketches of the same Type \n" +
                     "otherHLL.getClass() = " + synopsis.getClass() + "\n" +
                     "otherHLL.getClass().isInstance(HyperLogLogSketch.class) = false");

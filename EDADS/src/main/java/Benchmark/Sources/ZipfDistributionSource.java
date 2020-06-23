@@ -21,6 +21,7 @@ import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -50,7 +51,7 @@ import java.util.zip.GZIPInputStream;
  * <p>
  * StreamExecutionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
  */
-public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Integer, Integer, Long>> {
+public class ZipfDistributionSource extends RichParallelSourceFunction<Tuple3<Integer, Integer, Long>> {
 
     private final String dataFilePath;
 
@@ -189,7 +190,8 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
 
         try {
             tuple.f0 = Integer.parseInt(tokens[0]);
-            tuple.f1 = Integer.parseInt(tokens[1]);
+//            tuple.f1 = Integer.parseInt(tokens[1]);
+            tuple.f1 = this.getRuntimeContext().getIndexOfThisSubtask();
 //            tuple.f2 = Long.parseLong(tokens[2]);
             tuple.f2 = System.currentTimeMillis();
         } catch (NumberFormatException nfe) {

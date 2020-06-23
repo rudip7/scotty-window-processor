@@ -13,6 +13,7 @@ import Synopsis.Sampling.ReservoirSampler;
 import Synopsis.Sketches.*;
 import Synopsis.Synopsis;
 import Synopsis.Wavelets.WaveletSynopsis;
+import Synopsis.Yahoo.HLLYahoo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import de.tub.dima.scotty.core.TimeMeasure;
@@ -169,6 +170,8 @@ public class BenchmarkRunner {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(FastAGMS.class, new Object[]{4000, 2000, 7L});
         } else if (syn.equals("HyperLogLogSketch")) {
             return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(HyperLogLogSketch.class, new Object[]{11, 7L});
+        } else if (syn.equals("HLL-Yahoo")) {
+            return new Tuple2<Class<? extends MergeableSynopsis>, Object[]>(HLLYahoo.class, new Object[]{});
         }
         throw new IllegalArgumentException(syn + " is not a valid synopsis for benchmarking");
     }

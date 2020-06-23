@@ -55,7 +55,7 @@ public class ZipfFlinkJob<S extends MergeableSynopsis> {
 			SingleOutputStreamOperator<S> synopsesStream;
 			if (assigners.get(0) instanceof TumblingWindow) {
 				if (stratified) {
-					synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
+					synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 1, 0, synopsisClass, parameters);
 				} else {
 					synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()),0, synopsisClass, parameters);
 				}

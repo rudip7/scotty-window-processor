@@ -1,0 +1,42 @@
+{
+  "benchmarkConfigurations": [
+    {
+      "name": "HLL_benchmark",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 15000,
+      "throughput": 200000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Tumbling(15000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "HyperLogLogSketch"
+      ]
+    },
+    {
+      "name": "HLL_benchmark",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 15000,
+      "throughput": 200000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Tumbling(15000)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "HyperLogLogSketch"
+      ]
+    }
+  ]
+}

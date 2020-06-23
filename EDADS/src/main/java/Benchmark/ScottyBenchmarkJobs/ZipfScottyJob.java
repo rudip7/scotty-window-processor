@@ -54,7 +54,7 @@ public class ZipfScottyJob<S extends MergeableSynopsis> {
 
 		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream;
 		if (stratified){
-			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
+			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 1, 0, synopsisClass, parameters);
 		} else {
 			synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
 		}
