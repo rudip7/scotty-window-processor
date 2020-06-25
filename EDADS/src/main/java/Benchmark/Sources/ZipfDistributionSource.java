@@ -116,6 +116,7 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
         gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
         reader = new BufferedReader(new InputStreamReader(gzipStream, "UTF-8"));
 
+
         long startTime = System.currentTimeMillis();
         long endTime = startTime + runtime;
         loop:
@@ -190,8 +191,8 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
         try {
             tuple.f0 = Integer.parseInt(tokens[0]);
             tuple.f1 = Integer.parseInt(tokens[1]);
-//            tuple.f2 = Long.parseLong(tokens[2]);
-            tuple.f2 = System.currentTimeMillis();
+            tuple.f2 = Long.parseLong(tokens[2]); // TODO: hint that this was changed for the example query job
+            // tuple.f2 = System.currentTimeMillis();
         } catch (NumberFormatException nfe) {
             throw new RuntimeException("Invalid record: " + line, nfe);
         }
