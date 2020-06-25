@@ -1,34 +1,33 @@
 package Jobs;
 
 
-import Benchmark.FlinkBenchmarkJobs.ZipfFlinkJob;
-import Benchmark.ParallelThroughputLogger;
 import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildSynopsis;
 import FlinkScottyConnector.SynopsisAggregator;
 import Synopsis.MergeableSynopsis;
-import Synopsis.Sampling.SamplerWithTimestamps;
 import Synopsis.Sketches.DDSketch;
-import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.*;
+import org.apache.flink.streaming.api.datastream.DataStreamSource;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.apache.flink.streaming.api.windowing.windows.Window;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -38,15 +37,17 @@ public class ExampleQueryJob {
     public static void main(String[] args) {
         // Arguments
         final int runtime = 20000; // runtime in milliseconds
-        final int throughput = 100000; // target throughput
+        final int throughput = 100; // target throughput
         final List<Tuple2<Long, Long>> gaps = new ArrayList<>();
         final double accuracy = 0.95; // relative accuracy of DD-Sketch
         final int maxNumberOfBins = 100; // maximum number of bins of DD-Sketch
+        final String pathToZipfData = "/Users/joschavonhein/Data/zipfTimestamped.gz";
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setParallelism(4);
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new ZipfDistributionSource(runtime, throughput, gaps));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new ZipfDistributionSource(pathToZipfData, runtime, throughput, gaps));
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
@@ -64,10 +65,10 @@ public class ExampleQueryJob {
 
         final WindowedStream windowedStream = keyBy.timeWindow(seconds(6L), seconds(3L));
 
-        SingleOutputStreamOperator partialAggregate = windowedStream
-                .aggregate(agg);
+        final SingleOutputStreamOperator<DDSketch> partialAggregate = windowedStream
+                .aggregate(agg).returns(DDSketch.class);
 
-        SingleOutputStreamOperator<Tuple3<DDSketch, Long, Long>> timestampedSketches = partialAggregate.timeWindowAll(seconds(6L), seconds(3L))
+        final SingleOutputStreamOperator<Tuple3<DDSketch, Long, Long>> timestampedSketches = partialAggregate.timeWindowAll(seconds(6L), seconds(3L))
                 .reduce(new ReduceFunction<DDSketch>() {
                     public DDSketch reduce(DDSketch value1, DDSketch value2) throws Exception {
                         DDSketch merged = value1.merge(value2);
@@ -85,27 +86,49 @@ public class ExampleQueryJob {
                     }
                 }); // if there is an error here: try .returns!
 
+        // timestampedSketches.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/queryResults.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+
+        // Query Input Stream
+
+        final SingleOutputStreamOperator<Tuple2<Long, Double>> querySource = env.fromElements(new Tuple2<>(1593098445000L, 50d), new Tuple2<>(1593098466000L, 20d))
+                .assignTimestampsAndWatermarks(new QueryTimeStampAssigner());
 
 
+        // Join QueryStream with Sketch Stream using an intervalJoin with a Process Function
 
-        DataStreamSource<Tuple2<Long, Double>> querySource = env.fromElements("");
-
-
-        queryAndLong.keyBy(0)
+        final SingleOutputStreamOperator<Tuple2<Double, String>> queryResultStream = querySource.keyBy(0)
                 .intervalJoin(timestampedSketches.keyBy(1))
-                .between(Time.days(-1), seconds(0)) // this join is based on event timestamps -> the query can be joined with any sketch built in the last 24 hour -> the actual join is then based on the key (=> query Timestamp and sketch Timestamp)
-                .process(new ProcessJoinFunction<Tuple2<Long, String>, Tuple3<DDSketch, Long, Long>, Double>() {
+                .between(Time.days(-1), seconds(1)) // this join is based on event timestamps -> the query can be joined with any sketch built in the last 24 hour -> the actual join is then based on the key (=> query Timestamp and sketch Timestamp)
+                .process(new ProcessJoinFunction<Tuple2<Long, Double>, Tuple3<DDSketch, Long, Long>, Tuple2<Double, String>>() {
+                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss:sss");
+
                     @Override
-                    public void processElement(Tuple2<Long, String> left, Tuple3<DDSketch, Long, Long> right, Context ctx, Collector<Double> out) throws Exception {
-                        right.f0.getValueAtQuantile()
+                    public void processElement(Tuple2<Long, Double> left, Tuple3<DDSketch, Long, Long> right, Context ctx, Collector<Tuple2<Double, String>> out) throws Exception {
+                        // if (left.f0 >= right.f1 && left.f0 <= right.f2) { // the query time is contained within the sketch window time
+
+                            double valueAtQuantile = right.f0.getValueAtQuantile(left.f1);
+                            String queryResult = "Query for Timestamp: " + formatter.format(new Date(left.f0)) + " \n" +
+                                    "value at Quantile " + left.f1 + " = " + valueAtQuantile + "\n" +
+                                    "window start time: " + formatter.format(new Date(right.f1)) + "  --  window end time: " + formatter.format(new Date(right.f2));
+                            out.collect(new Tuple2<>(valueAtQuantile, queryResult));
+                        // }else {
+                            // TODO: this is just for testing -> if no exception is thrown, complete if else block can be removed
+                        //     throw new Exception("Interval Join does not actually check whether leftstream.key == rightstream.key !!!");
+                        // }
                     }
                 });
+
+        queryResultStream.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/queryResults.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+
+        try {
+            env.execute("Use Case Example Job with DD-Sketch");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static class TimestampsAndWatermarks implements AssignerWithPeriodicWatermarks<Tuple3<Integer, Integer, Long>> {
-        private final long maxOutOfOrderness = seconds(20).toMilliseconds(); // 5 seconds
         private long currentMaxTimestamp;
-        private long startTime = System.currentTimeMillis();
 
         @Override
         public long extractTimestamp(final Tuple3<Integer, Integer, Long> element, final long previousElementTimestamp) {
@@ -120,5 +143,22 @@ public class ExampleQueryJob {
             return new Watermark(currentMaxTimestamp);
         }
 
+    }
+
+    public static class QueryTimeStampAssigner implements AssignerWithPeriodicWatermarks<Tuple2<Long, Double>> {
+        private long currentMaxTimestamp;
+
+        @Nullable
+        @Override
+        public Watermark getCurrentWatermark() {
+            return new Watermark(currentMaxTimestamp);
+        }
+
+        @Override
+        public long extractTimestamp(Tuple2<Long, Double> element, long previousElementTimestamp) {
+            long timestamp = element.f0;
+            currentMaxTimestamp = Math.max(timestamp, currentMaxTimestamp);
+            return timestamp;
+        }
     }
 }
