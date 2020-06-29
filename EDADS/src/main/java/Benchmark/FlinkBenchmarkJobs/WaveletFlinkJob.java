@@ -8,12 +8,14 @@ import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.Sampling.TimestampedElement;
 import Synopsis.Synopsis;
 import Synopsis.Wavelets.DistributedWaveletsManager;
 import Synopsis.Wavelets.WaveletSynopsis;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
 import de.tub.dima.scotty.core.windowType.TumblingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -64,13 +66,13 @@ public class WaveletFlinkJob {
                 SingleOutputStreamOperator<? extends Synopsis> synopsesStream;
                 if (assigners.get(0) instanceof TumblingWindow) {
                     if (stratified) {
-                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), null, 0, WaveletSynopsis.class,  10000);
+                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), null, new RichStratifierNYC(env.getParallelism()), WaveletSynopsis.class,  10000);
                     } else {
                         synopsesStream = BuildSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), null, 0, WaveletSynopsis.class, DistributedWaveletsManager.class, 10000);
                     }
                 } else if (assigners.get(0) instanceof SlidingWindow) {
                     if (stratified) {
-                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, WaveletSynopsis.class,  10000);
+                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), new RichStratifierNYC(env.getParallelism()), WaveletSynopsis.class,  10000);
                     } else {
                         synopsesStream = BuildSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, WaveletSynopsis.class, DistributedWaveletsManager.class, 10000);
                     }
@@ -119,13 +121,13 @@ public class WaveletFlinkJob {
                 SingleOutputStreamOperator<? extends Synopsis> synopsesStream;
                 if (assigners.get(0) instanceof TumblingWindow) {
                     if (stratified) {
-                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), null, 0, WaveletSynopsis.class,  10000);
+                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), null, new RichStratifier(env.getParallelism()), WaveletSynopsis.class,  10000);
                     } else {
                         synopsesStream = BuildSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), null, 0, WaveletSynopsis.class, DistributedWaveletsManager.class, 10000);
                     }
                 } else if (assigners.get(0) instanceof SlidingWindow) {
                     if (stratified) {
-                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, WaveletSynopsis.class,  10000);
+                        synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()),new RichStratifier(env.getParallelism()), WaveletSynopsis.class,  10000);
                     } else {
                         synopsesStream = BuildSynopsis.timeBased(timestamped, env.getParallelism() * 2, Time.milliseconds(((SlidingWindow) assigners.get(0)).getSize()), Time.milliseconds(((SlidingWindow) assigners.get(0)).getSlide()), 0, WaveletSynopsis.class, DistributedWaveletsManager.class, 10000);
                     }
@@ -137,7 +139,7 @@ public class WaveletFlinkJob {
 
                     @Override
                     public void invoke(final Object value) throws Exception {
-                        //System.out.println(value);
+//                        System.out.println(value);
                     }
                 });
 
@@ -162,6 +164,42 @@ public class WaveletFlinkJob {
             e.printStackTrace();
         }
 
+    }
+
+    public static class RichStratifier extends RichMapFunction<Tuple3<Integer, Integer, Long>, Tuple2<Integer, Integer>> {
+
+        private int stratification;
+
+        public RichStratifier(int stratification) {
+            this.stratification = stratification;
+        }
+
+        @Override
+        public Tuple2<Integer, Integer> map(Tuple3<Integer, Integer, Long> value) throws Exception {
+            int key = (int) (value.f0 / 100d * stratification);
+            if (key >= stratification) {
+                key = stratification - 1;
+            }
+            return new Tuple2<>(key, value.f0);
+        }
+    }
+
+    public static class RichStratifierNYC extends RichMapFunction<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>, Tuple2<Integer, Long>> {
+
+        private int stratification;
+
+        public RichStratifierNYC(int stratification) {
+            this.stratification = stratification;
+        }
+
+        @Override
+        public Tuple2<Integer, Long> map(Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> value) throws Exception {
+            int key = (int) (value.f0 / 100d * stratification);
+            if (key >= stratification) {
+                key = stratification - 1;
+            }
+            return new Tuple2<>(key, value.f0);
+        }
     }
 
 

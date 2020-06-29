@@ -21,7 +21,6 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     private Class<SM> sliceManagerClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
-    private int partitionField;
 
     public NonMergeableSynopsisFunction(int keyField, int partitionField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
         this.keyField = keyField;
@@ -35,7 +34,6 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         if (partitionField >= 0 && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
         }
-        this.partitionField = partitionField;
     }
 
     public NonMergeableSynopsisFunction(Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
@@ -47,7 +45,6 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         }
         this.synopsisClass = synopsisClass;
         this.sliceManagerClass = sliceManagerClass;
-        this.partitionField = -1;
     }
 
     public NonMergeableSynopsisManager createAggregate() {
@@ -73,87 +70,43 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
 
     @Override
     public NonMergeableSynopsisManager lift(Input input) {
-        if (partitionField < 0) {
-            if (!(input instanceof Tuple2)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
-            }
-            Tuple2 inputTuple = (Tuple2) input;
-            NonMergeableSynopsisManager partialAggregate = createAggregate();
-            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
-                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(inputTuple.f1);
-            return partialAggregate;
-        } else {
-            if (!(input instanceof Tuple)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
-            }
-            NonMergeableSynopsisManager partialAggregate = createAggregate();
-            partialAggregate.setPartitionValue(((Tuple) input).getField(partitionField));
-            if (keyField != -1) {
-                Object field = ((Tuple) input).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(input);
+        if (!(input instanceof Tuple2)) {
+            throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+        }
+        Tuple2 inputTuple = (Tuple2) input;
+        NonMergeableSynopsisManager partialAggregate = createAggregate();
+        if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+            partialAggregate.update(field);
             return partialAggregate;
         }
+        partialAggregate.update(inputTuple.f1);
+        return partialAggregate;
+
 
     }
 
     @Override
     public NonMergeableSynopsisManager combine(NonMergeableSynopsisManager input, NonMergeableSynopsisManager partialAggregate) {
-        try {
-            if (partitionField >= 0){
-                Object partitionValue = partialAggregate.getPartitionValue();
-                Object partitionValue2 = input.getPartitionValue();
-                if (partitionValue != null
-                && partitionValue2 == null){
-                    input.setPartitionValue(partitionValue);
-                } else if (partitionValue == null
-                        && partitionValue2 != null){
-                    partialAggregate.setPartitionValue(partitionValue2);
-                } else if(!partitionValue.equals(partitionValue2)){
-                    throw new IllegalArgumentException("Some internal error occurred and the synopses to be merged have not the same partition value.");
-                }
-            }
-            input.unify(partialAggregate);
-            return input;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        input.unify(partialAggregate);
+        return input;
     }
 
     @Override
     public NonMergeableSynopsisManager liftAndCombine(NonMergeableSynopsisManager partialAggregate, Input input) {
-        if (partitionField < 0) {
-            if (!(input instanceof Tuple2)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
-            }
-            Tuple2 inputTuple = (Tuple2) input;
-            if (inputTuple.f1 instanceof Tuple && keyField != -1) {
-                Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(inputTuple.f1);
-            return partialAggregate;
-        } else {
-            if (!(input instanceof Tuple)) {
-                throw new IllegalArgumentException("Input elements must be from type Tuple to build a stratified synopsis.");
-            }
-            partialAggregate.setPartitionValue(((Tuple) input).getField(partitionField));
-            if (keyField != -1) {
-                Object field = ((Tuple) input).getField(this.keyField);
-                partialAggregate.update(field);
-                return partialAggregate;
-            }
-            partialAggregate.update(input);
+
+        if (!(input instanceof Tuple2)) {
+            throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+        }
+        Tuple2 inputTuple = (Tuple2) input;
+        if (inputTuple.f1 instanceof Tuple && keyField != -1) {
+            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
+            partialAggregate.update(field);
             return partialAggregate;
         }
+        partialAggregate.update(inputTuple.f1);
+        return partialAggregate;
+
     }
 
     @Override
@@ -163,7 +116,6 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(keyField);
-        out.writeInt(partitionField);
         out.writeObject(synopsisClass);
         out.writeObject(sliceManagerClass);
         out.writeInt(constructorParam.length);
@@ -177,7 +129,6 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.keyField = in.readInt();
-        this.partitionField = in.readInt();
         this.synopsisClass = (Class<S>) in.readObject();
         this.sliceManagerClass = (Class<SM>) in.readObject();
         int nParameters = in.readInt();

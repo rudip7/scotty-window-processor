@@ -1,10 +1,6 @@
 package Benchmark;
 
 import Benchmark.FlinkBenchmarkJobs.*;
-import Benchmark.Old.RebalancedFlinkJob;
-import Benchmark.Old.RebalancedScottyJob;
-import Benchmark.Old.RescaleFlinkJob;
-import Benchmark.Old.RescaleScottyJob;
 import Benchmark.ScottyBenchmarkJobs.*;
 import Synopsis.Histograms.EquiWidthHistogram;
 import Synopsis.MergeableSynopsis;
