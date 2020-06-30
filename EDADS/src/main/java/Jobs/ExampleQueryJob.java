@@ -4,7 +4,6 @@ package Jobs;
 import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildSynopsis;
 import FlinkScottyConnector.SynopsisAggregator;
-import Synopsis.MergeableSynopsis;
 import Synopsis.Sketches.DDSketch;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.ReduceFunction;
