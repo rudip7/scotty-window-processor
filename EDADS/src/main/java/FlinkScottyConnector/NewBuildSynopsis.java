@@ -123,4 +123,35 @@ public class NewBuildSynopsis {
 
         return allWindowedStream;
     }
+
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, long slideSize, int keyField, Class<S> synopsisClass, Object... parameters){
+        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters);
+        int parallelism = inputStream.getExecutionEnvironment().getParallelism();
+
+        KeyedStream keyBy;
+        DataStream<T> rescaled = inputStream.rescale();
+        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
+            keyBy = rescaled
+                    .process(new BuildSynopsis.ConvertToSample(keyField))
+                    .assignTimestampsAndWatermarks(new BuildSynopsis.SampleTimeStampExtractor())
+                    .map(new BuildSynopsis.AddParallelismIndex(-1))
+                    .keyBy(0);
+        } else {
+            keyBy = rescaled
+                    .map(new BuildSynopsis.AddParallelismIndex(keyField))
+                    .keyBy(0);
+        }
+        WindowedStream windowedStream;
+        if (slideSize == -1) {
+            windowedStream = keyBy.countWindow(windowSize / parallelism);
+        } else {
+            windowedStream = keyBy.countWindow(windowSize / parallelism, slideSize / parallelism);
+        }
+
+        SingleOutputStreamOperator preAggregated = windowedStream
+                .aggregate(agg);
+
+        SingleOutputStreamOperator result = preAggregated.flatMap(new BuildSynopsis.MergeCountPreAggregates(getParallelismKeys())).returns(synopsisClass);
+        return result;
+    }
 }

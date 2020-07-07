@@ -7,17 +7,18 @@ public class BuildSynopsisConfig {
     Time windowTime;
     Time slideTime;
     int keyField = -1;
-    Object[] parameters;
 
-    public BuildSynopsisConfig(Object[] parameters) {
-        this.parameters = parameters;
-    }
 
-    public BuildSynopsisConfig(Time windowTime, Time slideTime, int keyField, Object[] parameters) {
+    /**
+     *
+     * @param windowTime    Window Time
+     * @param slideTime     Slide Time
+     * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
+     */
+    public BuildSynopsisConfig(Time windowTime, Time slideTime, int keyField) {
         this.windowTime = windowTime;
         this.slideTime = slideTime;
         this.keyField = keyField;
-        this.parameters = parameters;
     }
 
     public Time getWindowTime() {
@@ -44,11 +45,4 @@ public class BuildSynopsisConfig {
         this.keyField = keyField;
     }
 
-    public Object[] getParameters() {
-        return parameters;
-    }
-
-    public void setParameters(Object[] parameters) {
-        this.parameters = parameters;
-    }
 }
