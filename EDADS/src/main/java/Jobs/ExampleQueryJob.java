@@ -83,9 +83,9 @@ public class ExampleQueryJob {
          */
 
         SingleOutputStreamOperator<Tuple3<Double, Double, Long>> queryResults = timestampedSketches.connect(quantiles)
-                .process(new CustomTimeStampCoProcessFunction());
+                .process(new CustomTimeStampCoProcessFunction()).setParallelism(1);
 
-        queryResults.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/RichCoProcessResult.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        queryResults.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/RichCoProcessResult.txt", FileSystem.WriteMode.OVERWRITE); //.setParallelism(1);
 
         try {
             env.execute("Query using CoProcessFunction");
