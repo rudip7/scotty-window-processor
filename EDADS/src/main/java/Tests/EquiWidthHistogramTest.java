@@ -31,7 +31,7 @@ public class EquiWidthHistogramTest {
         Double upperBound=20.0;
         Integer bucket= 4;
         EquiWidthHistogram eqwHistogram = new EquiWidthHistogram(lowerBound,upperBound,bucket);
-        //System.out.println(eqwHistogram.getBucketLength());
+        //Environment.out.println(eqwHistogram.getBucketLength());
         Assert.assertTrue(eqwHistogram.getBucketLength() == 1.85);
     }
     @Test
@@ -44,7 +44,7 @@ public class EquiWidthHistogramTest {
         int[] knownFrequency = new int[] {6,12,14,11,12,8,10,8,10,9};
         EquiWidthHistogram eqwHistogram = new EquiWidthHistogram(lowerBound,upperBound,numBucket);
         int [] computedFrequency=updateFrequencyFromFile( "data/testdata.csv",eqwHistogram);
-        //for (Integer freq:eqwHistogram.getFrequency()){System.out.println(freq);}
+        //for (Integer freq:eqwHistogram.getFrequency()){Environment.out.println(freq);}
         Assert.assertTrue(Arrays.equals(knownFrequency, computedFrequency));}
 
     @Test(expected = IllegalArgumentException.class)
@@ -117,7 +117,7 @@ public class EquiWidthHistogramTest {
         for (Double element: lines) {
             histogram.update(element);
         }
-        //for (Integer freq:eqwHistogram.getFrequency()){System.out.println(freq);}
+        //for (Integer freq:eqwHistogram.getFrequency()){Environment.out.println(freq);}
         return histogram.getFrequency();
     }
 

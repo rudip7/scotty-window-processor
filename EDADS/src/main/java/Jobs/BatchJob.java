@@ -45,7 +45,7 @@ import java.util.Calendar;
 public class BatchJob {
 
 	public static void main(String[] args) throws Exception {
-		// set up the batch execution environment
+		// set up the batch execution Environment
 		final ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
 		env.setParallelism(1);
 

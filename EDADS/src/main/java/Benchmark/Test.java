@@ -46,15 +46,15 @@ public class Test {
 ////                times.merge(getEventTime(ride), 1, (a, b) -> a + b);
 //                number++;
 //            }
-//            System.out.println(number);
-//            System.out.println("DES:  "+des);
-////            System.out.println(counts.toString());
-//            System.out.println(times.toString());
-//            System.out.println(times.size());
-//            System.out.println(times.firstKey()-times.lastKey());
+//            Environment.out.println(number);
+//            Environment.out.println("DES:  "+des);
+////            Environment.out.println(counts.toString());
+//            Environment.out.println(times.toString());
+//            Environment.out.println(times.size());
+//            Environment.out.println(times.firstKey()-times.lastKey());
 //
-//            System.out.println(times.firstKey());
-//            System.out.println(times.lastKey());
+//            Environment.out.println(times.firstKey());
+//            Environment.out.println(times.lastKey());
 //
 //
 //            int check=0;
@@ -62,7 +62,7 @@ public class Test {
 //                 counts.values()) {
 //                check+=c ;
 //            }
-//            System.out.println(check);
+//            Environment.out.println(check);
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }

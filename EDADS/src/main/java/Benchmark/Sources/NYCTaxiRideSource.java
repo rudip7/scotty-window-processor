@@ -146,7 +146,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
 
         if (getEventTime(ride) > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
-            //System.out.println("in Gap");
+            //Environment.out.println("in Gap");
             if (getEventTime(ride) > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;

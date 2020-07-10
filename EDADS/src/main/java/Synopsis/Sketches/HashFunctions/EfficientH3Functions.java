@@ -68,7 +68,7 @@ public class EfficientH3Functions {
 //                for (int i = 0; i < this.q_matrices.length; i++) {
 //                    for (int j = 0; j < this.q_matrices[0].length; j++) {
 //                        if (this.q_matrices[i][j] != that.q_matrices[i][j]){
-//                            System.out.println("DAFUQ");
+//                            Environment.out.println("DAFUQ");
 //                        }
 //                    }
 //                }

@@ -196,7 +196,7 @@ public final class BuildSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
-        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters);
         KeyedStream keyBy = inputStream
                 .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);
@@ -262,7 +262,7 @@ public final class BuildSynopsis {
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, int miniBatchSize, long windowSize, long slideSize, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         int parallelism = inputStream.getExecutionEnvironment().getParallelism();
 
-        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters);
         KeyedStream keyBy = inputStream
                 .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);

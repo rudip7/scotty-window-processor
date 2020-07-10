@@ -79,15 +79,15 @@ public class SliceManagerWaveletTest {
 //        slices.add(sliceManager1);
 //        slices.add(sliceManager2);
 
-//        System.out.println("Predicted: " + slices0.get(0).pointQuery(0));
+//        Environment.out.println("Predicted: " + slices0.get(0).pointQuery(0));
 //
-//        System.out.println("Predicted: " + sliceManager0.pointQuery(0));
+//        Environment.out.println("Predicted: " + sliceManager0.pointQuery(0));
         DistributedSliceWaveletsManager<Integer> globalManager = new DistributedSliceWaveletsManager<>();
         globalManager.addSynopsis(sliceManager0);
         globalManager.addSynopsis(sliceManager1);
         globalManager.addSynopsis(sliceManager2);
 //        DistributedSliceWaveletsManager<Integer> globalManager = new DistributedSliceWaveletsManager<>(slices);
-//        System.out.println(globalManager.pointQuery(76));
+//        Environment.out.println(globalManager.pointQuery(76));
         double sum = 0.0;
         for (int i = 0; i < 120; i++) {
             double v = globalManager.pointQuery(i);
@@ -99,7 +99,7 @@ public class SliceManagerWaveletTest {
                     sum += (Math.abs(v - i) / i);
                 }
             }
-//            System.out.println(v);
+//            Environment.out.println(v);
         }
         System.out.println("Average error: " + sum / 120 * 100 + "%");
     }

@@ -72,7 +72,7 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
                 this.addSynopsis((WaveletSynopsis<Input>) o.getUnifiedSynopses().get(i));
             }
 //        }
-//        System.out.println(other.getClass());
+//        Environment.out.println(other.getClass());
 //        throw new IllegalArgumentException("It is only possible to unify two objects of type NonMergeableSynopsisManager with each other.");
     }
 
