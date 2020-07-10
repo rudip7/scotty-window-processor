@@ -58,40 +58,40 @@ public class ExampleQueryJob {
         // runWithIntervalJoin(timestamped, env, config, params);
 
         // Run Job with DualInputOperator
-        runWithDualInputOperator(timestamped, env, config, params);
+//        runWithDualInputOperator(timestamped, env, config, params);
 
     }
 
     private static void runWithDualInputOperator(SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped, StreamExecutionEnvironment env, BuildSynopsisConfig config, Object... params){
 
-        /*
-        SingleOutputStreamOperator<DDSketch> sketches = NewBuildSynopsis.timeBased(timestamped, DDSketch.class, config, params)
-                .returns(DDSketch.class);
-        */
-        SingleOutputStreamOperator<Tuple3<DDSketch, Long, Long>> timestampedSketches = NewBuildSynopsis.timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params)
-                .returns(new TypeHint<Tuple3<DDSketch, Long, Long>>() {
-                });
-
-
-
-        SingleOutputStreamOperator<Double> quantiles = env.addSource(new QuerySource(20));
-
-        /*
-        SingleOutputStreamOperator<Tuple2<Double, Double>> queryResults = sketches.connect(quantiles)
-                .process(new CustomCoProcessFunction()); //.setParallelism(1);
-
-         */
-
-        SingleOutputStreamOperator<Tuple3<Double, Double, Long>> queryResults = timestampedSketches.connect(quantiles)
-                .process(new CustomTimeStampCoProcessFunction()).setParallelism(1);
-
-        queryResults.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/RichCoProcessResult.txt", FileSystem.WriteMode.OVERWRITE); //.setParallelism(1);
-
-        try {
-            env.execute("Query using CoProcessFunction");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        /*
+//        SingleOutputStreamOperator<DDSketch> sketches = NewBuildSynopsis.timeBased(timestamped, DDSketch.class, config, params)
+//                .returns(DDSketch.class);
+//        */
+//        SingleOutputStreamOperator<Tuple3<DDSketch, Long, Long>> timestampedSketches = NewBuildSynopsis.timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params)
+//                .returns(new TypeHint<Tuple3<DDSketch, Long, Long>>() {
+//                });
+//
+//
+//
+//        SingleOutputStreamOperator<Double> quantiles = env.addSource(new QuerySource(20));
+//
+//        /*
+//        SingleOutputStreamOperator<Tuple2<Double, Double>> queryResults = sketches.connect(quantiles)
+//                .process(new CustomCoProcessFunction()); //.setParallelism(1);
+//
+//         */
+//
+//        SingleOutputStreamOperator<Tuple3<Double, Double, Long>> queryResults = timestampedSketches.connect(quantiles)
+//                .process(new CustomTimeStampCoProcessFunction()).setParallelism(1);
+//
+//        queryResults.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/RichCoProcessResult.txt", FileSystem.WriteMode.OVERWRITE); //.setParallelism(1);
+//
+//        try {
+//            env.execute("Query using CoProcessFunction");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
     private static class QuerySource implements SourceFunction<Double> {
@@ -193,63 +193,63 @@ public class ExampleQueryJob {
 
 
     private static void runWithIntervalJoin(SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped, StreamExecutionEnvironment env, BuildSynopsisConfig config, Object... params){
-
-        SingleOutputStreamOperator<Tuple3<DDSketch, Long, Long>> timestampedSketches = NewBuildSynopsis
-                .timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params)
-                .returns(new TypeHint<Tuple3<DDSketch, Long, Long>>() {});
-
-        KeyedStream<Tuple4<DDSketch, Long, Long, Long>, Tuple> sketchWithKey = timestampedSketches.map(new MapFunction<Tuple3<DDSketch, Long, Long>, Tuple4<DDSketch, Long, Long, Long>>() {
-            @Override
-            public Tuple4<DDSketch, Long, Long, Long> map(Tuple3<DDSketch, Long, Long> value) throws Exception {
-                return new Tuple4<>(value.f0, value.f1, value.f2, value.f1 / 60000);
-            }
-        }).keyBy(3);
-
-        // timestampedSketches.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/timestampedSketches.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
-
-        // Query Input Stream
-
-        final KeyedStream<Tuple3<Long, Double, Long>, Tuple> querySource = env.fromElements(new Tuple2<>(1517499753000L, 0.5), new Tuple2<>(1517499759000L, 0.1))
-                .assignTimestampsAndWatermarks(new QueryTimeStampAssigner())
-                .map(new MapFunction<Tuple2<Long, Double>, Tuple3<Long, Double, Long>>() {
-                    @Override
-                    public Tuple3<Long, Double, Long> map(Tuple2<Long, Double> value) throws Exception {
-                        return new Tuple3<>(value.f0, value.f1, value.f0 / 60000);
-                    }
-                }).keyBy(2);
-
-        // querySource.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/queries.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
-
-
-        // Join QueryStream with Sketch Stream using an intervalJoin with a Process Function
-        final SingleOutputStreamOperator<Tuple2<Double, String>> queryResultStream = querySource
-                .intervalJoin(sketchWithKey)
-                .between(Time.days(-1), Time.days(1)) // this join is based on event timestamps -> the query can be joined with any sketch built in the last 24 hour -> the actual join is then based on the key (=> query Timestamp and sketch Timestamp)
-                .process(new ProcessJoinFunction<Tuple3<Long, Double, Long>, Tuple4<DDSketch, Long, Long, Long>, Tuple2<Double, String>>() {
-                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss:sss");
-
-                    @Override
-                    public void processElement(Tuple3<Long, Double, Long> left, Tuple4<DDSketch, Long, Long, Long> right, Context ctx, Collector<Tuple2<Double, String>> out) throws Exception {
-                        if (left.f0 >= right.f1 && left.f0 <= right.f2) { // the query time is contained within the sketch window time
-
-                            double valueAtQuantile = right.f0.getValueAtQuantile(left.f1);
-                            String queryResult = "Query for Timestamp: " + formatter.format(new Date(left.f0)) + " \n" +
-                                    "value at Quantile " + left.f1 + " = " + valueAtQuantile + "\n" +
-                                    "window start time: " + formatter.format(new Date(right.f1)) + "  --  window end time: " + formatter.format(new Date(right.f2));
-                            out.collect(new Tuple2<>(valueAtQuantile, queryResult));
-                        }
-                    }
-                });
-
-        queryResultStream.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/queryResults.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
-
-
-
-        try {
-            env.execute("Use Case Example Job with DD-Sketch");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//
+//        SingleOutputStreamOperator<Tuple3<DDSketch, Long, Long>> timestampedSketches = NewBuildSynopsis
+//                .timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params)
+//                .returns(new TypeHint<Tuple3<DDSketch, Long, Long>>() {});
+//
+//        KeyedStream<Tuple4<DDSketch, Long, Long, Long>, Tuple> sketchWithKey = timestampedSketches.map(new MapFunction<Tuple3<DDSketch, Long, Long>, Tuple4<DDSketch, Long, Long, Long>>() {
+//            @Override
+//            public Tuple4<DDSketch, Long, Long, Long> map(Tuple3<DDSketch, Long, Long> value) throws Exception {
+//                return new Tuple4<>(value.f0, value.f1, value.f2, value.f1 / 60000);
+//            }
+//        }).keyBy(3);
+//
+//        // timestampedSketches.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/timestampedSketches.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+//
+//        // Query Input Stream
+//
+//        final KeyedStream<Tuple3<Long, Double, Long>, Tuple> querySource = env.fromElements(new Tuple2<>(1517499753000L, 0.5), new Tuple2<>(1517499759000L, 0.1))
+//                .assignTimestampsAndWatermarks(new QueryTimeStampAssigner())
+//                .map(new MapFunction<Tuple2<Long, Double>, Tuple3<Long, Double, Long>>() {
+//                    @Override
+//                    public Tuple3<Long, Double, Long> map(Tuple2<Long, Double> value) throws Exception {
+//                        return new Tuple3<>(value.f0, value.f1, value.f0 / 60000);
+//                    }
+//                }).keyBy(2);
+//
+//        // querySource.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/queries.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+//
+//
+//        // Join QueryStream with Sketch Stream using an intervalJoin with a Process Function
+//        final SingleOutputStreamOperator<Tuple2<Double, String>> queryResultStream = querySource
+//                .intervalJoin(sketchWithKey)
+//                .between(Time.days(-1), Time.days(1)) // this join is based on event timestamps -> the query can be joined with any sketch built in the last 24 hour -> the actual join is then based on the key (=> query Timestamp and sketch Timestamp)
+//                .process(new ProcessJoinFunction<Tuple3<Long, Double, Long>, Tuple4<DDSketch, Long, Long, Long>, Tuple2<Double, String>>() {
+//                    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss:sss");
+//
+//                    @Override
+//                    public void processElement(Tuple3<Long, Double, Long> left, Tuple4<DDSketch, Long, Long, Long> right, Context ctx, Collector<Tuple2<Double, String>> out) throws Exception {
+//                        if (left.f0 >= right.f1 && left.f0 <= right.f2) { // the query time is contained within the sketch window time
+//
+//                            double valueAtQuantile = right.f0.getValueAtQuantile(left.f1);
+//                            String queryResult = "Query for Timestamp: " + formatter.format(new Date(left.f0)) + " \n" +
+//                                    "value at Quantile " + left.f1 + " = " + valueAtQuantile + "\n" +
+//                                    "window start time: " + formatter.format(new Date(right.f1)) + "  --  window end time: " + formatter.format(new Date(right.f2));
+//                            out.collect(new Tuple2<>(valueAtQuantile, queryResult));
+//                        }
+//                    }
+//                });
+//
+//        queryResultStream.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/queryResults.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+//
+//
+//
+//        try {
+//            env.execute("Use Case Example Job with DD-Sketch");
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
     }
 
 

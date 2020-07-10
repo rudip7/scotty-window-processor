@@ -2,6 +2,7 @@ package FlinkScottyConnector;
 
 import Synopsis.MergeableSynopsis;
 import Synopsis.Sampling.SamplerWithTimestamps;
+import Synopsis.WindowedSynopsis;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.*;
@@ -59,32 +60,30 @@ public class NewBuildSynopsis {
         return result;
     }
 
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<Tuple3<S, Long, Long>> timeBasedWithWindowTimes(DataStream<T> inputStream, Class<S> synopsisClass, BuildSynopsisConfig config, Object... parameters){
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<WindowedSynopsis<S>> timeBasedWithWindowTimes(DataStream<T> inputStream, Class<S> synopsisClass, BuildSynopsisConfig config, Object... parameters){
         if (config.getWindowTime() == null){
             throw new IllegalArgumentException("windowTime == null! must be set in order for this function to work!");
         }
 
         AllWindowedStream partialAggregate = timeBasedHelperFunction(inputStream, synopsisClass, config, parameters);
 
-        final SingleOutputStreamOperator<Tuple3<S, Long, Long>> timestampedSketches = partialAggregate
+        return partialAggregate
                 .reduce(new ReduceFunction<S>() {
                     public S reduce(S value1, S value2) throws Exception {
                         S merged = (S) value1.merge(value2);
                         return merged;
                     }
-                }, new AllWindowFunction<S ,Tuple3<S, Long, Long>, TimeWindow>() {
+                }, new AllWindowFunction<S, WindowedSynopsis<S>, TimeWindow>() {
                     @Override
                     public void apply(TimeWindow window, Iterable values, Collector out) throws Exception {
                         values.forEach(new Consumer<S>() {
                             @Override
-                            public void accept(S sketch) {
-                                out.collect(new Tuple3<>(sketch, window.getStart(), window.getEnd()));
+                            public void accept(S synopsis) {
+                                out.collect(new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd()));
                             }
                         });
                     }
-                });
-
-        return timestampedSketches;
+                }).returns(WindowedSynopsis.class);
     }
 
     private static <T, S extends MergeableSynopsis> AllWindowedStream timeBasedHelperFunction(DataStream<T> inputStream, Class<S> synopsisClass, BuildSynopsisConfig config, Object... parameters) {
