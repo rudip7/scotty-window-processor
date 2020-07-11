@@ -1,6 +1,6 @@
 package Synopsis;
 
-public abstract class StratifiedSynopsis<Partition> implements Synopsis{
+public abstract class StratifiedSynopsis<Partition>{
     private Partition partitionValue = null;
 
     public Partition getPartitionValue() {

@@ -24,12 +24,17 @@ import org.apache.flink.streaming.api.datastream.WindowedStream;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
+import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
 import java.util.PriorityQueue;
+import java.util.function.Consumer;
 
 
 // simple comment to let me commit for new merge
@@ -50,6 +55,66 @@ public final class BuildStratifiedSynopsis {
 
     public static int getParallelismKeys() {
         return parallelismKeys;
+    }
+
+    public static <T, S extends Synopsis, Key, Value> SingleOutputStreamOperator<WindowedSynopsis<S>> timeBasedADA(DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
+        }
+        if (MergeableSynopsis.class.isAssignableFrom(synopsisClass)) {
+            SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
+
+            KeyedStream keyBy = inputStream
+                    .map(mapper)
+                    .keyBy(0);
+
+            WindowedStream windowedStream;
+            if (slideTime == null) {
+                windowedStream = keyBy.timeWindow(windowTime);
+            } else {
+                windowedStream = keyBy.timeWindow(windowTime, slideTime);
+            }
+
+            return windowedStream
+                    .aggregate(agg, new WindowFunction<S, WindowedSynopsis<S>,Key, TimeWindow>() {
+                        @Override
+                        public void apply(Key key, TimeWindow window, Iterable<S> values, Collector<WindowedSynopsis<S>> out) throws Exception {
+                            values.forEach(new Consumer<S>() {
+                                @Override
+                                public void accept(S synopsis) {
+                                    out.collect(new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd()));
+                                }
+                            });
+                        }
+                    }).returns(WindowedSynopsis.class);
+        } else {
+            NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(true, synopsisClass, parameters);
+            KeyedStream keyBy = inputStream
+                    .map(mapper)
+                    .keyBy(0);
+
+            WindowedStream windowedStream;
+            if (slideTime == null) {
+                windowedStream = keyBy.timeWindow(windowTime);
+            } else {
+                windowedStream = keyBy.timeWindow(windowTime, slideTime);
+            }
+//            windowedStream.aggregate()
+
+            return windowedStream
+                    .aggregate(agg, new WindowFunction<S, WindowedSynopsis<S>,Key, TimeWindow>() {
+                        @Override
+                        public void apply(Key key, TimeWindow window, Iterable<S> values, Collector<WindowedSynopsis<S>> out) throws Exception {
+                            System.out.println("HOLAAAAA");
+                            values.forEach(new Consumer<S>() {
+                                @Override
+                                public void accept(S synopsis) {
+                                    out.collect(new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd()));
+                                }
+                            });
+                        }
+                    }).returns(WindowedSynopsis.class);
+        }
     }
 
     public static <T, S extends Synopsis, Key, Value> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
