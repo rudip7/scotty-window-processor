@@ -23,6 +23,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+
 import Synopsis.WindowedSynopsis;
 import Synopsis.StratifiedSynopsis;
 
@@ -34,7 +35,7 @@ import Synopsis.StratifiedSynopsis;
  */
 public final class ApproximateDataAnalytics {
 
-    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q,O>> queryLatest(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Q> queryStream, QueryFunction<Q, S, O> queryFunction) {
+    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q, O>> queryLatest(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Q> queryStream, QueryFunction<Q, S, O> queryFunction) {
         MapStateDescriptor<Boolean, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<Boolean, WindowedSynopsis<S>>(
                 "latestSynopsis",
                 BasicTypeInfo.BOOLEAN_TYPE_INFO,
@@ -46,30 +47,18 @@ public final class ApproximateDataAnalytics {
                 .process(new QueryLatestFunction<Q, S, O>(queryFunction));
     }
 
-//    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q,O>> queryTimestamped(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Q> queryStream, QueryFunction<Q, S, O> queryFunction) {
-//    }
+    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q, O>> queryTimestamped(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<TimestampedQuery<Q>> queryStream, QueryFunction<Q, S, O> queryFunction) {
+        //TODO Joscha
+        return null;
+    }
 
-//    public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<StratifiedQueryResult<Q, O, P>> queryLatestStratified(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<StratifiedQuery<Q,P>> queryStream, QueryFunction<Q, S, O> queryFunction) {
-//        MapStateDescriptor<Boolean, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<Boolean, WindowedSynopsis<S>>(
-//                "latestSynopsis",
-//                BasicTypeInfo.BOOLEAN_TYPE_INFO,
-//                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {
-//                }));
-//
-//        BroadcastStream<WindowedSynopsis<S>> broadcast = synopsesStream.broadcast(synopsisMapStateDescriptor);
-////        KeyedStream<StratifiedQuery<Q, P>, P> keyedQueryStream = queryStream.keyBy(new StratifiedQueryKeySelector<>());
-//        KeyedStream<StratifiedQuery<Q, P>, P> keyedQueryStream = queryStream.keyBy(StratifiedQuery::getPartition);
-//
-//
-//        return keyedQueryStream.connect(broadcast)
-//                .process(new QueryLatestStratifiedFunction<P, Q, S, O>(queryFunction));
-//    }
 
-    public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<StratifiedQueryResult<Q, O, P>> queryLatestStratified(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Tuple2<P,Q>> queryStream, QueryFunction<Q, S, O> queryFunction, Class<P> partitionClass) {
+    public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<StratifiedQueryResult<Q, O, P>> queryLatestStratified(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Tuple2<P, Q>> queryStream, QueryFunction<Q, S, O> queryFunction, Class<P> partitionClass) {
         MapStateDescriptor<P, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<P, WindowedSynopsis<S>>(
                 "latestSynopsis",
                 TypeInformation.of(partitionClass),
-                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {}));
+                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {
+                }));
 
         BroadcastStream<WindowedSynopsis<S>> broadcast = synopsesStream.broadcast(synopsisMapStateDescriptor);
 
@@ -79,14 +68,10 @@ public final class ApproximateDataAnalytics {
                 .process(new QueryLatestStratifiedFunction<P, Q, S, O>(queryFunction, partitionClass));
     }
 
-//    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q,O>> queryTimestampedStratified(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Q> queryStream, QueryFunction<Q, S, O> queryFunction) {
-//    }
-
-    private static class StratifiedQueryKeySelector<Q extends Serializable, P extends Serializable> implements KeySelector<StratifiedQuery<Q,P>, P> {
-        @Override
-        public P getKey(StratifiedQuery<Q,P> query) throws Exception {
-            return query.getPartition();
-        }
+    public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q, O>> queryTimestampedStratified(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Tuple2<P, TimestampedQuery<Q>>> queryStream, QueryFunction<Q, S, O> queryFunction) {
+        //TODO Joscha
+        return null;
     }
+
 
 }
