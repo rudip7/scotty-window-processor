@@ -27,7 +27,6 @@ public class Runner {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setMaxParallelism(env.getParallelism());
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        // TODO: check whether ObjectReuse really enhances throughput as expected!
         env.getConfig().enableObjectReuse();
 
         for (int i = 0; i < benchmark.approxConfigurationList.size(); i++) {

@@ -1,5 +1,7 @@
 package Synopsis;
 
+import org.jetbrains.annotations.NotNull;
+
 public class WindowedSynopsis<S extends Synopsis> implements Synopsis{
     private long windowStart;
     private long windowEnd;
