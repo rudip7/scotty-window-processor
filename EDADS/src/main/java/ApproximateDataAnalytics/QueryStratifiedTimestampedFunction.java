@@ -1,7 +1,7 @@
 package ApproximateDataAnalytics;
 
 import Synopsis.Synopsis;
-import Synopsis.StratifiedSynopsis;
+import Synopsis.StratifiedSynopsisWrapper;
 import Synopsis.WindowedSynopsis;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -20,7 +20,7 @@ import java.util.*;
  * @param <S>   Synopsis Type
  * @param <O>   Query Result Type
  */
-public class QueryStratifiedTimestampedFunction<P extends Serializable, Q extends Serializable, S extends StratifiedSynopsis<P> & Synopsis, O extends Serializable> extends KeyedBroadcastProcessFunction<P, Tuple2<P, TimestampedQuery<Q>>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> {
+public class QueryStratifiedTimestampedFunction<P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> extends KeyedBroadcastProcessFunction<P, Tuple2<P, TimestampedQuery<Q>>, StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>, QueryResult<TimestampedQuery<Q>, O>> {
 
     final int maxSynopsisCount; // maximum synopsis count per strata / key
     final QueryFunction<TimestampedQuery<Q>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> queryFunction;
@@ -61,15 +61,16 @@ public class QueryStratifiedTimestampedFunction<P extends Serializable, Q extend
     }
 
     @Override
-    public void processBroadcastElement(WindowedSynopsis<S> value, Context ctx, Collector<QueryResult<TimestampedQuery<Q>, O>> out) throws Exception {
+    public void processBroadcastElement(StratifiedSynopsisWrapper<P, WindowedSynopsis<S>> value, Context ctx, Collector<QueryResult<TimestampedQuery<Q>, O>> out) throws Exception {
         TreeSet<WindowedSynopsis<S>> windowedSynopses;
-        P key = value.getSynopsis().getPartitionValue();
+        P key = value.getKey();
+        WindowedSynopsis synopsis = value.getSynopsis();
         if (ctx.getBroadcastState(synopsisMapStateDescriptor).contains(key)){
             windowedSynopses = ctx.getBroadcastState(synopsisMapStateDescriptor).get(key);
             if (windowedSynopses.size() >= maxSynopsisCount){
                 windowedSynopses.pollFirst();
             }
-            windowedSynopses.add(value);
+            windowedSynopses.add(synopsis);
             ctx.getBroadcastState(synopsisMapStateDescriptor).put(key, windowedSynopses);
         } else {
             windowedSynopses = new TreeSet<WindowedSynopsis<S>>(new Comparator<WindowedSynopsis<S>>() {
@@ -78,12 +79,12 @@ public class QueryStratifiedTimestampedFunction<P extends Serializable, Q extend
                     return Long.compare(o1.getWindowStart(), o2.getWindowStart());
                 }
             });
-            windowedSynopses.add(value);
+            windowedSynopses.add(synopsis);
             ctx.getBroadcastState(synopsisMapStateDescriptor).put(key, windowedSynopses);
             if (queryHashMap.containsKey(key)){
                 queryHashMap.get(key).stream()
-                        .filter(query -> query.getTimeStamp() >= value.getWindowStart() && query.getTimeStamp() <= value.getWindowEnd())
-                        .forEach(query -> out.collect(queryFunction.query(query, value)));
+                        .filter(query -> query.getTimeStamp() >= synopsis.getWindowStart() && query.getTimeStamp() <= synopsis.getWindowEnd())
+                        .forEach(query -> out.collect(queryFunction.query(query, synopsis)));
             }
         }
     }

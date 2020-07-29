@@ -34,6 +34,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.PriorityQueue;
 import java.util.function.Consumer;
 
@@ -58,7 +59,8 @@ public final class BuildStratifiedSynopsis {
         return parallelismKeys;
     }
 
-    public static <T, S extends Synopsis, Key, Value> SingleOutputStreamOperator<WindowedSynopsis<S>> timeBasedADA(DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
+    public static <T, S extends Synopsis, Key extends Serializable, Value> SingleOutputStreamOperator<StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>> timeBasedADA
+            (DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
         if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
@@ -77,17 +79,18 @@ public final class BuildStratifiedSynopsis {
             }
 
             return windowedStream
-                    .aggregate(agg, new WindowFunction<S, WindowedSynopsis<S>,Key, TimeWindow>() {
+                    .aggregate(agg, new WindowFunction<S, StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>,Key, TimeWindow>() {
                         @Override
-                        public void apply(Key key, TimeWindow window, Iterable<S> values, Collector<WindowedSynopsis<S>> out) throws Exception {
+                        public void apply(Key key, TimeWindow window, Iterable<S> values, Collector<StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>> out) throws Exception {
                             values.forEach(new Consumer<S>() {
                                 @Override
                                 public void accept(S synopsis) {
-                                    out.collect(new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd()));
+                                    WindowedSynopsis windowedSynopsis = new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd());
+                                    out.collect(new StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>(key, windowedSynopsis));
                                 }
                             });
                         }
-                    }).returns(WindowedSynopsis.class);
+                    }).returns(StratifiedSynopsisWrapper.class);
         } else {
             NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(true, synopsisClass, parameters);
             KeyedStream keyBy = inputStream
@@ -103,18 +106,19 @@ public final class BuildStratifiedSynopsis {
 //            windowedStream.aggregate()
 
             return windowedStream
-                    .aggregate(agg, new WindowFunction<S, WindowedSynopsis<S>,Key, TimeWindow>() {
+                    .aggregate(agg, new WindowFunction<S, StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>,Key, TimeWindow>() {
                         @Override
-                        public void apply(Key key, TimeWindow window, Iterable<S> values, Collector<WindowedSynopsis<S>> out) throws Exception {
+                        public void apply(Key key, TimeWindow window, Iterable<S> values, Collector<StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>> out) throws Exception {
                             System.out.println("HOLAAAAA");
                             values.forEach(new Consumer<S>() {
                                 @Override
                                 public void accept(S synopsis) {
-                                    out.collect(new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd()));
+                                    WindowedSynopsis<S> windowedSynopsis = new WindowedSynopsis<S>(synopsis, window.getStart(), window.getEnd());
+                                    out.collect(new StratifiedSynopsisWrapper<Key, WindowedSynopsis<S>>(key, windowedSynopsis));
                                 }
                             });
                         }
-                    }).returns(WindowedSynopsis.class);
+                    }).returns(StratifiedSynopsisWrapper.class);
         }
     }
 

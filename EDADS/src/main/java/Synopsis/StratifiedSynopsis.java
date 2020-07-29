@@ -1,5 +1,6 @@
 package Synopsis;
 
+@Deprecated // use StratifiedSynopsisWrapper instead
 public abstract class StratifiedSynopsis<Partition>{
     private Partition partitionValue = null;
 

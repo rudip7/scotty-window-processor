@@ -2,6 +2,7 @@ package ApproximateDataAnalytics;
 
 import Synopsis.Synopsis;
 import Synopsis.StratifiedSynopsis;
+import Synopsis.StratifiedSynopsisWrapper;
 import Synopsis.WindowedSynopsis;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
@@ -81,8 +82,10 @@ public final class ApproximateDataAnalytics {
     }
 
 
-    public static <P extends Serializable, Q extends Serializable, S extends StratifiedSynopsis<P> & Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<TimestampedQuery<Q>, O>> queryTimestampedStratified
-            (DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Tuple2<P, TimestampedQuery<Q>>> queryStream, QueryFunction<TimestampedQuery<Q>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> queryFunction, Class<P> partitionClass, int maxSynopsisCount) {
+    public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<TimestampedQuery<Q>, O>> queryTimestampedStratified
+            (DataStream<StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>> synopsesStream,
+             DataStream<Tuple2<P, TimestampedQuery<Q>>> queryStream, QueryFunction<TimestampedQuery<Q>, WindowedSynopsis<S>,
+                    QueryResult<TimestampedQuery<Q>, O>> queryFunction, Class<P> partitionClass, int maxSynopsisCount) {
 
         // MapStateDescriptor for the BroadcastState which contains the stored synopsis keyed by <P>
         MapStateDescriptor<P, TreeSet<WindowedSynopsis<S>>> synopsisMapStateDescriptor = new MapStateDescriptor<P, TreeSet<WindowedSynopsis<S>>>(
@@ -91,7 +94,7 @@ public final class ApproximateDataAnalytics {
                 TypeInformation.of(new TypeHint<TreeSet<WindowedSynopsis<S>>>() {
                 }));
 
-        final BroadcastStream<WindowedSynopsis<S>> broadcast = synopsesStream.broadcast(synopsisMapStateDescriptor);
+        BroadcastStream<StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>> broadcast = synopsesStream.broadcast(synopsisMapStateDescriptor);
 
         final KeyedStream<Tuple2<P, TimestampedQuery<Q>>, Tuple> keyedQueryStream = queryStream.keyBy(0);
 

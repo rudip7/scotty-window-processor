@@ -52,6 +52,7 @@ public class ExampleStratifiedADAJob {
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
+        /*
 
         SingleOutputStreamOperator<WindowedSynopsis<DDSketch>> stratifiedSynopsesStream = BuildStratifiedSynopsis.timeBasedADA(timestamped, Time.seconds(6L), Time.seconds(3L), new Stratifier(stratification), DDSketch.class, params);
 
@@ -66,6 +67,8 @@ public class ExampleStratifiedADAJob {
         queryResults.writeAsText("EDADS/output/exampleADAStratified.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("ADA Example Job");
+
+         */
     }
 
     private static class DDSketchQuery implements QueryFunction<Double, DDSketch, Double>{

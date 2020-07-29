@@ -18,4 +18,9 @@ public class TimestampedQuery<Q extends Serializable> implements Serializable{
     public long getTimeStamp() {
         return timeStamp;
     }
+
+    public String toString(){
+        String string = "timebasedQuery { query = " + query + " , timestamp = " + timeStamp + "} ";
+        return string;
+    }
 }
