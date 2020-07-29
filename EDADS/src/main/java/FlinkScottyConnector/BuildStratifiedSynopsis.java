@@ -10,6 +10,7 @@ import Synopsis.Sampling.SamplerWithTimestamps;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
+import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
@@ -156,6 +157,8 @@ public final class BuildStratifiedSynopsis {
                     .returns(synopsisClass);
         }
     }
+
+
 
 
     //TODO: Support NonMergeableSynopsis with TransformStratified<>(partitionField, keyField)

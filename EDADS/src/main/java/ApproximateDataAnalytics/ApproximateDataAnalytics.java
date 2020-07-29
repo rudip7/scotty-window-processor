@@ -1,19 +1,20 @@
 package ApproximateDataAnalytics;
 
 import Synopsis.Synopsis;
+import Synopsis.StratifiedSynopsis;
 import Synopsis.WindowedSynopsis;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.functions.co.BroadcastProcessFunction;
-import org.apache.flink.util.Collector;
+import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
 
 import java.io.Serializable;
 import java.util.TreeSet;
@@ -79,15 +80,24 @@ public final class ApproximateDataAnalytics {
                 .process(new QueryLatestStratifiedFunction<P, Q, S, O>(queryFunction, partitionClass));
     }
 
-    public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q, O>> queryTimestampedStratified
-            (DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Tuple2<P, TimestampedQuery<Q>>> queryStream, QueryFunction<Q, S, O> queryFunction, Class<P> partitionClass) {
 
-        MapStateDescriptor<P, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<P, WindowedSynopsis<S>>(
+    public static <P extends Serializable, Q extends Serializable, S extends StratifiedSynopsis<P> & Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<TimestampedQuery<Q>, O>> queryTimestampedStratified
+            (DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Tuple2<P, TimestampedQuery<Q>>> queryStream, QueryFunction<TimestampedQuery<Q>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> queryFunction, Class<P> partitionClass, int maxSynopsisCount) {
+
+        // MapStateDescriptor for the BroadcastState which contains the stored synopsis keyed by <P>
+        MapStateDescriptor<P, TreeSet<WindowedSynopsis<S>>> synopsisMapStateDescriptor = new MapStateDescriptor<P, TreeSet<WindowedSynopsis<S>>>(
                 "latestSynopsis",
                 TypeInformation.of(partitionClass),
-                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {
+                TypeInformation.of(new TypeHint<TreeSet<WindowedSynopsis<S>>>() {
                 }));
 
-        return null;
+        final BroadcastStream<WindowedSynopsis<S>> broadcast = synopsesStream.broadcast(synopsisMapStateDescriptor);
+
+        final KeyedStream<Tuple2<P, TimestampedQuery<Q>>, Tuple> keyedQueryStream = queryStream.keyBy(0);
+
+        SingleOutputStreamOperator<QueryResult<TimestampedQuery<Q>, O>> queryResultStream = keyedQueryStream.connect(broadcast)
+                .process(new QueryStratifiedTimestampedFunction<P, Q, S, O>(maxSynopsisCount, queryFunction, synopsisMapStateDescriptor));
+
+        return queryResultStream;
     }
 }

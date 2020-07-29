@@ -32,14 +32,14 @@ public class ExampleADAJob {
     public static void main(String[] args) throws Exception{
 
         // Arguments & setup
-        final int runtime = 20000; // runtime in milliseconds
+        final int runtime = 30000; // runtime in milliseconds
         final int throughput = 1000; // target throughput
         final List<Tuple2<Long, Long>> gaps = new ArrayList<>();
         final double accuracy = 0.01; // relative accuracy of DD-Sketch
         final int maxNumberOfBins = 500; // maximum number of bins of DD-Sketch
 //        final String pathToZipfData = "/Users/joschavonhein/Data/zipfTimestamped.gz";
         Object[] params = new Object[]{accuracy, maxNumberOfBins};
-        BuildSynopsisConfig config = new BuildSynopsisConfig(Time.seconds(10L), null, 0);
+        BuildSynopsisConfig config = new BuildSynopsisConfig(Time.seconds(5), null, 0);
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(4);
@@ -53,7 +53,7 @@ public class ExampleADAJob {
 
         DataStream<WindowedSynopsis<DDSketch>> synopsesStream = NewBuildSynopsis.timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params);
 
-        DataStream<TimestampedQuery<Double>> timestampedQueries = env.addSource(new TimestampedQuerySource(200));
+        DataStream<TimestampedQuery<Double>> timestampedQueries = env.addSource(new TimestampedQuerySource(200, 5));
 
 
         QueryFunction<TimestampedQuery<Double>, WindowedSynopsis<DDSketch>, QueryResult<TimestampedQuery<Double>, Double>> queryFunction =
@@ -118,8 +118,10 @@ public class ExampleADAJob {
     private static class TimestampedQuerySource implements SourceFunction<TimestampedQuery<Double>> {
 
         private final int queries;
+        private final int wait;
 
-        public TimestampedQuerySource(int queries) {
+        public TimestampedQuerySource(int queries, int secondsWait) {
+            this.wait = secondsWait;
             this.queries = queries;
         }
 
@@ -128,13 +130,13 @@ public class ExampleADAJob {
             Random random = new Random();
 
             long startTs = System.currentTimeMillis();
-            while (System.currentTimeMillis() < startTs + 10000) {
+            while (System.currentTimeMillis() < startTs + wait * 1000) {
                 // active waiting
             }
 
             for (int i = 0; i < queries; i++) {
                 startTs = System.currentTimeMillis();
-                while (System.currentTimeMillis() < startTs + 10) {
+                while (System.currentTimeMillis() < startTs + 100) {
                     // active waiting
                 }
                 long timestamp = System.currentTimeMillis();
