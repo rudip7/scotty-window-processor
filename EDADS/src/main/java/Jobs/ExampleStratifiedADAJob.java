@@ -7,6 +7,7 @@ import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsisConfig;
 import Synopsis.Sketches.DDSketch;
+import Synopsis.StratifiedSynopsisWrapper;
 import Synopsis.WindowedSynopsis;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -52,9 +53,8 @@ public class ExampleStratifiedADAJob {
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
-        /*
 
-        SingleOutputStreamOperator<WindowedSynopsis<DDSketch>> stratifiedSynopsesStream = BuildStratifiedSynopsis.timeBasedADA(timestamped, Time.seconds(6L), Time.seconds(3L), new Stratifier(stratification), DDSketch.class, params);
+        SingleOutputStreamOperator<StratifiedSynopsisWrapper<Integer, WindowedSynopsis<DDSketch>>> stratifiedSynopsesStream = BuildStratifiedSynopsis.timeBasedADA(timestamped, Time.seconds(6L), Time.seconds(3L), new Stratifier(stratification), DDSketch.class, params);
 
 //        stratifiedSynopsesStream.writeAsText("EDADS/output/exampleADAStratified.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
@@ -64,11 +64,9 @@ public class ExampleStratifiedADAJob {
 
         SingleOutputStreamOperator<StratifiedQueryResult<Double, Double, Integer>> queryResults = ApproximateDataAnalytics.queryLatestStratified(stratifiedSynopsesStream, queryStream, new DDSketchQuery(), Integer.class);
 
-        queryResults.writeAsText("EDADS/output/exampleADAStratified.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        queryResults.writeAsText("EDADS/Results/exampleADAStratified.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
 
         env.execute("ADA Example Job");
-
-         */
     }
 
     private static class DDSketchQuery implements QueryFunction<Double, DDSketch, Double>{

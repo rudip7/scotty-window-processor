@@ -4,6 +4,7 @@ import ApproximateDataAnalytics.ApproximateDataAnalytics;
 import ApproximateDataAnalytics.TimestampedQuery;
 import ApproximateDataAnalytics.QueryResult;
 import ApproximateDataAnalytics.QueryFunction;
+import ApproximateDataAnalytics.StratifiedQueryResult;
 import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsisConfig;
@@ -58,17 +59,16 @@ public class StratifiedTimeBasedQueryJob {
 
         DataStream<Tuple2<Integer, TimestampedQuery<Double>>> queryStream = env.addSource(new StratifiedTimestampedQuerySource(2000, 10, 10, 30));
 
-        QueryFunction<TimestampedQuery<Double>, WindowedSynopsis<DDSketch>, QueryResult<TimestampedQuery<Double>, Double>> queryFunction = new QueryFunction<TimestampedQuery<Double>, WindowedSynopsis<DDSketch>, QueryResult<TimestampedQuery<Double>, Double>>() {
-            @Override
-            public QueryResult<TimestampedQuery<Double>, Double> query(TimestampedQuery<Double> query, WindowedSynopsis<DDSketch> synopsis) {
+        QueryFunction<Tuple2<Integer, TimestampedQuery<Double>>, WindowedSynopsis<DDSketch>, StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>> queryFunction =
+                new QueryFunction<Tuple2<Integer, TimestampedQuery<Double>>, WindowedSynopsis<DDSketch>, StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>>() {
+                    @Override
+                    public StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer> query(Tuple2<Integer, TimestampedQuery<Double>> query, WindowedSynopsis<DDSketch> synopsis) {
+                        Double result = synopsis.getSynopsis().getValueAtQuantile(query.f1.getQuery());
+                        return new StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>(result, query, synopsis);
+                    }
+                };
 
-                Double result = synopsis.getSynopsis().getValueAtQuantile(query.getQuery());
-                return new QueryResult<TimestampedQuery<Double>, Double>(result, query, synopsis);
-            }
-        };
-
-
-        final SingleOutputStreamOperator<QueryResult<TimestampedQuery<Double>, Double>> queryResultStream =
+        final SingleOutputStreamOperator<StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>> queryResultStream =
                 ApproximateDataAnalytics.queryTimestampedStratified(stratifiedSynopsisStream, queryStream, queryFunction, Integer.class, 100);
 
         queryResultStream.print();
