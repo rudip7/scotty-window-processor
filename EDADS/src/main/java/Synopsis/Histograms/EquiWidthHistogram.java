@@ -16,7 +16,7 @@ import java.io.ObjectStreamException;
  */
 public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis implements MergeableSynopsis<T> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EquiWidthHistogram.class);
+    //private static final Logger LOG = LoggerFactory.getLogger(EquiWidthHistogram.class);
 
     double lowerBound, upperBound;
     int numBuckets;

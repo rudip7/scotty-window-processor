@@ -54,7 +54,6 @@ public class WaveletScottyJob {
         }
         BuildStratifiedSynopsis.setParallelismKeys(env.getParallelism());
         BuildSynopsis.setParallelismKeys(env.getParallelism());
-
         if (source.contentEquals("NYC-taxi")) {
             DataStream<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> messageStream = env
                     .addSource(new NYCTaxiRideSource(runtime, throughput, gaps));

@@ -14,7 +14,7 @@ public class EfficientH3Functions {
     private int numFunctions;
     private long seed;
 
-    Logger logger = LoggerFactory.getLogger(EfficientH3Functions.class);
+    //Logger logger = LoggerFactory.getLogger(EfficientH3Functions.class);
 
 
     public EfficientH3Functions(int numFunctions, long seed) {

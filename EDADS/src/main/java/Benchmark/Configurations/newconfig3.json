@@ -1,12 +1,12 @@
 {
   "benchmarkConfigurations": [
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 256,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -20,12 +20,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 256,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -39,12 +39,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 256,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -58,12 +58,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 128,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -77,12 +77,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 128,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -96,12 +96,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 128,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -115,12 +115,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 64,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -134,12 +134,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 64,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -153,12 +153,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 64,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -172,12 +172,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 32,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -191,12 +191,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 32,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -210,12 +210,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 32,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -229,12 +229,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 16,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -248,12 +248,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 16,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -267,12 +267,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 16,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -286,12 +286,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 8,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -305,12 +305,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 8,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -324,12 +324,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 8,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -343,12 +343,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 4,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -362,12 +362,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 4,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -381,12 +381,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 4,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -400,12 +400,12 @@
       ]
     },
     {
-      "name": "org_Reservoir_Zipf_2",
+      "name": "org_Reservoir_Uniform_2",
       "parallelism": 2,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -419,12 +419,12 @@
       ]
     },
     {
-      "name": "org_Equi_Zipf_2",
+      "name": "org_Equi_Uniform_2",
       "parallelism": 2,
       "iterations": 10,
       "runtime": 20000,
       "throughput": 500000,
-      "source": "Zipf",
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"
@@ -438,12 +438,12 @@
       ]
     },
     {
-      "name": "org_Countmin_Zipf_2",
+      "name": "org_Countmin_Uniform_2",
       "parallelism": 2,
       "iterations": 10,
       "runtime": 20000,
-      "throughput": 500000,
-      "source": "Zipf",
+      "throughput": 200000,
+      "source": "Uniform",
       "windowConfigurations": [
         [
           "Sliding(4000,2000)"

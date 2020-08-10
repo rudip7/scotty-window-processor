@@ -26,7 +26,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BenchmarkRunner {
+public class
+BenchmarkRunner {
 
     private static String configPath;
 

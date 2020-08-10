@@ -1,15 +1,148 @@
 {
   "benchmarkConfigurations": [
     {
-      "name": "Wavelet_benchmark",
-      "parallelism": 8,
-      "iterations": 1,
-      "runtime": 15000,
-      "throughput": 25000,
-      "source": "Uniform",
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 2,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
       "windowConfigurations": [
         [
-          "Sliding(10000,5000)"
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 4,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 8,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 16,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 32,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 64,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 128,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "org_Wavelet_NYC_1",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "NYC-taxi",
+      "windowConfigurations": [
+        [
+          "Sliding(6902676,3451338)"
         ]
       ],
       "configurations": [

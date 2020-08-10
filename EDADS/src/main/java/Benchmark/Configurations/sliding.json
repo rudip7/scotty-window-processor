@@ -1,0 +1,113 @@
+{
+  "benchmarkConfigurations":
+  [
+    {"name": "slide_Count_Uni_scotty_2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,4000)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    },
+    {"name": "slide_Count_Uni_scotty_2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,800)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    },
+    {"name": "slide_Count_Uni_scotty_2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,400)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    },
+    {"name": "slide_Count_Uni_scotty_2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,200)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    },
+    {"name": "slide_Count_Uni_scotty_2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,100)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    },
+    {"name": "slide_Count_Uni_scotty_2",
+      "parallelism": 256,
+      "iterations": 10,
+      "runtime": 20000,
+      "throughput": 200000,
+      "source": "Uniform",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,50)"
+        ]
+      ],
+      "configurations": [
+        "Scotty"
+      ],
+      "synopses": [
+        "CountMinSketch"
+      ]
+    }
+  ]
+}

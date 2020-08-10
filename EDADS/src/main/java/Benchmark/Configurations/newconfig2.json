@@ -1,0 +1,194 @@
+{
+  "benchmarkConfigurations": [
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 500,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 1000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 2000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 3000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 4000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 5000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 10000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 20000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 50000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    },
+    {
+      "name": "Th_Wavelet_Zipf_1",
+      "parallelism": 256,
+      "iterations": 1,
+      "runtime": 20000,
+      "throughput": 100000,
+      "source": "Zipf",
+      "windowConfigurations": [
+        [
+          "Sliding(4000,2000)"
+        ]
+      ],
+      "configurations": [
+        "Flink"
+      ],
+      "synopses": [
+        "Wavelet"
+      ]
+    }
+  ]
+}

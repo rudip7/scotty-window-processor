@@ -1,21 +1,96 @@
+,
 {
-  "name" : "synopses_window_benchmark",
-  "runtime" : 10000,
-  "throughput": 3000000,
-  "windowConfigurations": [
-    [
-      "Sliding(2000,1000)"
-    ]
-  ],
-  "configurations": [
-    "Scotty"
-  ],
-  "sessionConfig": {
-    "gapCount": 10,
-    "minGapTime": 1000,
-    "maxGapTime": 1001
-  },
-  "synopses":[
-    "CountMinSketch"
-  ]
+"name": "Th_Wavelet_zipf_1",
+"parallelism": 256,
+"iterations": 1,
+"runtime": 20000,
+"throughput": 50000,
+"source": "Zipf",
+"windowConfigurations": [
+[
+"Sliding(4000,2000)"
+]
+],
+"configurations": [
+"Scotty"
+],
+"synopses": [
+"Wavelet"
+]
+},
+{
+"name": "Th_Wavelet_zipf_1",
+"parallelism": 256,
+"iterations": 1,
+"runtime": 20000,
+"throughput": 100000,
+"source": "Zipf",
+"windowConfigurations": [
+[
+"Sliding(4000,2000)"
+]
+],
+"configurations": [
+"Scotty"
+],
+"synopses": [
+"Wavelet"
+]
+},
+{
+"name": "Th_Wavelet_zipf_1",
+"parallelism": 256,
+"iterations": 1,
+"runtime": 20000,
+"throughput": 200000,
+"source": "Zipf",
+"windowConfigurations": [
+[
+"Sliding(4000,2000)"
+]
+],
+"configurations": [
+"Scotty"
+],
+"synopses": [
+"Wavelet"
+]
+},
+{
+"name": "Th_Wavelet_zipf_1",
+"parallelism": 256,
+"iterations": 1,
+"runtime": 20000,
+"throughput": 500000,
+"source": "Zipf",
+"windowConfigurations": [
+[
+"Sliding(4000,2000)"
+]
+],
+"configurations": [
+"Scotty"
+],
+"synopses": [
+"Wavelet"
+]
+},
+{
+"name": "Th_Wavelet_zipf_1",
+"parallelism": 256,
+"iterations": 1,
+"runtime": 20000,
+"throughput": 1000000,
+"source": "Zipf",
+"windowConfigurations": [
+[
+"Sliding(4000,2000)"
+]
+],
+"configurations": [
+"Scotty"
+],
+"synopses": [
+"Wavelet"
+]
 }
