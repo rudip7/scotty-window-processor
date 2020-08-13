@@ -28,7 +28,9 @@ import java.util.TreeSet;
  */
 public final class ApproximateDataAnalytics {
 
-    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q, O>> queryLatest(DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Q> queryStream, QueryFunction<Q, S, O> queryFunction) {
+    public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<Q, O>> queryLatest
+            (DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<Q> queryStream, QueryFunction<Q, S, O> queryFunction) {
+
         MapStateDescriptor<Boolean, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<Boolean, WindowedSynopsis<S>>(
                 "latestSynopsis",
                 BasicTypeInfo.BOOLEAN_TYPE_INFO,
@@ -52,7 +54,8 @@ public final class ApproximateDataAnalytics {
      * @return
      */
     public static <Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<QueryResult<TimestampedQuery<Q>, O>> queryTimestamped
-    (DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<TimestampedQuery<Q>> queryStream, QueryFunction<TimestampedQuery<Q>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> queryFunction, int maxSynopsisCount) {
+        (DataStream<WindowedSynopsis<S>> synopsesStream, DataStream<TimestampedQuery<Q>> queryStream, QueryFunction<TimestampedQuery<Q>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> queryFunction, int maxSynopsisCount) {
+
         MapStateDescriptor<Boolean, TreeSet<WindowedSynopsis<S>>> synopsisMapStateDescriptor = new MapStateDescriptor<Boolean, TreeSet<WindowedSynopsis<S>>>(
                 "SynopsisArchive",
                 BasicTypeInfo.BOOLEAN_TYPE_INFO,
@@ -67,18 +70,18 @@ public final class ApproximateDataAnalytics {
 
     public static <P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> SingleOutputStreamOperator<StratifiedQueryResult<Q, O, P>> queryLatestStratified
             (DataStream<StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>> synopsesStream, DataStream<Tuple2<P, Q>> queryStream, QueryFunction<Q, S, O> queryFunction, Class<P> partitionClass) {
+
         MapStateDescriptor<P, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<P, WindowedSynopsis<S>>(
                 "latestSynopsis",
                 TypeInformation.of(partitionClass),
-                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {
-                }));
+                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {}));
 
         BroadcastStream<StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>> broadcast = synopsesStream.broadcast(synopsisMapStateDescriptor);
 
         KeyedStream<Tuple2<P, Q>, Tuple> keyedQueryStream = queryStream.keyBy(0);
 
         return keyedQueryStream.connect(broadcast)
-                .process(new QueryLatestStratifiedFunction<P, Q, S, O>(queryFunction, partitionClass));
+                .process(new QueryLatestStratifiedFunction<P, Q, S, O>(queryFunction, partitionClass, synopsisMapStateDescriptor));
     }
 
 

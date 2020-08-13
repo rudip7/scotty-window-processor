@@ -36,7 +36,8 @@ public class QueryLatestFunction<Q extends Serializable, S extends Synopsis, O e
         ReadOnlyBroadcastState<Boolean, WindowedSynopsis<S>> broadcastState = ctx.getBroadcastState(synopsisMapStateDescriptor);
 
         if (broadcastState.contains(true)) {
-            out.collect(new QueryResult<>(queryFunction.query(query, broadcastState.get(true).getSynopsis()), query, broadcastState.get(true)));
+            O result = queryFunction.query(query, broadcastState.get(true).getSynopsis());
+            out.collect(new QueryResult<Q, O>(result, query, broadcastState.get(true)));
         } else {
             queryList.add(query);
         }
@@ -45,15 +46,9 @@ public class QueryLatestFunction<Q extends Serializable, S extends Synopsis, O e
     @Override
     public void processBroadcastElement(WindowedSynopsis<S> synopsis, Context ctx, Collector<QueryResult<Q, O>> out) throws Exception {
         if (!ctx.getBroadcastState(synopsisMapStateDescriptor).contains(true) && queryList.size() > 0) {
-            queryList.forEach(new Consumer<Q>() {
-                @Override
-                public void accept(Q query) {
-                    out.collect(new QueryResult<>(queryFunction.query(query, synopsis.getSynopsis()), query, synopsis));
-                }
-            });
+            queryList.forEach(query -> out.collect(new QueryResult<Q, O>(queryFunction.query(query, synopsis.getSynopsis()), query, synopsis)));
             queryList.clear();
         }
         ctx.getBroadcastState(synopsisMapStateDescriptor).put(true, synopsis);
     }
-
 }

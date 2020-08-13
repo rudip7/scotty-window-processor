@@ -7,6 +7,7 @@ import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ReadOnlyBroadcastState;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple1;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
 import org.apache.flink.util.Collector;
@@ -14,6 +15,7 @@ import org.apache.flink.util.Collector;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class QueryLatestStratifiedFunction<P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> extends KeyedBroadcastProcessFunction<P, Tuple2<P,Q>, StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>, StratifiedQueryResult<Q, O, P>> {
@@ -25,14 +27,11 @@ public class QueryLatestStratifiedFunction<P extends Serializable, Q extends Ser
     private final MapStateDescriptor<P, WindowedSynopsis<S>> synopsisMapStateDescriptor;
 
 
-    public QueryLatestStratifiedFunction(QueryFunction<Q, S, O> queryFunction, Class<P> partitionClass) {
+    public QueryLatestStratifiedFunction(QueryFunction<Q, S, O> queryFunction, Class<P> partitionClass, MapStateDescriptor<P, WindowedSynopsis<S>> mapStateDescriptor) {
         this.queryFunction = queryFunction;
         queryList = new HashMap<>();
         this.partitionClass = partitionClass;
-        synopsisMapStateDescriptor = new MapStateDescriptor<P, WindowedSynopsis<S>>(
-                "latestSynopsis",
-                TypeInformation.of(partitionClass),
-                TypeInformation.of(new TypeHint<WindowedSynopsis<S>>() {}));
+        synopsisMapStateDescriptor = mapStateDescriptor;
     }
 
 
@@ -40,12 +39,16 @@ public class QueryLatestStratifiedFunction<P extends Serializable, Q extends Ser
     public void processElement(Tuple2<P,Q> query, ReadOnlyContext ctx, Collector<StratifiedQueryResult<Q, O, P>> out) throws Exception {
         ReadOnlyBroadcastState<P, WindowedSynopsis<S>> broadcastState = ctx.getBroadcastState(synopsisMapStateDescriptor);
 
-        if (broadcastState.contains(query.f0)) {
-            WindowedSynopsis<S> windowedSynopsis = broadcastState.get(query.f0);
+        // using query.f0 very strangely did not work, using context here was the best workaround i found
+        P key = ctx.getCurrentKey();
+
+
+        if (broadcastState.contains(key)){
+            WindowedSynopsis<S> windowedSynopsis = broadcastState.get(key);
             O queryResult = queryFunction.query(query.f1, windowedSynopsis.getSynopsis());
             out.collect(new StratifiedQueryResult<Q, O, P>(queryResult, query, windowedSynopsis));
-        } else if (queryList.containsKey(query.f0)){
-            queryList.get(query.f0).add(query);
+        } else if (queryList.containsKey(key)){
+            queryList.get(key).add(query);
         } else {
             ArrayList<Tuple2<P,Q>> queries = new ArrayList<>();
 

@@ -72,49 +72,6 @@ public class ExampleADAJob {
         env.execute("ADA Example Job");
     }
 
-    private static class DDSketchQuery implements QueryFunction<Double, DDSketch, Double>{
-
-        @Override
-        public Double query(Double query, DDSketch ddSketch) {
-            return ddSketch.getValueAtQuantile(query);
-        }
-    }
-
-
-    private static class QuerySource implements SourceFunction<Double> {
-
-        private final int queries;
-
-        public QuerySource() {
-            queries = 10;
-        }
-
-        public QuerySource(int queriesCount){
-            this.queries = queriesCount;
-        }
-
-        @Override
-        public void run(SourceContext<Double> ctx) throws Exception {
-            Random random = new Random();
-            // initial waiting time
-            long startTs = System.currentTimeMillis();
-            while (System.currentTimeMillis() < startTs + 10000) {
-                // active waiting
-            }
-
-            for (int i = 0; i < queries; i++) {
-                long time = System.currentTimeMillis();
-                while (System.currentTimeMillis() < time + 10) {
-                    // active waiting
-                }
-                ctx.collectWithTimestamp(random.nextDouble(), System.currentTimeMillis());
-            }
-        }
-
-        @Override
-        public void cancel() { }
-    }
-
     private static class TimestampedQuerySource implements SourceFunction<TimestampedQuery<Double>> {
 
         private final int queries;
