@@ -20,6 +20,7 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class ADABenchmark {
 
     public static void main(String[] args){
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
+        final String outputDir = parameterTool.get("outputDir", null);
         final Time runtime = Time.minutes(1);
         final int stratification = 10;
         final int sketchTroughput = 200; // # tuples / seconds to build the sketch
@@ -42,17 +44,16 @@ public class ADABenchmark {
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        for (int queryThroughput = 1000; queryThroughput <= 1000; queryThroughput *= 2) {
+        for (int queryThroughput = 100; queryThroughput <= 20000; queryThroughput *= 5) {
             System.out.println(queryThroughput);
-            runQueryLatest(env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
-            runQueryStratifiedLatest(env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
-            runQueryTimestamped(env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
-            runQueryStratifiedTimestamped(env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+            runQueryLatest(outputDir, env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
+            runQueryStratifiedLatest(outputDir,env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+            runQueryTimestamped(outputDir,env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
+            runQueryStratifiedTimestamped(outputDir,env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
         }
-
     }
 
-    static JobExecutionResult runQueryLatest(StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryLatest(String outputDir,StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
         DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
@@ -60,7 +61,8 @@ public class ADABenchmark {
 
         final DataStream<WindowedSynopsis<DDSketch>> synopsisStream = NewBuildSynopsis.timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params);
 
-        final DataStreamSource<Double> queryStream = env.addSource(new SimpleQuerySource(runtime, queryThroughput, config.getWindowTime()));
+        final DataStreamSource<Double> queryStreamSource = env.addSource(new SimpleQuerySource(runtime, queryThroughput, config.getWindowTime()));
+        final SingleOutputStreamOperator<Double> queryStream = queryStreamSource.flatMap(new ParallelThroughputLogger<Double>(1000, "query_latest - " + queryThroughput));
 
         final QueryFunction<Double, DDSketch, Double> queryFunction = new QueryFunction<Double, DDSketch, Double>() {
             @Override
@@ -71,7 +73,17 @@ public class ADABenchmark {
 
         final SingleOutputStreamOperator<QueryResult<Double, Double>> queryResults = ApproximateDataAnalytics.queryLatest(synopsisStream, queryStream, queryFunction);
 
-        queryResults.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/query_latest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        if (outputDir == null){
+            queryResults.addSink(new SinkFunction<QueryResult<Double, Double>>() {
+                @Override
+                public void invoke(QueryResult<Double, Double> value, Context context) throws Exception {
+                    // empty sink;
+                }
+            });
+        }else {
+            queryResults.writeAsText(outputDir+"/query_latest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        }
+
 
         try {
             return env.execute("Query Latest Job");
@@ -82,7 +94,7 @@ public class ADABenchmark {
         return null;
     }
 
-    static JobExecutionResult runQueryStratifiedLatest(StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryStratifiedLatest(String outputDir, StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
         Stratifier stratifier = new Stratifier(stratification);
 
@@ -103,7 +115,16 @@ public class ADABenchmark {
 
         DataStream<StratifiedQueryResult<Double, Double, Integer>> queryResultDataStream = ApproximateDataAnalytics.queryLatestStratified(stratifiedSynopsisStream, queryStream, queryFunction, Integer.class);
 
-        queryResultDataStream.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/query_stratified_latest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        if (outputDir == null){
+            queryResultDataStream.addSink(new SinkFunction<StratifiedQueryResult<Double, Double, Integer>>() {
+                @Override
+                public void invoke(StratifiedQueryResult<Double, Double, Integer> value, Context context) throws Exception {
+                    // do nothing sink;
+                }
+            });
+        }else {
+            queryResultDataStream.writeAsText(outputDir+"/query_stratified_latest.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        }
 
         try {
             return env.execute("Query Latest Job");
@@ -114,7 +135,7 @@ public class ADABenchmark {
         return null;
     }
 
-    static JobExecutionResult runQueryTimestamped(StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryTimestamped(String outputDir, StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
         DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
 
@@ -136,7 +157,16 @@ public class ADABenchmark {
         final SingleOutputStreamOperator<QueryResult<TimestampedQuery<Double>, Double>> queryResults =
                 ApproximateDataAnalytics.queryTimestamped(synopsesStream, timestampedQueries, queryFunction, 120);
 
-        queryResults.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/query_timestamped.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        if (outputDir == null){
+            queryResults.addSink(new SinkFunction<QueryResult<TimestampedQuery<Double>, Double>>() {
+                @Override
+                public void invoke(QueryResult<TimestampedQuery<Double>, Double> value, Context context) throws Exception {
+                    // do nothing sink;
+                }
+            });
+        }else {
+            queryResults.writeAsText(outputDir+"/query_timestamped.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        }
 
         try {
             return env.execute("Query Timestamped Job");
@@ -147,7 +177,7 @@ public class ADABenchmark {
         return null;
     }
 
-    static JobExecutionResult runQueryStratifiedTimestamped(StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryStratifiedTimestamped(String outputDir, StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
         DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
 
@@ -171,7 +201,16 @@ public class ADABenchmark {
         final SingleOutputStreamOperator<StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>> queryResultStream =
                 ApproximateDataAnalytics.queryTimestampedStratified(stratifiedSynopsisStream, queryStream, queryFunction, Integer.class, 100);
 
-        queryResultStream.writeAsText("/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/Results/query_timestamped_stratified.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        if (outputDir == null){
+            queryResultStream.addSink(new SinkFunction<StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>>() {
+                @Override
+                public void invoke(StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer> value, Context context) throws Exception {
+                    // do nothing sink;
+                }
+            });
+        }else {
+            queryResultStream.writeAsText(outputDir+"/query_timestamped_stratified.txt", FileSystem.WriteMode.OVERWRITE).setParallelism(1);
+        }
 
         try {
             env.execute("Query Timestamped Stratified Job");
@@ -181,6 +220,4 @@ public class ADABenchmark {
 
         return null;
     }
-
-
 }
