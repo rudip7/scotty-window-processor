@@ -16,6 +16,14 @@ import Synopsis.WindowedSynopsis;
 
 import javax.jws.Oneway;
 
+/**
+ * Function used by the ApproximateDataAnalytics Class to query the latest Synopsis seen in the SynopsisStream.
+ *
+ * @param <Q>   Query Type
+ * @param <S>   Synopsis Type
+ * @param <O>   Query Output Type
+ * @author Joscha von Hein
+ */
 public class QueryLatestFunction<Q extends Serializable, S extends Synopsis, O extends Serializable> extends BroadcastProcessFunction<Q, WindowedSynopsis<S>, QueryResult<Q, O>> {
 
     private final MapStateDescriptor<Boolean, WindowedSynopsis<S>> synopsisMapStateDescriptor = new MapStateDescriptor<Boolean, WindowedSynopsis<S>>(

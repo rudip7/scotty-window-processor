@@ -26,7 +26,15 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Used to Benchmark the Approximate Data Analytics Package.
+ *
+ * It will run queryLatest, queryStratified, queryTimestamped and queryStratifiedTimestamped a number of times with a given
+ * Synopsis to measure the throughput in the queryStream.
+ *
+ *
+ * @author Joscha von Hein
+ */
 public class ADABenchmark {
 
     public static void main(String[] args){

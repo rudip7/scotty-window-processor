@@ -21,7 +21,10 @@ import java.io.Serializable;
 import java.util.TreeSet;
 
 /**
- * Class which enables querying a stream of Synopsis easily for the user
+ * Class which enables querying a stream of Synopsis easily for the user.
+ * It takes both the synopsis stream and the query stream as inputs, as well as a synopsis specific query function
+ * and uses a BroadCastProcessFunction to 'join' the two.
+ * All Methods will produce a Stream of QueryResults.
  *
  * @author Joscha von Hein
  * @author Rudi Poepsel Lemaitre
