@@ -19,7 +19,7 @@ public class Runner {
 
 
         configPath = args[0];
-        // configPath = "/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/src/main/java/StreamApprox/testLocal.json";
+        configPath = "/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/src/main/java/StreamApprox/testLocal.json";
         System.out.println("\n\nLoading configurations: "+configPath);
 
         BenchmarkList benchmark = loadConfig();
@@ -27,7 +27,6 @@ public class Runner {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setMaxParallelism(env.getParallelism());
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        // TODO: check whether ObjectReuse really enhances throughput as expected!
         env.getConfig().enableObjectReuse();
 
         for (int i = 0; i < benchmark.approxConfigurationList.size(); i++) {
