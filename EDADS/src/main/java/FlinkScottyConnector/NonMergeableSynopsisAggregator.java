@@ -1,6 +1,7 @@
 package FlinkScottyConnector;
 
 import Synopsis.MergeableSynopsis;
+import Synopsis.Sampling.TimestampedElement;
 import Synopsis.StratifiedSynopsis;
 import Synopsis.Synopsis;
 import org.apache.flink.api.common.functions.AggregateFunction;
@@ -15,6 +16,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.PriorityQueue;
 
 /**
  * General {@link AggregateFunction} to build a customized MergeableSynopsis in an incremental way.
@@ -25,23 +27,21 @@ import java.lang.reflect.InvocationTargetException;
 public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1, Synopsis, Synopsis> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalStreamEnvironment.class);
-    private int keyField;
-    private int partitionField;
+    private boolean stratified = false;
     private Class<? extends Synopsis> sketchClass;
     private Object[] constructorParam;
+    private int miniBatchSize;
+    private PriorityQueue<TimestampedElement<Tuple2>> dispatchList;
 
     /**
      * Construct a new MergeableSynopsis Aggregator Function.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
-     * @param keyField    The keyField with which to update the MergeableSynopsis. To update with the whole Tuple use -1!
      */
-    public NonMergeableSynopsisAggregator(Class<? extends Synopsis> sketchClass, Object[] params, int keyField) {
-        this.keyField = keyField;
+    public NonMergeableSynopsisAggregator(Class<? extends Synopsis> sketchClass, Object[] params) {
         this.sketchClass = sketchClass;
         this.constructorParam = params;
-        this.partitionField = -1;
     }
 
     /**
@@ -49,13 +49,26 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
-     * @param keyField    The keyField with which to update the MergeableSynopsis. To update with the whole Tuple use -1!
      */
-    public NonMergeableSynopsisAggregator(Class<? extends Synopsis> sketchClass, Object[] params, int partitionField, int keyField) {
-        this.keyField = keyField;
-        this.partitionField = partitionField;
+    public NonMergeableSynopsisAggregator(boolean stratified, Class<? extends MergeableSynopsis> sketchClass, Object[] params) {
         this.sketchClass = sketchClass;
         this.constructorParam = params;
+        this.stratified = stratified;
+    }
+
+    /**
+     * Construct a new MergeableSynopsis Aggregator Function.
+     *
+     * @param sketchClass the MergeableSynopsis.class
+     * @param params      The parameters of the MergeableSynopsis as an Object array
+     */
+    public NonMergeableSynopsisAggregator(int miniBatchSize, Class<? extends MergeableSynopsis> sketchClass, Object[] params) {
+        this.sketchClass = sketchClass;
+        this.constructorParam = params;
+        this.stratified = true;
+        if (miniBatchSize > 0) {
+            dispatchList = new PriorityQueue<>();
+        }
     }
 
     /**
@@ -99,34 +112,31 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
      */
     @Override
     public Synopsis add(T1 value, Synopsis accumulator) {
-        if (partitionField < 0) {
+        if (miniBatchSize > 0) {
+            if (!(value instanceof TimestampedElement)) {
+                throw new IllegalArgumentException("Incoming elements must be from type TimestampedElement to build a stratified non mergeable synopsis with order.");
+            }
+            TimestampedElement<Tuple2> inputTuple = (TimestampedElement<Tuple2>) value;
+            dispatchList.add(inputTuple);
+            ((StratifiedSynopsis) accumulator).setPartitionValue(inputTuple.getValue().f0);
+
+            if (dispatchList.size() == miniBatchSize) {
+                while (!dispatchList.isEmpty()) {
+                    Tuple2 tupleValue = dispatchList.poll().getValue();
+                    accumulator.update(tupleValue.f1);
+                }
+            }
+        } else {
             if (!(value instanceof Tuple2)) {
-                throw new IllegalArgumentException("Incoming elements must be from type to build a synopsis.");
+                throw new IllegalArgumentException("Incoming elements must be from type Tuple2 to build a synopsis.");
             }
             Tuple2 tupleValue = (Tuple2) value;
-            if (tupleValue.f1 instanceof Tuple && keyField != -1) {
-                Object field = ((Tuple) tupleValue.f1).getField(this.keyField);
-                accumulator.update(field);
-                return accumulator;
-            }
             accumulator.update(tupleValue.f1);
-            return accumulator;
-        } else {
-            if (!(value instanceof Tuple)) {
-                throw new IllegalArgumentException("Incoming elements must be from type Tuple to build a stratified synopsis.");
+            if (stratified) {
+                ((StratifiedSynopsis) accumulator).setPartitionValue(tupleValue.f0);
             }
-            Tuple tupleValue = (Tuple) value;
-
-            ((StratifiedSynopsis) accumulator).setPartitionValue(tupleValue.getField(this.partitionField));
-            if (keyField != -1) {
-                Object field = tupleValue.getField(this.keyField);
-                accumulator.update(field);
-                return accumulator;
-            }
-            accumulator.update(tupleValue);
-            return accumulator;
-
         }
+        return accumulator;
     }
 
     /**
@@ -157,17 +167,23 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        out.writeInt(keyField);
         out.writeObject(constructorParam);
         out.writeObject(sketchClass);
-        out.writeInt(partitionField);
+        out.writeBoolean(stratified);
+        out.writeInt(miniBatchSize);
+        if (miniBatchSize > 0){
+            out.writeObject(dispatchList);
+        }
     }
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        keyField = in.readInt();
         constructorParam = (Object[]) in.readObject();
         sketchClass = (Class<? extends MergeableSynopsis>) in.readObject();
-        partitionField = in.readInt();
+        stratified = in.readBoolean();
+        this.miniBatchSize = in.readInt();
+        if (miniBatchSize > 0){
+            dispatchList = (PriorityQueue<TimestampedElement<Tuple2>>) in.readObject();
+        }
     }
 
     private void readObjectNoData() throws ObjectStreamException {

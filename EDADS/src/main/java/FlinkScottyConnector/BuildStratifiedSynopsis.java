@@ -1,7 +1,6 @@
 package FlinkScottyConnector;
 
 
-
 import Synopsis.CommutativeSynopsis;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.MergeableSynopsis;
@@ -14,6 +13,8 @@ import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.functions.KeySelector;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -44,42 +45,70 @@ public final class BuildStratifiedSynopsis {
 
     public static void setParallelismKeys(int newParallelismKeys) {
         parallelismKeys = newParallelismKeys;
-        System.out.println("BuildStratifiedSynopsis Parallelism Keys changed to: "+parallelismKeys);
+        System.out.println("BuildStratifiedSynopsis Parallelism Keys changed to: " + parallelismKeys);
     }
 
-    public static int getParallelismKeys(){
+    public static int getParallelismKeys() {
         return parallelismKeys;
     }
 
-    public static <T, S extends Synopsis, Key, Value> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
-        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
-        KeyedStream keyBy = inputStream
-                .map(mapper)
-                .keyBy(0);
-
-        WindowedStream windowedStream;
-        if (slideTime == null) {
-            windowedStream = keyBy.timeWindow(windowTime);
-        } else {
-            windowedStream = keyBy.timeWindow(windowTime, slideTime);
+    public static <T, S extends Synopsis, Key, Value> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
+        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
+            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
         }
+        if (MergeableSynopsis.class.isAssignableFrom(synopsisClass)) {
+            SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
 
-        return windowedStream
-                .aggregate(agg).returns(synopsisClass);
+            KeyedStream keyBy = inputStream
+                    .map(mapper)
+                    .keyBy(0);
+
+            WindowedStream windowedStream;
+            if (slideTime == null) {
+                windowedStream = keyBy.timeWindow(windowTime);
+            } else {
+                windowedStream = keyBy.timeWindow(windowTime, slideTime);
+            }
+
+            return windowedStream
+                    .aggregate(agg)
+                    .returns(synopsisClass);
+        } else {
+            NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(true, synopsisClass, parameters);
+            KeyedStream keyBy = inputStream
+                    .map(mapper)
+                    .keyBy(0);
+
+            WindowedStream windowedStream;
+            if (slideTime == null) {
+                windowedStream = keyBy.timeWindow(windowTime);
+            } else {
+                windowedStream = keyBy.timeWindow(windowTime, slideTime);
+            }
+
+            return windowedStream
+                    .aggregate(agg)
+                    .returns(synopsisClass);
+        }
     }
 
 
-  //TODO: Support NonMergeableSynopsis with TransformStratified<>(partitionField, keyField)
+    //TODO: Support NonMergeableSynopsis with TransformStratified<>(partitionField, keyField)
 
 
-    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager, Key, Value> SingleOutputStreamOperator<AggregateWindow<SM>> scottyWindows(DataStream<T> inputStream, Window[] windows, int keyField, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object... parameters) {
+    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager, Key, Value> SingleOutputStreamOperator<AggregateWindow<SM>> scottyWindows(DataStream<T> inputStream, Window[] windows, RichMapFunction<T, TimestampedElement<Tuple2<Key, Value>>> mapper, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object... parameters) {
 
-        KeyedStream<Tuple2<Key, Value>, Tuple> keyedStream = inputStream
+        KeyedStream<TimestampedElement<Tuple2<Key, Value>>, String> keyedStream = inputStream
                 .map(mapper)
-                .keyBy(0);
+                .keyBy(new KeySelector<TimestampedElement<Tuple2<Key, Value>>, String>() {
+                    @Override
+                    public String getKey(TimestampedElement<Tuple2<Key, Value>> value) throws Exception {
+                        return String.valueOf(value.getValue().f0);
+                    }
+                });
 
-        KeyedScottyWindowOperator<Tuple, Tuple2<Key, Value>, SM> processingFunction =
-                new KeyedScottyWindowOperator<>(new NonMergeableSynopsisFunction(keyField, -1, synopsisClass, sliceManagerClass, parameters));
+        KeyedScottyWindowOperator<String, TimestampedElement<Tuple2<Key, Value>>, SM> processingFunction =
+                new KeyedScottyWindowOperator<>(new StratifiedNonMergeableSynopsisFunction(synopsisClass, sliceManagerClass, parameters));
 
         for (Window window : windows) {
             processingFunction.addWindow(window);
@@ -103,46 +132,10 @@ public final class BuildStratifiedSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T, S extends MergeableSynopsis, Key, Value> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
-        return timeBased(inputStream,windowTime,null,mapper,synopsisClass,parameters);
+        return timeBased(inputStream, windowTime, null, mapper, synopsisClass, parameters);
     }
 
-    /**
-     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
-     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
-     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
-     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
-     *
-     * @param inputStream   the data stream to build the MergeableSynopsis
-     * @param windowTime    the size of the time window
-     * @param slideTime     sliding window time
-     * @param mapper        A custom Map Function which takes any Tuple as Input and must have a (Key, Value) Tuple2 as output
-     * @param synopsisClass the type of MergeableSynopsis to be computed
-     * @param parameters    the initialization parameters for the MergeableSynopsis
-     * @param <T>           the type of the input elements
-     * @param <S>           the type of the MergeableSynopsis
-     * @return stream of time window based Synopses
-     */
-    public static <T, S extends MergeableSynopsis, Key, Value> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
-        if (!StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
-            throw new IllegalArgumentException("Synopsis class needs to extend the StratifiedSynopsis abstract class to build a stratified synopsis.");
-        }
-        SynopsisAggregator agg = new SynopsisAggregator(true, synopsisClass, parameters);
 
-        KeyedStream keyBy = inputStream
-                .map(mapper)
-                .keyBy(0);
-
-        WindowedStream windowedStream;
-        if (slideTime == null) {
-            windowedStream = keyBy.timeWindow(windowTime);
-        } else {
-            windowedStream = keyBy.timeWindow(windowTime, slideTime);
-        }
-
-        return windowedStream
-                .aggregate(agg)
-                .returns(synopsisClass);
-    }
     /**
      * Build an operator pipeline to generate a stream of count window based Synopses. Firstly each element will be
      * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
@@ -159,7 +152,7 @@ public final class BuildStratifiedSynopsis {
      * @return stream of count window based Synopses
      */
     public static <T, S extends MergeableSynopsis, Key, Value> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, RichMapFunction<T, Tuple2<Key, Value>> mapper, Class<S> synopsisClass, Object... parameters) {
-        return countBased(inputStream,windowSize,-1,mapper,synopsisClass,parameters);
+        return countBased(inputStream, windowSize, -1, mapper, synopsisClass, parameters);
     }
 
     /**
@@ -253,7 +246,7 @@ public final class BuildStratifiedSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Time windowTime, int partitionField, int keyField, Class<S> synopsisClass, Object... parameters) {
-        return timeBased(inputStream,windowTime,null,partitionField,keyField,synopsisClass,parameters);
+        return timeBased(inputStream, windowTime, null, partitionField, keyField, synopsisClass, parameters);
     }
 
 
@@ -430,8 +423,8 @@ public final class BuildStratifiedSynopsis {
             }
             return keyedStream.process(processingFunction);
         } else {
-            KeyedStream<Tuple2<String,Object>, Tuple> keyedStream = inputStream.map(new TransformStratified(partitionField, keyField)).keyBy(0);
-            KeyedScottyWindowOperator<Tuple, Tuple2<String,Object>, S> processingFunction;
+            KeyedStream<Tuple2<String, Object>, Tuple> keyedStream = inputStream.map(new TransformStratified(partitionField, keyField)).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<String, Object>, S> processingFunction;
             if (InvertibleSynopsis.class.isAssignableFrom(synopsisClass)) {
                 processingFunction =
                         new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(true, synopsisClass, parameters));
@@ -452,6 +445,15 @@ public final class BuildStratifiedSynopsis {
 
     public static <T extends Tuple, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, Window[] windows, int partitionField, Class<S> synopsisClass, Object... parameters) {
         return scottyWindows(inputStream, windows, partitionField, -1, synopsisClass, parameters);
+    }
+
+    public static class TimestampedKeySelector implements KeySelector<TimestampedElement<Tuple2>, String> {
+
+
+        @Override
+        public String getKey(TimestampedElement<Tuple2> value) throws Exception {
+            return String.valueOf(value.getValue().f0);
+        }
     }
 
 
