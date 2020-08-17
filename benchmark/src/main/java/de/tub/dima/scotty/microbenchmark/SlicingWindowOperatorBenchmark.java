@@ -11,6 +11,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.util.concurrent.TimeUnit;
+
 @State(Scope.Benchmark)
 public class SlicingWindowOperatorBenchmark {
 
@@ -34,6 +36,8 @@ public class SlicingWindowOperatorBenchmark {
         });
     }
 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
     @Benchmark()
     public void benchmarkSameSlice() throws Exception {
         windowOperator.processElement(10, 0);
