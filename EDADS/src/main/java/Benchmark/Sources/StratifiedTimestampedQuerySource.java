@@ -13,13 +13,15 @@ public class StratifiedTimestampedQuerySource implements SourceFunction<Tuple2<I
     private final long wait;
     private final long runtime;
     private final int stratification;
+    private final int synopsisRuntime; // synopsis runtime in seconds
 
 
-    public StratifiedTimestampedQuerySource(int throughput, Time wait, Time runtime, int stratification) {
+    public StratifiedTimestampedQuerySource(int throughput, Time wait, Time queryRuntime, Time synopsisRuntime,int stratification) {
         this.throughput = throughput;
         this.wait = wait.toMilliseconds();
-        this.runtime = runtime.toMilliseconds() - this.wait;
+        this.runtime = queryRuntime.toMilliseconds();
         this.stratification = stratification;
+        this.synopsisRuntime = (int)(synopsisRuntime.toMilliseconds() / 1000);
     }
 
     @Override
@@ -37,10 +39,9 @@ public class StratifiedTimestampedQuerySource implements SourceFunction<Tuple2<I
         while (System.currentTimeMillis() < endTs){
 
             long time = System.currentTimeMillis();
-            int upperBound = (int)((time - startTs) / 1000);
 
             for (int i = 0; i < throughput; i++) {
-                int relativeTimestamp = random.nextInt(upperBound); // upper bound in seconds from job start
+                int relativeTimestamp = random.nextInt(synopsisRuntime);
                 long query_timestamp = startTs + relativeTimestamp * 1000;
                 TimestampedQuery<Double> timestampedQuery = new TimestampedQuery<Double>(random.nextDouble(), query_timestamp);
                 ctx.collectWithTimestamp(new Tuple2<>(random.nextInt(stratification), timestampedQuery), time);
