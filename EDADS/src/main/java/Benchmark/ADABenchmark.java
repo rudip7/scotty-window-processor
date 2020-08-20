@@ -32,6 +32,8 @@ public class ADABenchmark {
     public static void main(String[] args){
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
         final String outputDir = parameterTool.get("outputDir", null);
+//        final String outputDir = null;
+
         final Time runtime = Time.minutes(1);
         final int stratification = 10;
         final int sketchTroughput = 200; // # tuples / seconds to build the sketch
@@ -43,8 +45,11 @@ public class ADABenchmark {
         final BuildSynopsisConfig config = new BuildSynopsisConfig(windowTime, null, 0); // config object for tumbling window with 5 seconds slide time
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        for (int queryThroughput = 100; queryThroughput <= 20000; queryThroughput *= 5) {
+//        int queryThroughput = Integer.parseInt(args[0]);
+//        System.out.println(queryThroughput);
+//        runQueryLatest(outputDir, env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
+//
+        for (int queryThroughput = 10000; queryThroughput <= 20000; queryThroughput *= 5) {
             System.out.println(queryThroughput);
             runQueryLatest(outputDir, env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
             runQueryStratifiedLatest(outputDir,env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
