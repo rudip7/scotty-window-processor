@@ -1,6 +1,7 @@
 package Benchmark.ScottyBenchmarkJobs;
 
 import Benchmark.ParallelThroughputLogger;
+import Benchmark.RichStratifier;
 import Benchmark.Sources.UniformDistributionSource;
 import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
@@ -53,7 +54,8 @@ public class ZipfScottyJob<S extends MergeableSynopsis> {
 
 		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream;
 		if (stratified){
-			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
+//			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
+			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped,windows,new RichStratifier(env.getParallelism(),false),synopsisClass, parameters);
 		} else {
 			synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
 		}

@@ -92,7 +92,7 @@
               </filters>
               <transformers>
                 <transformer>
-                  <mainClass>StreamApprox.Runner</mainClass>
+                  <mainClass>Benchmark.BenchmarkRunner</mainClass>
                 </transformer>
               </transformers>
             </configuration>
