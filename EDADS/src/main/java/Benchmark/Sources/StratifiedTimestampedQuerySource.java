@@ -2,12 +2,13 @@ package Benchmark.Sources;
 
 import ApproximateDataAnalytics.TimestampedQuery;
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class StratifiedTimestampedQuerySource implements SourceFunction<Tuple2<Integer, TimestampedQuery<Double>>> {
+public class StratifiedTimestampedQuerySource extends RichParallelSourceFunction<Tuple2<Integer, TimestampedQuery<Double>>> {
 
     private final int throughput;
     private final long wait;

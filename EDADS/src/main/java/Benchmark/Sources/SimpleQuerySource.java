@@ -1,11 +1,12 @@
 package Benchmark.Sources;
 
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class SimpleQuerySource implements SourceFunction<Double> {
+public class SimpleQuerySource extends RichParallelSourceFunction<Double> {
 
     private final long runtime;
     private final int throughput;

@@ -1,12 +1,13 @@
 package Benchmark.Sources;
 
 import ApproximateDataAnalytics.TimestampedQuery;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class TimestampedQuerySource implements SourceFunction<TimestampedQuery<Double>> {
+public class TimestampedQuerySource extends RichParallelSourceFunction<TimestampedQuery<Double>> {
 
     private final long runtime; // in millis
     private final int throughput;

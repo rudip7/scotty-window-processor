@@ -42,7 +42,7 @@ public class ADABenchmark {
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
         final String outputDir = parameterTool.get("outputDir", null);
         final boolean test = parameterTool.has("test");
-        int maxParallelism = test ? 2 : 256;
+        int maxParallelism = test ? 2 : 64;
         final int stratification = 10;
         final int sketchTroughput = 1000; // # tuples / seconds to build the sketch
         final List<Tuple2<Long, Long>> gaps = new ArrayList<>();
@@ -60,15 +60,22 @@ public class ADABenchmark {
 
 
         for (int parallelism = 2; parallelism <= maxParallelism; parallelism *= 2) {
-            for (int queryThroughput = 10000; queryThroughput <= 1000000; queryThroughput *= 5) {
+            for (int queryThroughput = 300000; queryThroughput <= 500000; queryThroughput += 50000) {
                 for (int iteration = 0; iteration < 10; iteration++) {
                     env.setParallelism(parallelism);
                     String configString = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughput;
-                    System.out.println(queryThroughput);
-                    runQueryLatest(configString, outputDir, env, sketchTroughput, queryThroughput, gaps, config, params);
-                    runQueryStratifiedLatest(configString, outputDir,env, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+                    System.out.println(configString);
                     runQueryTimestamped(configString, outputDir,env, sketchTroughput, queryThroughput, gaps, config, params);
                     runQueryStratifiedTimestamped(configString, outputDir,env, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+                }
+            }
+            for (int queryThroughput = 600000; queryThroughput <= 1000000 ; queryThroughput += 200000) {
+                for (int iteration = 0; iteration < 10; iteration++) {
+                    env.setParallelism(parallelism);
+                    String configString = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughput;
+                    System.out.println(configString);
+                    runQueryLatest(configString, outputDir, env, sketchTroughput, queryThroughput, gaps, config, params);
+                    runQueryStratifiedLatest(configString, outputDir,env, sketchTroughput, queryThroughput, stratification, gaps, config, params);
                 }
             }
         }

@@ -1,12 +1,13 @@
 package Benchmark.Sources;
 
 import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class StratifiedQuerySource implements SourceFunction<Tuple2<Integer, Double>> {
+public class StratifiedQuerySource extends RichParallelSourceFunction<Tuple2<Integer, Double>> {
 
     private final long runtime;
     private final int throughput;
