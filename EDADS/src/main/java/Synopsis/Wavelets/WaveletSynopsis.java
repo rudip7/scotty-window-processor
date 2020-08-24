@@ -12,13 +12,12 @@ import java.util.PriorityQueue;
 public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsis<T>, Serializable {
 
     private int size;
-    private FrontlineNode frontlineBottom;
-    private FrontlineNode frontlineTop;
+    private FrontlineNode frontlineBottom; // pointer to lower fnode
+    private FrontlineNode frontlineTop; //pointer to upper fnode
     private FrontlineNode rootnode;  // only set after the whole data stream is read (in padding)
     private int streamElementCounter;
     private PriorityQueue<DataNode> errorHeap;
     private double data1;
-
     private WaveletSynopsis<T> combinedWith;
 
     public int getStreamElementCounter() {
@@ -56,6 +55,11 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         }
     }
 
+    /**
+     * private method used by update(T element) to add new element
+     *
+     * @param element
+     */
     private void update(double element) {
         streamElementCounter++;
         if (streamElementCounter % 2 == 0) {
@@ -145,6 +149,16 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         return rangeQueryTraversal(leftIndex, rightIndex, rootnode.hungChild, rangeSum);
     }
 
+    /**
+     * private method compute range sum by traversing both right and left subtree of a node
+     * when right and left indexes are contained in subtrees
+     *
+     * @param leftIndex
+     * @param rightIndex
+     * @param current
+     * @param ancestorContribution
+     * @return
+     */
     private double rangeQueryTraversal(int leftIndex, int rightIndex, DataNode current, double ancestorContribution) {
 
         DataNode onLeftPath = current;

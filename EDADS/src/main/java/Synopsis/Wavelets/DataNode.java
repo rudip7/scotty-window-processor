@@ -29,7 +29,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         out.writeDouble(data);
         out.writeDouble(maxerrorleft);
         out.writeDouble(minerrorleft);
-        out.writeDouble(maxerrorright);  
+        out.writeDouble(maxerrorright);
         out.writeDouble(minerrorright);
         out.writeDouble(maxabserror);
         out.writeInt(level);
@@ -125,6 +125,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
 
     /**
      * compute the potential maximum absolute error if this node were to be discarded
+     *
      * @return      potential maximum absolute error
      */
     public double computeMA(){
@@ -134,6 +135,13 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         return maxabserror;
     }
 
+    /**
+     * find in which subtree is the index located
+     *
+     * @param  queryIndex
+     * @param  maxLevel the maximum level in tree (or level of leaves)
+     * @return 1 if index is in left subtree, -1 if it is in right subtree and 0 if not contained
+     */
     public int indexInSubtree(int queryIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
         int treeSize = (int) Math.pow(2, maxLevel);
@@ -155,7 +163,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      * @param leftIndex     inclusive
      * @param rightIndex    inclusive
      * @param maxLevel
-     * @return
+     * @return calculated amount
      */
     public int countLeftLeaves(int leftIndex,int rightIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
@@ -175,7 +183,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      * @param leftIndex     inclusive
      * @param rightIndex    inclusive
      * @param maxLevel
-     * @return
+     * @return calculated amount
      */
     public int countRightLeaves(int leftIndex, int rightIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
