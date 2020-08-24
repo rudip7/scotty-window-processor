@@ -29,7 +29,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         out.writeDouble(data);
         out.writeDouble(maxerrorleft);
         out.writeDouble(minerrorleft);
-        out.writeDouble(maxerrorright);
+        out.writeDouble(maxerrorright);  
         out.writeDouble(minerrorright);
         out.writeDouble(maxabserror);
         out.writeInt(level);
