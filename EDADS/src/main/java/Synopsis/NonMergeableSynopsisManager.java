@@ -10,8 +10,18 @@ public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Inpu
         unifiedSynopses = new ArrayList<>();
     }
 
+    /**
+     * return the index of the synopsis contains streamIndex
+     *
+     * @param streamIndex
+     */
     public abstract int getSynopsisIndex(int streamIndex);
 
+    /**
+     * add new synopsis to a collection of synopses
+     *
+     * @param synopsis
+     */
     public void addSynopsis(S synopsis){
         unifiedSynopses.add(synopsis);
     }
@@ -24,11 +34,19 @@ public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Inpu
         return elementsProcessed;
     }
 
+    /**
+     * unify tow noneNonMergeable Synopses
+     *
+     * @param other
+     */
     public void unify(NonMergeableSynopsisManager other){
         elementsProcessed += other.getElementsProcessed();
         unifiedSynopses.addAll(other.getUnifiedSynopses());
     }
 
+    /**
+     * empty the NonMergeableSynopsis manager
+     */
     public void cleanManager(){
         unifiedSynopses = new ArrayList<>();
         elementsProcessed = 0;

@@ -2,7 +2,6 @@ package Synopsis.Wavelets;
 
 import Synopsis.NonMergeableSynopsisManager;
 import Synopsis.StratifiedSynopsis;
-
 import java.util.ArrayList;
 
 
@@ -11,6 +10,11 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
     int slicesPerWindow;
     ArrayList<Integer> sliceStartIndices;
 
+    /**
+     * SliceWaveletsManager constructor - assign slices and store the start indices of slices in an Arraylist.
+     *
+     * @param unifiedSynopses an array of WaveletSynopsis
+     */
 
     public SliceWaveletsManager(ArrayList<WaveletSynopsis<Input>> unifiedSynopses) {
         this.unifiedSynopses = unifiedSynopses;
@@ -37,6 +41,12 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
         }
     }
 
+
+    /**
+     * return the index of the slice contains streamIndex
+     *
+     * @param streamIndex
+     */
     @Override
     public int getSynopsisIndex(int streamIndex) {
         int index = -1;
@@ -76,13 +86,26 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
 //        throw new IllegalArgumentException("It is only possible to unify two objects of type NonMergeableSynopsisManager with each other.");
     }
 
+
+    /**
+     * perform a simple point query based on the given index
+     *
+     * @param index
+     * @return value of the stream element at given index
+     */
     public double pointQuery(int index) {
         int managerIndex = getSynopsisIndex(index);
         int previousSliceElements = sliceStartIndices.get(managerIndex);
         return unifiedSynopses.get(managerIndex).pointQuery(index - previousSliceElements);
     }
 
-
+    /**
+     * performs a range sum query.
+     *
+     * @param leftIndex
+     * @param rightIndex
+     * @return approximated sum of values between leftIndex and rightIndex
+     */
     public double rangeSumQuery(int leftIndex, int rightIndex) {
         int leftManagerIndex = getSynopsisIndex(leftIndex);
         int rightManagerIndex = getSynopsisIndex(rightIndex);

@@ -64,6 +64,15 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         // no idea what to put here...
     }
 
+    /**
+     * DataNode constructor - add a DataNode to sibling tree based on its corresponding information.
+     *
+     * @param data
+     * @param level
+     * @param orderinlevel
+     * @param leftChild
+     * @param previousSibling
+     */
     public DataNode(double data, int level, int orderinlevel, DataNode leftChild, DataNode previousSibling) {
         this.data = data;
         this.level = level;
@@ -125,6 +134,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
 
     /**
      * compute the potential maximum absolute error if this node were to be discarded
+     *
      * @return      potential maximum absolute error
      */
     public double computeMA(){
@@ -135,10 +145,11 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     }
 
     /**
-     * find that in which subtree, a queried index is contained or not contained in tree
-     * @param queryIndex    The queried index
-     * @param maxLevel    Maximum level index could be contained
-     * @return      containing subtree or zero when index is not contained
+     * find in which subtree is the index located
+     *
+     * @param  queryIndex
+     * @param  maxLevel the maximum level in tree (or level of leaves)
+     * @return 1 if index is in left subtree, -1 if it is in right subtree and 0 if not contained
      */
     public int indexInSubtree(int queryIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
@@ -160,8 +171,8 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      *
      * @param leftIndex     inclusive
      * @param rightIndex    inclusive
-     * @param maxLevel      the calculated amount is corresponded to existing leftleaves up to the maxlevel
-     * @return
+     * @param maxLevel
+     * @return calculated amount
      */
     public int countLeftLeaves(int leftIndex,int rightIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
@@ -180,8 +191,8 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      *
      * @param leftIndex     inclusive
      * @param rightIndex    inclusive
-     * @param maxLevel      the calculated amount is corresponded to existing rightleaves up to the maxlevel
-     * @return
+     * @param maxLevel
+     * @return calculated amount
      */
     public int countRightLeaves(int leftIndex, int rightIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
