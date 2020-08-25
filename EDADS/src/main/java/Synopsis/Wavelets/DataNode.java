@@ -134,6 +134,12 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         return maxabserror;
     }
 
+    /**
+     * find that in which subtree, a queried index is contained or not contained in tree
+     * @param queryIndex    The queried index
+     * @param maxLevel    Maximum level index could be contained
+     * @return      containing subtree or zero when index is not contained
+     */
     public int indexInSubtree(int queryIndex, int maxLevel){
         int coefficientsInLevel = (int) Math.pow(2, maxLevel - level);
         int treeSize = (int) Math.pow(2, maxLevel);
@@ -154,7 +160,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      *
      * @param leftIndex     inclusive
      * @param rightIndex    inclusive
-     * @param maxLevel
+     * @param maxLevel      the calculated amount is corresponded to existing leftleaves up to the maxlevel
      * @return
      */
     public int countLeftLeaves(int leftIndex,int rightIndex, int maxLevel){
@@ -174,7 +180,7 @@ public class DataNode implements Serializable, Comparable<DataNode> {
      *
      * @param leftIndex     inclusive
      * @param rightIndex    inclusive
-     * @param maxLevel
+     * @param maxLevel      the calculated amount is corresponded to existing rightleaves up to the maxlevel
      * @return
      */
     public int countRightLeaves(int leftIndex, int rightIndex, int maxLevel){

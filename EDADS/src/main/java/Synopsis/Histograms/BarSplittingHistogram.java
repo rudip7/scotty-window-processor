@@ -111,7 +111,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         }
 
     }
-
+    /**
+     * Split corresponding bin until its size does not exceeds maximum size
+     * @param leftKey    The left boundary  of the bin
+     * @param maxSize    Maximum size of bins
+     * @return
+     */
     private void splitBin(int leftKey, double maxSize){
 
         float currentFrequency = bars.get(leftKey);
