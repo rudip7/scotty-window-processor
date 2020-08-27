@@ -44,6 +44,11 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         combinedWith = null;
     }
 
+    /**
+     * Update the Wavelet structure with a new incoming element.
+     *
+     * @param element new incoming element
+     */
     @Override
     public void update(T element) {
         if (element instanceof Number) {
@@ -55,7 +60,7 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
     }
 
     /**
-     * private method used by update(T element) to add new element
+     * private method used by update(T element) to update Wavelet with new element
      *
      * @param element
      */
@@ -534,6 +539,9 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
     }
 
 
+    /**
+     * write the object to an OutputStream .
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(size);
         out.writeObject(frontlineBottom);
@@ -545,6 +553,9 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         out.writeObject(combinedWith);
     }
 
+    /**
+     * read the object from an inputStream .
+    */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         size = in.readInt();
         frontlineBottom = (FrontlineNode) in.readObject();

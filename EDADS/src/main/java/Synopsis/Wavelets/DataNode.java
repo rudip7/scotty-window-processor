@@ -25,6 +25,9 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     DataNode nextSibling;   // next (right) sibling
     DataNode previousSibling;   // previous (left) sibling
 
+    /**
+     * write the object to an OutputStream .
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeDouble(data);
         out.writeDouble(maxerrorleft);
@@ -42,6 +45,9 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         out.writeObject(previousSibling);
     }
 
+    /**
+     * read the object from an inputStream .
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         data = in.readDouble();
         maxerrorleft = in.readDouble();
