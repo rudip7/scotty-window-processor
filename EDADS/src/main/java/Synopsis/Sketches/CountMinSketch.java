@@ -112,22 +112,46 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
         return min;
     }
 
+    /**
+     * Returns the width.
+     *
+     * @return the width
+     */
     public int getWidth() {
         return width;
     }
 
+    /**
+     * Returns the height.
+     *
+     * @return the height
+     */
     public int getHeight() {
         return height;
     }
 
+    /**
+     * Returns the array.
+     *
+     * @return the array
+     */
     public int[][] getArray() {
         return array;
     }
 
+    /**
+     * Returns the elementsProcessed.
+     *
+     * @return the elementsProcessed
+     */
     public int getElementsProcessed() {
         return elementsProcessed;
     }
 
+    /**
+     * set array in the sketch
+     * @param array, an array which array of the sketch is set to the value of its elements
+     */
     public void setArray(int[][] array) {
         if (!(array.length == height && array[0].length == width)) {
             throw new IllegalArgumentException("MergeableSynopsis.Sketches have to be the same size");

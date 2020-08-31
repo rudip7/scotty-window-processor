@@ -26,7 +26,9 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     DataNode previousSibling;   // previous (left) sibling
 
     /**
-     * write the object to an OutputStream .
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeDouble(data);
@@ -46,7 +48,9 @@ public class DataNode implements Serializable, Comparable<DataNode> {
     }
 
     /**
-     * read the object from an inputStream .
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in
      */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         data = in.readDouble();
@@ -212,6 +216,12 @@ public class DataNode implements Serializable, Comparable<DataNode> {
         return Math.max(rightBorder - leftBorder, 0);
     }
 
+    /**
+     * convert the information contained in DataNode to string.
+     * could be used to print the DataNode
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         String s = "Coeff. value: "+data + " ["+ maxerrorleft +"," + minerrorleft + "," + maxerrorright + "," + minerrorright +"]  RelToParent: " + reltoparent.toString();

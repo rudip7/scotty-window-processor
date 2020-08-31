@@ -18,6 +18,9 @@ public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManag
         this.unifiedSynopses = unifiedSynopses;
     }
 
+    /**
+     * the constructor - when there is no parameter call NonMergeableSynopsisManager constructor.
+     */
     public DistributedWaveletsManager(){
         super();
     }
@@ -114,6 +117,12 @@ public class DistributedWaveletsManager<Input> extends NonMergeableSynopsisManag
         return rangeSum;
     }
 
+    /**
+     * return the index of element in the whole stream
+     *
+     * @param localIndex index of partition
+     * @param partition index of element in partition
+     */
     private int getGlobalIndex(int localIndex, int partition){
         return partition + (localIndex * parallelism);
     }

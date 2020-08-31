@@ -59,17 +59,38 @@ public class RealValuedBucket4LT implements Serializable {
         lowerLevels += delta4_7;
     }
 
+    /**
+     * Returns the lowerbound.
+     *
+     * @return the lowerbound
+     */
     public double getLowerBound() {
         return lowerBound;
     }
 
+    /**
+     * Returns the upperBound.
+     *
+     * @return the upperBound
+     */
     public double getUpperBound() {
         return upperBound;
     }
 
+    /**
+     * Returns the root.
+     *
+     * @return the root
+     */
     public int getRoot() {
         return root;
     }
+
+    /**
+     * Returns the lowerLevels.
+     *
+     * @return the lowerLevels
+     */
     public int getLowerLevels() {
         return lowerLevels;
     }
@@ -187,6 +208,12 @@ public class RealValuedBucket4LT implements Serializable {
         return frequency;
     }
 
+    /**
+     * convert the information contained in 4LT bucket to string.
+     * could be used to print bucket
+     *
+     * @return a string of contained information
+     */
     public String toString(){
 
         int delta2_1 = lowerLevels >>> 26; // extract delta of second level - six bits
@@ -233,8 +260,10 @@ public class RealValuedBucket4LT implements Serializable {
         return null;
     }
 
-    /*
-     * Methods needed for Serializability.
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(root);
@@ -243,6 +272,11 @@ public class RealValuedBucket4LT implements Serializable {
         out.writeDouble(upperBound);
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         root = in.readInt();
         lowerLevels = in.readInt();

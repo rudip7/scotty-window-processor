@@ -17,7 +17,7 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
     private int streamElementCounter;
     private PriorityQueue<DataNode> errorHeap;
     private double data1;
-    private WaveletSynopsis<T> combinedWith;
+    private WaveletSynopsis<T> combinedWith;// the Wavelet synopsis to combine with.
 
     public int getStreamElementCounter() {
         return streamElementCounter;
@@ -510,14 +510,28 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         }
     }
 
+    /**
+     * set the combinedWith.
+     */
     public void setCombinedWith(WaveletSynopsis<T> toCombineWith) {
         this.combinedWith = toCombineWith;
     }
 
+    /**
+     * Returns the combinedWith.
+     *
+     * @return the combinedWith
+     */
     public WaveletSynopsis<T> getCombinedWith() {
         return combinedWith;
     }
 
+    /**
+     * convert the information contained in WaveletSynopsis to string.
+     * could be used to print the Wavelet
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         String s = "streamElementCounter: " + streamElementCounter + "\n";
@@ -539,8 +553,10 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
     }
 
 
-    /*
-     * Methods needed for Serializability.
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(size);
@@ -552,6 +568,11 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         out.writeDouble(data1);
         out.writeObject(combinedWith);
     }
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         size = in.readInt();
         frontlineBottom = (FrontlineNode) in.readObject();

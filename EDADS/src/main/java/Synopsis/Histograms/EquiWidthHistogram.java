@@ -59,22 +59,47 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         frequency[index]++;
     }
 
+    /**
+     * Returns the lowerBound.
+     *
+     * @return the lowerBound
+     */
     public double getLowerBound() {
         return lowerBound;
     }
 
+    /**
+     * Returns the upperBound.
+     *
+     * @return the upperBound
+     */
     public double getUpperBound() {
         return upperBound;
     }
 
+    /**
+     * Returns the numBuckets.
+     *
+     * @return the numBuckets
+     */
     public int getNumBuckets() {
         return numBuckets;
     }
 
+    /**
+     * Returns the bucketLength.
+     *
+     * @return the bucketLength
+     */
     public double getBucketLength() {
         return this.bucketLength;
     }
 
+    /**
+     * Returns the frequency.
+     *
+     * @return the frequency
+     */
     public int[] getFrequency() {
         return frequency;
     }
@@ -147,6 +172,12 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         return resultFrequency;
     }
 
+    /**
+     * convert the information contained in Equiwidth histogram to string.
+     * could be used to print the histogram
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString(){
         String s = "Equi-Width Histogram properties:\n" +
@@ -160,8 +191,10 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
     }
 
 
-    /*
-     * Methods needed for Serializability.
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeDouble(lowerBound);
@@ -173,6 +206,11 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         out.writeDouble(bucketLength);
         out.writeObject(this.getPartitionValue());
     }
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         lowerBound = in.readDouble();
         upperBound = in.readDouble();

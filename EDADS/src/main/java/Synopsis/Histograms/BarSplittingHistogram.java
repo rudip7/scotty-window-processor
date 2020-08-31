@@ -162,37 +162,81 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         }
     }
 
+    /**
+     * Returns precision.
+     *
+     * @return precision
+     */
     public int getP() {
         return p;
     }
 
+    /**
+     * Returns numBuckets.
+     *
+     * @return numBuckets
+     */
     public int getNumBuckets() {
         return numBuckets;
     }
 
+    /**
+     * Returns maxNumBars.
+     *
+     * @return maxNumBars
+     */
     public int getMaxNumBars() {
         return maxNumBars;
     }
 
+    /**
+     * Returns bars.
+     *
+     * @return bars
+     */
     public TreeMap<Integer, Float> getBars() {
         return bars;
     }
 
+    /**
+     * Returns rightBoundary.
+     *
+     * @return rightBoundary
+     */
     public int getRightBoundary() {
         return rightBoundary;
     }
 
+    /**
+     * Returns totalFrequencies.
+     *
+     * @return totalFrequencies
+     */
     public double getTotalFrequencies() {
         return totalFrequencies;
     }
+
+    /**
+     * set bars
+     * @param bars
+     */
     public void setBars(TreeMap<Integer,Float> bars)
     {
         this.bars=bars;
     }
+
+    /**
+     * set rightBoundary
+     * @param right
+     */
     public void setRight(int right)
     {
         this.rightBoundary=right;
     }
+    /**
+     * set totalFrequencies
+     * @param t, total frequency
+     */
     public void setTotalFrequencies(double t)
     {
         this.totalFrequencies=t;
@@ -332,8 +376,9 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         return new EquiDepthHistogram(boundaries, rightBoundary, totalFrequencies);
     }
 
-    /*
-     * Methods needed for Serializability.
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException{
         out.writeInt(p);
@@ -342,6 +387,10 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         out.writeInt(rightBoundary);
         out.writeDouble(totalFrequencies);
     }
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         p = in.readInt();
         maxNumBars = in.readInt();
@@ -354,6 +403,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         Log.error("method not implemented");
     }
 
+    /**
+     * convert the information contained in BASH to string.
+     * could be used to print the histogram
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return "BarSplittingHistogram{" +

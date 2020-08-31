@@ -21,6 +21,9 @@ public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsis
         }
     }
 
+    /**
+     * the constructor - when there is no parameter call NonMergeableSynopsisManager constructor.
+     */
     public DistributedSliceWaveletsManager() {
         super();
     }

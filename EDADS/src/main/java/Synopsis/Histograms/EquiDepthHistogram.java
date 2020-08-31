@@ -114,6 +114,12 @@ public class EquiDepthHistogram {
 
     }
 
+    /**
+     * convert the information contained in EquiDepth histogram to string.
+     * could be used to print the histogram
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return "EquiDepthHistogram{" +
@@ -124,18 +130,38 @@ public class EquiDepthHistogram {
                 "}\n";
     }
 
+    /**
+     * Returns the leftBoundaries.
+     *
+     * @return the leftBoundaries
+     */
     public double[] getLeftBoundaries() {
         return leftBoundaries;
     }
 
+    /**
+     * Returns the rightMostBoundary.
+     *
+     * @return the rightMostBoundary
+     */
     public double getRightMostBoundary() {
         return rightMostBoundary;
     }
 
+    /**
+     * Returns the totalFrequencies.
+     *
+     * @return the totalFrequencies
+     */
     public double getTotalFrequencies() {
         return totalFrequencies;
     }
 
+    /**
+     * Returns the numBuckets.
+     *
+     * @return the numBuckets
+     */
     public int getNumBuckets() {
         return numBuckets;
     }

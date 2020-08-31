@@ -25,6 +25,12 @@ public class FrontlineNode implements Serializable {
         errorhanging = false;
     }
 
+    /**
+     * convert the information contained in Node to string.
+     * could be used to print the Node
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return ("Level " + this.level + " ---> " + this.value);
@@ -34,6 +40,12 @@ public class FrontlineNode implements Serializable {
         positiveerror = Math.max(maxError, positiveerror);
         negativeerror = Math.min(minError, negativeerror);
     }
+
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(hungChild);
@@ -45,6 +57,11 @@ public class FrontlineNode implements Serializable {
         out.writeBoolean(errorhanging);
         out.writeInt(level);
     }
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
 
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         hungChild = (DataNode) in.readObject();

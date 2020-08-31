@@ -29,6 +29,9 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
         }
     }
 
+    /**
+     * the constructor - when there is no parameter call NonMergeableSynopsisManager constructor and declare sliceStartIndices.
+     */
     public SliceWaveletsManager() {
         super();
         sliceStartIndices = new ArrayList<>();
