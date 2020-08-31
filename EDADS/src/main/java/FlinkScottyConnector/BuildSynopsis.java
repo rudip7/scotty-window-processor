@@ -17,6 +17,8 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
+import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
@@ -194,7 +196,7 @@ public final class BuildSynopsis {
      * @return stream of time window based Synopses
      */
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
-        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters);
         KeyedStream keyBy = inputStream
                 .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);
@@ -260,7 +262,7 @@ public final class BuildSynopsis {
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, int miniBatchSize, long windowSize, long slideSize, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         int parallelism = inputStream.getExecutionEnvironment().getParallelism();
 
-        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters, keyField);
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters);
         KeyedStream keyBy = inputStream
                 .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
                 .keyBy(0);

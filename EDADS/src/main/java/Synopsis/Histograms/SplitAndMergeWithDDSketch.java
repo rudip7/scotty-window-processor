@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Class which maintains an error-bound equi-depth histogram in a streaming environment using a dd sketch for quantile computation.
+ * Class which maintains an error-bound equi-depth histogram in a streaming Environment using a dd sketch for quantile computation.
  * The sketch is used to periodically recompute the histogram boundaries and extract statistical properties of the data.
  * The incremental update process is done using a split and merge algorithm as proposed in the below mentioned paper.
  * The ddsketch is used to compute the median of buckets which have to be split.
@@ -23,7 +23,7 @@ import java.util.TreeMap;
  * Our method differs from the algorithm proposed in the paper in the way that we trade the backing sample for a DDSketch.
  * The DDSketch wasn't available at the time the paper was written and provides quantile computation with better error bounds than a backing sample of the same size.
  *
- * Due to the nature of the algorithm and the merge this algorithm is most useful in a single threaded environment (parallelism of 1)
+ * Due to the nature of the algorithm and the merge this algorithm is most useful in a single threaded Environment (parallelism of 1)
  * and a continuous window with an evictor instead of the typical count / time based windows. This is due to fact that
  * with every merge the @equiDepthSampleCompute() function is called. The benefit compared to an algorithm which simply computes
  * an equiDepthHistogram from a sample lies in it's characteristic of beeing accurate within a given error bound at all (!) times

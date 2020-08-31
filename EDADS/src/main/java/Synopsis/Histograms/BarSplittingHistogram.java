@@ -23,10 +23,10 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
     private int p; // precision hyper parameter
     private int numBuckets; // number of final Buckets
     private int maxNumBars; // maximum number of Bars in the sketch
-    private TreeMap<Integer, Float> bars; //
+    private TreeMap<Integer, Float> bars; // a Tree represents bars, Keys show the left most boundary of each bar and corresponding value shows frequency of bars
     private int rightBoundary; // rightmost boundary - inclusive
-    private final double MAXCOEF = 1.7;
-    private double totalFrequencies; //
+    private final double MAXCOEF = 1.7; // a constant used in determining maxsize of bars
+    private double totalFrequencies; //the total amount of frequencies
 
     private static final Logger logger = LoggerFactory.getLogger(BarSplittingHistogram.class);
 
@@ -43,6 +43,10 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         totalFrequencies = 0;
     }
 
+    /**
+     * precision will be set to 7 by default, if no parameter determines it.
+     * @param numBuckets
+     */
     public BarSplittingHistogram(Integer numBuckets) {
         this(7, numBuckets);
     }
@@ -136,6 +140,11 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         }
     }
 
+    /**
+     * if element is an integer call private update method, if it is another BASH histogram merge it with current BASH, otherwise log a warning
+     *
+     * @param element new incoming element
+     */
     @Override
     public void update(Object element) {
         if (element instanceof Integer){
@@ -188,6 +197,14 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
     {
         this.totalFrequencies=t;
     }
+
+    /**
+     * merge current BASH structure with another BarSplittingHistogram. the BASH with larger total frequency is considered
+     * as the base one an then add the other BASH bars to the baser.
+     *
+     * @param other new BASH to be merged to.
+     * @throws IllegalArgumentException
+     */
     @Override
     public BarSplittingHistogram merge(MergeableSynopsis other) {
         if (other instanceof BarSplittingHistogram){
@@ -232,12 +249,12 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                         baseUB = base.rightBoundary;
                     }
                 }
-//                System.out.println(otherLB);
-//                System.out.println(otherUB);
-//                System.out.println(baseLB);
-//                System.out.println(baseUB);
-//                System.out.println("base first");
-//                System.out.println(base.getBars());
+//                Environment.out.println(otherLB);
+//                Environment.out.println(otherUB);
+//                Environment.out.println(baseLB);
+//                Environment.out.println(baseUB);
+//                Environment.out.println("base first");
+//                Environment.out.println(base.getBars());
 
                 // loop through all base bars which cover area of the current other bar
                 while (baseLB < otherUB){
@@ -316,7 +333,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
     }
 
     /*
-     * Methods needed for Serializability
+     * Methods needed for Serializability.
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException{
         out.writeInt(p);
@@ -333,6 +350,9 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
         rightBoundary = in.readInt();
         totalFrequencies = in.readDouble();
     }
+    private void readObjectNoData() throws ObjectStreamException{
+        Log.error("method not implemented");
+    }
 
     @Override
     public String toString() {
@@ -346,8 +366,5 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
                 '}';
     }
 
-    private void readObjectNoData() throws ObjectStreamException{
-        Log.error("method not implemented");
-    }
 
 }

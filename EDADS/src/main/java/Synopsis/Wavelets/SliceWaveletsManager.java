@@ -34,6 +34,11 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
         sliceStartIndices = new ArrayList<>();
     }
 
+    /**
+     * Update the structure with a new incoming element by updating last WaveletSynopsis contained in SliceWaveletManager.
+     *
+     * @param element new incoming element
+     */
     @Override
     public void update(Object element) {
         if (!unifiedSynopses.isEmpty()) {
@@ -59,6 +64,11 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
         return index;
     }
 
+    /**
+     * add a WaveletSynopsis as a new slice to SliceWaveletManager
+     *
+     * @param synopsis
+     */
     @Override
     public void addSynopsis(WaveletSynopsis<Input> synopsis) {
         if (sliceStartIndices == null){
@@ -74,6 +84,11 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
         super.addSynopsis(synopsis);
     }
 
+    /**
+     * integrate another NonMergeableSynopsisManager with this object
+     *
+     * @param other
+     */
     @Override
     public void unify(NonMergeableSynopsisManager other) {
 //        if (other instanceof SliceWaveletsManager){
@@ -82,7 +97,7 @@ public class SliceWaveletsManager<Input> extends NonMergeableSynopsisManager<Inp
                 this.addSynopsis((WaveletSynopsis<Input>) o.getUnifiedSynopses().get(i));
             }
 //        }
-//        System.out.println(other.getClass());
+//        Environment.out.println(other.getClass());
 //        throw new IllegalArgumentException("It is only possible to unify two objects of type NonMergeableSynopsisManager with each other.");
     }
 

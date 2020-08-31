@@ -41,6 +41,7 @@
     {
       "name": "org_Wavelet_NYC_1",
       "parallelism": 8,
+<<<<<<< HEAD
       "iterations": 10,
       "runtime": 20000,
       "throughput": 2000,
@@ -140,6 +141,13 @@
       "runtime": 20000,
       "throughput": 2000,
       "source": "NYC-taxi",
+=======
+      "iterations": 1,
+      "runtime": 15000,
+      "throughput": 4000,
+      "source": "Uniform",
+      "stratified" : "true",
+>>>>>>> f617103044b69788cbc4752a9f7eaad17ffae21b
       "windowConfigurations": [
         [
           "Sliding(6902676,3451338)"

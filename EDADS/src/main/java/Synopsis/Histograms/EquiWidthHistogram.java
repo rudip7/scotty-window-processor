@@ -18,10 +18,10 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
 
     //private static final Logger LOG = LoggerFactory.getLogger(EquiWidthHistogram.class);
 
-    double lowerBound, upperBound;
-    int numBuckets;
-    int[] frequency;
-    double bucketLength;
+    double lowerBound, upperBound; // lower and upper bound of Histogram
+    int numBuckets; // number of buckets
+    int[] frequency; // frequency of each bucket
+    double bucketLength; // length of each bucket
 
     /**
      * Creates an equi-width histogram with the given boundaries and number of buckets
@@ -42,7 +42,11 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         this.bucketLength = (upperBound - lowerBound) / (double) numBuckets;
     }
 
-
+    /**
+     * Update the Histogram structure with a new incoming element.
+     *
+     * @param number new element
+     */
     @Override
     public void update(T number) {
         double input = number.doubleValue();
@@ -75,6 +79,12 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         return frequency;
     }
 
+    /**
+     * merge two EquiWidthHistogram
+     *
+     * @param other new EquiWidthHistogram to be merged to.
+     * @throws IllegalArgumentException
+     */
     @Override
     public EquiWidthHistogram merge(MergeableSynopsis other) throws IllegalArgumentException {
         if (other instanceof EquiWidthHistogram){
@@ -149,6 +159,10 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         return s + "\n\n";
     }
 
+
+    /*
+     * Methods needed for Serializability.
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeDouble(lowerBound);
         out.writeDouble(upperBound);
@@ -159,7 +173,6 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         out.writeDouble(bucketLength);
         out.writeObject(this.getPartitionValue());
     }
-
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         lowerBound = in.readDouble();
         upperBound = in.readDouble();
@@ -171,7 +184,6 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
         this.setPartitionValue(in.readObject());
 
     }
-
     private void readObjectNoData() throws ObjectStreamException {
         throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }

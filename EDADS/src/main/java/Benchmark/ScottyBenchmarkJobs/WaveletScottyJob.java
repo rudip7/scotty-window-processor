@@ -8,6 +8,7 @@ import Benchmark.Sources.ZipfDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
 import Synopsis.MergeableSynopsis;
+import Synopsis.Sampling.TimestampedElement;
 import Synopsis.Synopsis;
 import Synopsis.Wavelets.DistributedSliceWaveletsManager;
 import Synopsis.Wavelets.DistributedWaveletsManager;
@@ -15,6 +16,7 @@ import Synopsis.Wavelets.SliceWaveletsManager;
 import Synopsis.Wavelets.WaveletSynopsis;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.Window;
+import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -67,7 +69,7 @@ public class WaveletScottyJob {
 
             if (stratified) {
                 SingleOutputStreamOperator<AggregateWindow<SliceWaveletsManager>> synopsesStream;
-                synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, env.getParallelism(), windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, 10000);
+                synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped,windows,new RichStratifierNYC(env.getParallelism()),WaveletSynopsis.class, SliceWaveletsManager.class, 10000);
                 synopsesStream.addSink(new SinkFunction() {
 
                     @Override
@@ -105,12 +107,15 @@ public class WaveletScottyJob {
 
             if (stratified) {
                 SingleOutputStreamOperator<AggregateWindow<SliceWaveletsManager>> synopsesStream;
-                synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, env.getParallelism(), windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, 10000);
+//                synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, env.getParallelism(), windows, 0, WaveletSynopsis.class, SliceWaveletsManager.class, 10000);
+                synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped,windows,new RichStratifier(env.getParallelism()),WaveletSynopsis.class, SliceWaveletsManager.class, 10000);
+
+
                 synopsesStream.addSink(new SinkFunction() {
 
                     @Override
                     public void invoke(final Object value) throws Exception {
-                        //System.out.println(value);
+//                        System.out.println(value);
                     }
                 });
             } else {
@@ -134,6 +139,42 @@ public class WaveletScottyJob {
             e.printStackTrace();
         }
 
+    }
+
+    public static class RichStratifier extends RichMapFunction<Tuple3<Integer, Integer, Long>, TimestampedElement<Tuple2<Integer, Integer>>> {
+
+        private int stratification;
+
+        public RichStratifier(int stratification) {
+            this.stratification = stratification;
+        }
+
+        @Override
+        public TimestampedElement<Tuple2<Integer, Integer>> map(Tuple3<Integer, Integer, Long> value) throws Exception {
+            int key = (int) (value.f0 / 100d * stratification);
+            if (key >= stratification) {
+                key = stratification - 1;
+            }
+            return new TimestampedElement<>(new Tuple2<>(key, value.f0),value.f2);
+        }
+    }
+
+    public static class RichStratifierNYC extends RichMapFunction<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>, TimestampedElement<Tuple2<Integer, Long>>> {
+
+        private int stratification;
+
+        public RichStratifierNYC(int stratification) {
+            this.stratification = stratification;
+        }
+
+        @Override
+        public TimestampedElement<Tuple2<Integer, Long>> map(Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> value) throws Exception {
+            int key = (int) (value.f0 / 100d * stratification);
+            if (key >= stratification) {
+                key = stratification - 1;
+            }
+            return new TimestampedElement<>(new Tuple2<>(key, value.f0),value.f4);
+        }
     }
 
 

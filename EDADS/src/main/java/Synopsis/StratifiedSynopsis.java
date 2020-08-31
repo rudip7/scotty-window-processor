@@ -1,8 +1,12 @@
 package Synopsis;
 
+@Deprecated // use StratifiedSynopsisWrapper instead
 public abstract class StratifiedSynopsis<Partition>{
-    private Partition partitionValue = null;
+    private Partition partitionValue = null; //the value of partition in a startiefied sampling.
 
+    /**
+     * @return partitionValue
+     */
     public Partition getPartitionValue() {
         return partitionValue;
     }

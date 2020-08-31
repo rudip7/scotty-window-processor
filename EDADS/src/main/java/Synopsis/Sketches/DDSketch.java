@@ -205,7 +205,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         final long rank = (long) (quantile * (count - 1));
 
         if (rank < zeroCount) {
-            //System.out.println("zero rank");
+            //Environment.out.println("zero rank");
             return 0;
         }
 
@@ -265,7 +265,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
              counts.clear();
              counts.putAll(collect);
 
-//                System.out.println(collect);
+//                Environment.out.println(collect);
 
 //                    for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
 //

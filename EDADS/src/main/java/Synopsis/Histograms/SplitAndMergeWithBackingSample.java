@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.TreeMap;
 
 /**
- * Class which maintains an error-bound equi-depth histogram in a streaming environment using a backing sample.
+ * Class which maintains an error-bound equi-depth histogram in a streaming Environment using a backing sample.
  * The backing sample is used to periodically recompute the histogram boundaries and extract statistical properties of the data.
  * The incremental update process is done using a split and merge algorithm as proposed in the below mentioned paper.
  * The backing sample is used to compute the median of buckets which have to be split.

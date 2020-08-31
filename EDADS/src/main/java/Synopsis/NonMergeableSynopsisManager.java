@@ -35,7 +35,7 @@ public abstract class NonMergeableSynopsisManager<Input, S extends Synopsis<Inpu
     }
 
     /**
-     * unify tow noneNonMergeable Synopses
+     * unify two noneNonMergeable Synopses
      *
      * @param other
      */

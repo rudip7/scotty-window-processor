@@ -143,7 +143,7 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
 
         if (tuple.f2 > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
-            //System.out.println("in Gap");
+            //Environment.out.println("in Gap");
             if (tuple.f2 > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;

@@ -51,8 +51,8 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 //                throughputStatistics.mean() + "\t");
 
         System.out.println(System.currentTimeMillis()+" : "+configuration+" : "+throughputStatistics.printHistory());
-//        System.out.println(throughputStatistics.history.size());
-//        System.out.println();
+//        Environment.out.println(throughputStatistics.history.size());
+//        Environment.out.println();
 
 //        InetAddress ip = null;
 //        String hostname="";
@@ -66,7 +66,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 //        }
 //        String res = "current Hostname:"+"\t"+ hostname+"\t"+throughputStatistics.mean() + "\t"+"\n";
 ////        ThroughputWriter.getThroughputWriter().append(res);
-//        System.out.println(res);
+//        Environment.out.println(res);
 
 //        resultWriter.append("current Hostname:"+"\t"+ hostname+"\t");
 ////        String.format("%s = %d", "joe", 35);
@@ -74,7 +74,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
 //        resultWriter.append("\n");
 //        resultWriter.flush();
 //        resultWriter.close();
-//        System.out.println(ParallelThroughputStatistics.getInstance().toString());
+//        Environment.out.println(ParallelThroughputStatistics.getInstance().toString());
     }
 
     @Override
@@ -98,7 +98,7 @@ public class ParallelThroughputLogger<T> extends RichFlatMapFunction<T, T> {
                     timeDiff, elementDiff, elementDiff * ex);
 
             throughputStatistics.addThrouputResult(elementDiff * ex);
-            //System.out.println(ThroughputStatistics.getInstance().toString());
+            //Environment.out.println(ThroughputStatistics.getInstance().toString());
             // reinit
             lastLogTimeMs = now;
             lastTotalReceived = totalReceived;

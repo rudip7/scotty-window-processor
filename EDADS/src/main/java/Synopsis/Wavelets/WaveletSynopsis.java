@@ -539,8 +539,8 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
     }
 
 
-    /**
-     * write the object to an OutputStream .
+    /*
+     * Methods needed for Serializability.
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(size);
@@ -552,10 +552,6 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         out.writeDouble(data1);
         out.writeObject(combinedWith);
     }
-
-    /**
-     * read the object from an inputStream .
-    */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         size = in.readInt();
         frontlineBottom = (FrontlineNode) in.readObject();
@@ -566,8 +562,6 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
         data1 = in.readDouble();
         combinedWith = (WaveletSynopsis<T>) in.readObject();
     }
-
-
     private void readObjectNoData() throws ObjectStreamException {
         // no idea what to put here...
     }

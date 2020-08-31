@@ -1,0 +1,66 @@
+{
+  "approxConfigurationList": [
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox",
+      "source": "Uniform"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink",
+      "source": "Uniform"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty",
+      "source": "Uniform"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "StreamApprox",
+      "source": "Zipf"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Flink",
+      "source": "Zipf"
+    },
+    {
+      "runtime": "20000",
+      "throughput": 1000,
+      "sampleSize": 1000,
+      "parallelism": 2,
+      "iterations": 10,
+      "stratification": 1,
+      "environment": "Scotty",
+      "source": "Zipf"
+    }
+  ]
+}
+
+

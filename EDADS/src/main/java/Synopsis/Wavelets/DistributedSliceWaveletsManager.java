@@ -41,6 +41,11 @@ public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsis
         return streamIndex % parallelism;
     }
 
+    /**
+     * Update the structure with a new incoming element.
+     *
+     * @param element new incoming element
+     */
     @Override
     public void update(Object element) {
         elementsProcessed++;
@@ -48,6 +53,11 @@ public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsis
     }
 
     @Override
+    /**
+     * add new SliceWaveletManager to the unified partitions
+     *
+     * @param synopsis
+     */
     public void addSynopsis(SliceWaveletsManager<Input> synopsis) {
         parallelism++;
         elementsProcessed += synopsis.getElementsProcessed();
@@ -55,7 +65,7 @@ public class DistributedSliceWaveletsManager<Input> extends NonMergeableSynopsis
     }
 
     /**
-     * show in which partition index is contained
+     * show in which partition the index is contained
      *
      * @param index
      */
