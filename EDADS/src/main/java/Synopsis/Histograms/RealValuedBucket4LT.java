@@ -5,7 +5,8 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 public class RealValuedBucket4LT implements Serializable {
-    int root, lowerLevels;
+    int root; //total frequency of the entire bucket
+    int lowerLevels; //the integer which encodes tree nodes
     double lowerBound, upperBound;
 
     /**
@@ -27,6 +28,7 @@ public class RealValuedBucket4LT implements Serializable {
     /**
      * Method to build the Histogram Structure - specifically the lowerLevels
      * @param frequencies the respective frequency for the given low level bucket.
+     * @throws IllegalArgumentException
      */
     public void build(int[] frequencies) throws IllegalArgumentException, Exception {
         if(frequencies.length != 8){
@@ -78,6 +80,7 @@ public class RealValuedBucket4LT implements Serializable {
      * @param queryLowerBound   lower bound of the query range inclusive
      * @param queryUpperBound   upper bound of the query range exclusive
      * @return  the approximate frequencies of the range query based on this 4LT Bucket
+     * @throws IllegalArgumentException
      */
     public int getFrequency(double queryLowerBound, double queryUpperBound){
 
@@ -230,6 +233,9 @@ public class RealValuedBucket4LT implements Serializable {
         return null;
     }
 
+    /*
+     * Methods needed for Serializability.
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(root);
         out.writeInt(lowerLevels);

@@ -7,12 +7,16 @@ import java.util.Arrays;
  * @author joschavonhein
  */
 public class EquiWidthHistogram4LT {
-    double lowerBound;
-    double upperBound;
-    int numBuckets;
-    double bucketLength;
-    RealValuedBucket4LT[] buckets;
+    double lowerBound; //lower bound of histogram range
+    double upperBound; //upper bound of histogram range
+    int numBuckets; //number of histogram buckets
+    double bucketLength; //length of buckets in histogram
+    RealValuedBucket4LT[] buckets; // array stores buckets of histogram
 
+    /**
+     * constructor - creates a new Equi-width histogram through building 4LT buckets based on transformed information of old ordinary equi-width histogram
+     * @param old, the ordinary equiwidth histogram
+     */
     public EquiWidthHistogram4LT(EquiWidthHistogram old) throws Exception {
         lowerBound = old.getLowerBound();
         upperBound = old.getUpperBound();
@@ -33,6 +37,13 @@ public class EquiWidthHistogram4LT {
         }
     }
 
+    /**
+     *performs a range query
+     *
+     * @param lowerBound
+     * @param upperBound
+     * @return the approximate frequency of queried range
+     */
     public int rangeQuery(double lowerBound, double upperBound){
         int result = 0;
         int leftIndex = Math.max((int)((lowerBound-this.lowerBound)/bucketLength),0);
@@ -43,26 +54,57 @@ public class EquiWidthHistogram4LT {
         return  result;
     }
 
+    /**
+     * Returns the lowerbound.
+     *
+     * @return the lowerbound
+     */
     public double getLowerBound() {
         return lowerBound;
     }
 
+    /**
+     * Returns the upperBound.
+     *
+     * @return the upperBound
+     */
     public double getUpperBound() {
         return upperBound;
     }
 
+    /**
+     * Returns the numBuckets.
+     *
+     * @return the numBuckets
+     */
     public int getNumBuckets() {
         return numBuckets;
     }
 
+    /**
+     * Returns the bucketLength.
+     *
+     * @return the bucketLength
+     */
     public double getBucketLength() {
         return bucketLength;
     }
 
+    /**
+     * Returns the buckets.
+     *
+     * @return the buckets
+     */
     public RealValuedBucket4LT[] getBuckets() {
         return buckets;
     }
 
+    /**
+     * merge 2 EquiWidthHistogram4LT
+     *
+     * @param other the histogram to merge with
+     * @throws IllegalArgumentException
+     */
     public EquiWidthHistogram4LT merge(EquiWidthHistogram4LT other){
         if (other.getLowerBound() != this.lowerBound || other.getUpperBound() != this.upperBound
             || other.getNumBuckets() != this.getNumBuckets()){
@@ -72,6 +114,12 @@ public class EquiWidthHistogram4LT {
         return null;
     }
 
+    /**
+     * convert the information contained in EquiWidthHistogram4LT to string.
+     * could be used to print the histogram
+     *
+     * @return a string of contained information
+     */
     public String toString(){
         String s ="";
         for (int i = 0; i < numBuckets; i++) {
