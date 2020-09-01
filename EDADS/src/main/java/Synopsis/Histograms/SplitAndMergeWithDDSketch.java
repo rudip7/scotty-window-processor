@@ -26,7 +26,7 @@ import java.util.TreeMap;
  * Due to the nature of the algorithm and the merge this algorithm is most useful in a single threaded Environment (parallelism of 1)
  * and a continuous window with an evictor instead of the typical count / time based windows. This is due to fact that
  * with every merge the @equiDepthSampleCompute() function is called. The benefit compared to an algorithm which simply computes
- * an equiDepthHistogram from a sample lies in it's characteristic of beeing accurate within a given error bound at all (!) times
+ * an equiDepthHistogram from a sample lies in it's characteristic of being accurate within a given error bound at all (!) times
  * and not just at the end of a window.
  *
  * @author joschavonhein
@@ -40,9 +40,9 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
     private TreeMap<Double, Double> buckets; // key: left boundary of bin - value: frequency of bin (rightboundary is the next key or rightMostBoundary)
     private Double rightMostBoundary; // rightmost boundary - inclusive
     private double totalFrequencies; //
-    private DDSketch ddSketch;
+    private DDSketch ddSketch; // dd sketch used to maintain histogram
     private double gamma; // hyper parameter which tunes the threshold - has to be greater than -1 and should realistically be smaller than 2
-    private int threshold;
+    private int threshold; // threshold on frequency of buckets
 
     private static final Logger logger = LoggerFactory.getLogger(SplitAndMergeWithDDSketch.class);
 
@@ -56,7 +56,7 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
     }
 
     /**
-     * Constructer which additionally allows setting of the hyperparameter gamma. Should only be used by experience users.
+     * Constructer which additionally allows setting of the hyperparameter gamma. Should only be used by experienced users.
      * As rule of thumb: if gamma is greater, less recomputes / bucket splits occur but the histogram will be less accurate (!)
      * @param numBuckets    number of buckets of the histogram
      * @param sketchAccuracy    accuracy bound of the DDSketch used to compute the quantiles
@@ -77,7 +77,7 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
     }
 
     /**
-     * private update method called by the public update (tuple) and merge function.
+     * update method to restructure buckets with new element
      * Adds frequencies for a certain value to the Histogram.
      *
      * @param input attribute value
@@ -210,7 +210,7 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
                 result += buckets.get(lowerBound);
             }
 
-            // 1st step: add left bucket part - can't be the last bucket, therefore no null-check necessary
+            // 2st step: add right bucket part - if it is last bucket set the bucketWidth with regards to rightMostBoundary
             Map.Entry<Double, Double> upperBoundBucket = buckets.floorEntry(upperBound);
             bucketWidth = buckets.higherKey(upperBound) == null ? rightMostBoundary - upperBoundBucket.getKey() : buckets.higherKey(upperBound) - upperBoundBucket.getKey();
             fraction = (upperBound - upperBoundBucket.getKey()) / bucketWidth;
@@ -221,9 +221,7 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
     }
 
     /**
-     * Method to completely recompute the histogram boundaries on the basis of the backing sample
-     *
-     * The leftmost and rightmost boundary are an exception to this and are kept as they represent 100% accurate values.
+     * Method to completely recompute the histogram boundaries on the basis of the DD sketch
      */
     private void equiDepthSampleCompute(){
 
@@ -254,22 +252,49 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
         return ddSketch.getValueAtQuantile(quantile);
     }
 
+    /**
+     * Returns buckets.
+     *
+     * @return buckets
+     */
     public TreeMap<Double, Double> getBuckets() {
         return buckets;
     }
 
+    /**
+     * Returns rightMostBoundary.
+     *
+     * @return rightMostBoundary
+     */
     public Double getRightMostBoundary() {
         return rightMostBoundary;
     }
 
+    /**
+     * Returns totalFrequencies.
+     *
+     * @return totalFrequencies
+     */
     public double getTotalFrequencies() {
         return totalFrequencies;
     }
 
+    /**
+     * Returns ddSketch.
+     *
+     * @return ddSketch
+     */
     public DDSketch getDdSketch() {
         return ddSketch;
     }
 
+    /**
+     * merge the SAMWithDDSketch synopsis with another synopsis of the same type.
+     *
+     * @param other synopsis to be merged with
+     * @return the result synopsis of merging
+     * @throws IllegalArgumentException
+     */
     @Override
     public SplitAndMergeWithDDSketch merge(MergeableSynopsis other) {
         if (other instanceof SplitAndMergeWithDDSketch){
@@ -289,6 +314,12 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
         }
     }
 
+    /**
+     * convert the information contained in synopsis to string.
+     * could be used to print the histogram
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return "SplitAndMergeWithDDSketch{" +
@@ -302,8 +333,10 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
                 '}';
     }
 
-    /*
-     * Methods needed for Serializability
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException{
         out.writeInt(maxNumBuckets);
@@ -314,6 +347,12 @@ public class SplitAndMergeWithDDSketch implements MergeableSynopsis, Serializabl
         out.writeDouble(gamma);
         out.writeInt(threshold);
     }
+
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         maxNumBuckets = in.readInt();
         buckets = (TreeMap<Double, Double>) in.readObject();

@@ -26,20 +26,23 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
 
 
     private int maxNumBuckets; // maximum number of Bars in the sketch
-    private TreeMap<Integer, Float> buckets; //
+    private TreeMap<Integer, Float> buckets;
     private int rightBoundary; // rightmost boundary - inclusive
-    private double totalFrequencies; //
-    private ReservoirSampler sample;
+    private double totalFrequencies; // total histogram frequency
+    private ReservoirSampler sample; // the  backing sample which used to maintain histogram
     private double countError; // with probability of at least getErrorMinProbability() this is the maximum error the counts of this approximate histogram varies from the true equi depth histogram
-    private int sampleSize;
-    private double c;
+    private int sampleSize;// size of backing sample
+    private double c;//
     private final double GAMMA = 0.5; // hyper parameter which tunes the threshold - has to be greater than -1 and should realistically be smaller than 2
-    private int threshold;
+    private int threshold; // threshold on frequency of buckets
 
     private static final Logger logger = LoggerFactory.getLogger(SplitAndMergeWithBackingSample.class);
 
     /**
      * initialisation method used by all constructors
+     *
+     * @param numberOfFinalBuckets
+     *
      * @param countError    maximum error: standard deviation of the bucket counts from the actual number of elements
      *                     in each buckets, normalized with respect to the mean bucket count.
      * @param sampleSize    maximum size of the backing sample used to recompute the histogram and the median of buckets to be split
@@ -50,19 +53,36 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
         totalFrequencies = 0;
         this.countError = countError;
         this.sampleSize = sampleSize;
-        this.threshold = 3; // initially set the threshold to 3 (value it should have if there is only a single valu)
+        this.threshold = 3; // initially set the threshold to 3 (value it should have if there is only a single value)
     }
+
+    /**
+     * returns the minimum probability that approximation error is at most countError
+     * @return computed probability
+     */
 
     public double getErrorMinProbability() {
         return 1 - 1 / Math.pow(buckets.size(), Math.sqrt(c)-1) - 1 / Math.pow(totalFrequencies / (2+GAMMA), 1/3);
     }
 
+    /**
+     * constructor-compute sample size based on countError and call init(numBuckets, countError, sampleSize)
+     *
+     * @param countError
+     * @param numBuckets
+     */
     public SplitAndMergeWithBackingSample(Integer numBuckets, Double countError) {
         c = 1 / (Math.pow(countError, 6) * Math.log(numBuckets));
         sampleSize = (int) (numBuckets * c * Math.pow(Math.log(numBuckets), 2));
         init( numBuckets, countError, sampleSize);
     }
 
+    /**
+     * constructor-compute countError based on sample size and call init(numBuckets, countError, sampleSize)
+     *
+     * @param numBuckets
+     * @param sampleSize
+     */
     public SplitAndMergeWithBackingSample(Integer numBuckets, Integer sampleSize){
         c = sampleSize / (numBuckets * Math.pow(Math.log(numBuckets),2));
         countError = 1 / Math.pow((c * Math.log(numBuckets)), 1/6);
@@ -175,6 +195,12 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
         return sampleArray[rightIndex-bucketCount/2];
     }
 
+    /**
+     * if the incoming element is an integer, use the private update method to restructure buckets with new element,
+     * if the incoming element is a SplitAndMergeWithBackingSample object then use merge method to merge with it.
+     *
+     * @param element new incoming element
+     */
     @Override
     public void update(Object element) {
         if (element instanceof Integer){
@@ -192,26 +218,58 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
         }
     }
 
+    /**
+     * Returns maxNumBuckets.
+     *
+     * @return maxNumBuckets
+     */
     public int getMaxNumBuckets() {
         return maxNumBuckets;
     }
 
+    /**
+     * Returns buckets.
+     *
+     * @return buckets
+     */
     public TreeMap<Integer, Float> getBuckets() {
         return buckets;
     }
 
+    /**
+     * Returns rightBoundary.
+     *
+     * @return rightBoundary
+     */
     public int getRightBoundary() {
         return rightBoundary;
     }
 
+    /**
+     * Returns totalFrequencies.
+     *
+     * @return totalFrequencies
+     */
     public double getTotalFrequencies() {
         return totalFrequencies;
     }
 
+    /**
+     * Returns sample.
+     *
+     * @return sample
+     */
     public ReservoirSampler getSample() {
         return sample;
     }
 
+    /**
+     * merge the SAMWithBackingSample synopsis with another synopsis of the same type.
+     *
+     * @param other synopsis to be merged with
+     * @return the result synopsis of merging
+     * @throws IllegalArgumentException
+     */
     @Override
     public SplitAndMergeWithBackingSample merge(MergeableSynopsis other) {
         if (other instanceof SplitAndMergeWithBackingSample){
@@ -232,8 +290,10 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
     }
 
 
-    /*
-     * Methods needed for Serializability
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException{
         out.writeInt(maxNumBuckets);
@@ -241,6 +301,11 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
         out.writeInt(rightBoundary);
         out.writeDouble(totalFrequencies);
     }
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         maxNumBuckets = in.readInt();
         buckets = (TreeMap<Integer, Float>) in.readObject();
@@ -248,6 +313,12 @@ public class SplitAndMergeWithBackingSample implements MergeableSynopsis, Serial
         totalFrequencies = in.readDouble();
     }
 
+    /**
+     * convert the information contained in synopsis to string.
+     * could be used to print the histogram
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return "SplitAndMergeWithBackingSample{" +

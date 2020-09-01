@@ -379,6 +379,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
     /**
      * Method needed for Serializability.
      * write object to an output Stream
+     * @param out, output stream to write object to
      */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException{
         out.writeInt(p);
@@ -390,6 +391,7 @@ public class BarSplittingHistogram implements MergeableSynopsis, Serializable {
     /**
      * Method needed for Serializability.
      * read object from an input Stream
+     * @param in, input stream to read from
      */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         p = in.readInt();
