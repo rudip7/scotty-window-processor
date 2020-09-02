@@ -30,10 +30,20 @@ public class TimestampedElement<T> implements Serializable, Comparable<Timestamp
         this.timeStamp = timeStamp;
     }
 
+    /**
+     * Returns the value.
+     *
+     * @return the value
+     */
     public T getValue() {
         return value;
     }
 
+    /**
+     * set value in the object.
+     *
+     * @param value
+     */
     public void setValue(T value) {
         this.value = value;
     }
@@ -42,7 +52,12 @@ public class TimestampedElement<T> implements Serializable, Comparable<Timestamp
         return timeStamp;
     }
 
-
+    /**
+     * returns the temporal distance between two element.
+     *
+     * @param o the other element that is compared to.
+     * @return -1 if two element has same value and timestamp, otherwise return the difference
+     */
     @Override
     public int compareTo(TimestampedElement o) {
         int diff = (int) (this.timeStamp - o.timeStamp);
@@ -52,6 +67,13 @@ public class TimestampedElement<T> implements Serializable, Comparable<Timestamp
         return diff;
     }
 
+    /**
+     * find whether two objects  are equal or not.
+     *
+     * @param o the other element that should be compared.
+     * @return false if o is not an instance of TimestampedElement element or corresponding values of objects are not equal
+     * ,return true if both objects' timestamp and value are equal.
+     */
     @Override
     public boolean equals(Object  o){
 
@@ -75,16 +97,32 @@ public class TimestampedElement<T> implements Serializable, Comparable<Timestamp
         return equal;
     }
 
+    /**
+     * convert the information contained in the element to string .
+     * could be used to print the element.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return new String("(" + value.toString() + " | " + timeStamp + ")");
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(value);
         out.writeLong(timeStamp);
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         value = (T) in.readObject();
         timeStamp = in.readLong();

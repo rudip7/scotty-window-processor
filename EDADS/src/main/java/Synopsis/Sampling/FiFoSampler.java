@@ -11,13 +11,22 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.TreeSet;
 
+/**
+ * this class maintain a sample base on the first in first out strategy
+ * @param <T>
+ */
 public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTimestamps<T>, Serializable {
     //TODO: change treeset to priorityQueue due duplicated timestamps
 
     private TreeSet<TimestampedElement<T>> sample;
-    private int sampleSize;
-    private boolean eventTime;
+    private int sampleSize;//maximum possible sample size
+    private boolean eventTime; //boolean display whether the type of timestampe is EventTime
 
+    /**
+     * the constructor- initialize variables and determine eventTime
+     * @param sampleSize
+     * @param timeCharacteristic
+     */
     public FiFoSampler(Integer sampleSize, TimeCharacteristic timeCharacteristic) {
         this.sample = new TreeSet<>();
         this.sampleSize = sampleSize;
@@ -27,6 +36,11 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
             this.eventTime = false;
         }
     }
+
+    /**
+     * the constructor- if there is no timeCharacteristic, it is set to true by default
+     * @param sampleSize
+     */
     public FiFoSampler(Integer sampleSize) {
         this.sample = new TreeSet<>();
         this.sampleSize = sampleSize;
@@ -49,24 +63,39 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
 
     }
 
+    /**
+     * Returns the sample.
+     *
+     * @return the sample
+     */
     public TreeSet<TimestampedElement<T>> getSample() {
         return sample;
     }
 
+    /**
+     * Returns the sampleSize.
+     *
+     * @return the sampleSize
+     */
     public int getSampleSize() {
         return sampleSize;
     }
 
+    /**
+     * Returns the eventTime.
+     *
+     * @return the eventTime
+     */
     public boolean isEventTime() {
         return eventTime;
     }
 
     /**
-     * Function to Merge two MergeableSynopsis.Sketches
+     * Function to Merge two Fifo sampler. This function keeps the newest elements of two samplers in the result sample
      *
-     * @param other
-     * @return
-     * @throws Exception
+     * @param other, Fifo Reservoir sampler to be merged with
+     * @return merged Fifo Sampler
+     * @throws IllegalArgumentException
      */
     @Override
     public FiFoSampler merge(MergeableSynopsis other) {
@@ -96,6 +125,12 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
         return this;
     }
 
+    /**
+     * convert the information contained in the sampler including the size and the elements to string .
+     * could be used to print the sampler.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString(){
         String s = new String("FiFo sample size: " + this.sampleSize+"\n");
@@ -108,6 +143,11 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
         return s;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(sampleSize);
         out.writeObject(sample);
@@ -115,6 +155,11 @@ public class FiFoSampler<T> extends StratifiedSynopsis implements SamplerWithTim
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         sampleSize = in.readInt();
         sample = (TreeSet<TimestampedElement<T>>) in.readObject();

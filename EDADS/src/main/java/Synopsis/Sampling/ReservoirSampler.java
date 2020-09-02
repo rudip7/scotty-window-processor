@@ -60,14 +60,29 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
         }
     }
 
+    /**
+     * Returns the sample.
+     *
+     * @return the sample
+     */
     public T[] getSample() {
         return sample;
     }
 
+    /**
+     * Returns the sampleSize.
+     *
+     * @return the sampleSize
+     */
     public int getSampleSize() {
         return sampleSize;
     }
 
+    /**
+     * Returns the processedElements.
+     *
+     * @return the processedElements
+     */
     public int getProcessedElements() {
         return processedElements;
     }
@@ -79,7 +94,7 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
      *
      * @param other Reservoir Sampler to be merged with this Reservoir Sampler
      * @return the merged Reservoir Sampler
-     * @throws Exception
+     * @throws IllegalArgumentException
      */
     @Override
     public ReservoirSampler<T> merge(MergeableSynopsis other) {
@@ -132,7 +147,7 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
     }
 
     /**
-     * Internal function to generate an array list containing all indices from 0 to size-1.
+     * private function to generate an array list containing all indices from 0 to size-1.
      *
      * @param size
      * @return
@@ -146,7 +161,7 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
     }
 
     /**
-     * Internal function to pick a random index without replacement from the given index list.
+     * private function to pick a random index without replacement from the given index list.
      *
      * @param list containing the remaining possible indices
      * @return a random index
@@ -199,6 +214,12 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
         return this;
     }
 
+    /**
+     * convert the information contained in the sampler including the size and the elements to string .
+     * could be used to print the sampler.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString(){
         String s = new String("Reservoir sample size: " + this.sampleSize+"\n");
@@ -216,6 +237,11 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
         return s;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(sampleSize);
         for (int i = 0; i < sampleSize; i++) {
@@ -225,6 +251,11 @@ public class ReservoirSampler<T> extends StratifiedSynopsis implements Commutati
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         sampleSize = in.readInt();
         for (int i = 0; i < sampleSize; i++) {
