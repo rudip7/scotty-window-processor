@@ -12,9 +12,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
- * Implementation of classical Cuckoo Filter sketch to estimate the the elements that were contained in a
+ * Implementation of classical Cuckoo Filter sketch to estimate the elements that were contained in a
  * datastream.
- * Tis implementation uses a family of pairwise independent hash functions to update the hash map of the
+ * This implementation uses a family of pairwise independent hash functions to update the hash map of the
  * sketch and has the limitation that are not suitable for applications that insert the same
  * item more than 2b times (b is the bucket size) because the error guarantees get lost.
  *
@@ -133,7 +133,7 @@ public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSy
     }
 
     /**
-     * Delete an the fingerprint of the data structure
+     * Delete the fingerprint of the data structure
      *
      * @param element to be deleted
      * @return true if the elements fingerprint was founded and deleted
@@ -157,29 +157,65 @@ public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSy
         return false;
     }
 
+    /**
+     * Returns the bucketSize.
+     *
+     * @return the bucketSize
+     */
     public int getBucketSize() {
         return bucketSize;
     }
 
+    /**
+     * Returns the buckets.
+     *
+     * @return the buckets
+     */
     public ArrayList<Byte>[] getBuckets() {
         return buckets;
     }
 
+    /**
+     * Returns the maxNumKicks.
+     *
+     * @return the maxNumKicks
+     */
     public int getMaxNumKicks() {
         return maxNumKicks;
     }
 
+    /**
+     * Returns the a.
+     *
+     * @return the a
+     */
     public int getA() {
         return a;
     }
 
+    /**
+     * Returns the b.
+     *
+     * @return the b
+     */
     public int getB() {
         return b;
     }
 
+    /**
+     * Returns the elementsProcessed.
+     *
+     * @return the elementsProcessed
+     */
     public int getElementsProcessed() {
         return elementsProcessed;
     }
+
+    /**
+     * Returns the Bucket Status.
+     *
+     * @return true if the bucket is full otherwise return false
+     */
     public boolean getBucketStatus() {return full;}
 
     /**
@@ -226,6 +262,12 @@ public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSy
     }
 
 
+    /**
+     * convert the information contained in the sketch to string .
+     * could be used to print the sketch.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         String sketch = new String();
@@ -241,6 +283,11 @@ public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSy
         return sketch;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(bucketSize);
         for (int i = 0; i < buckets.length; i++) {
@@ -255,6 +302,11 @@ public class CuckooFilter<T> extends StratifiedSynopsis implements CommutativeSy
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         bucketSize = in.readInt();
         for (int i = 0; i < buckets.length; i++) {

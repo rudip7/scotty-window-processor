@@ -25,7 +25,7 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
     private int width;
     private int height;
     private long seed;
-    private int[][] array;
+    private int[][] array; // array represents the sketch
     private EfficientH3Functions hashFunctions;
     private int elementsProcessed;
 //    private HashSet<T> Elements;
@@ -163,6 +163,10 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
         }
     }
 
+    /**
+     * set elementsProcessed in the sketch
+     * @param elementsProcessed, number of processed elements
+     */
     public void setElementsProcessed(int elementsProcessed) {
         this.elementsProcessed = elementsProcessed;
     }
@@ -205,6 +209,11 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
 //        return cm;
 //    }
 
+    /**
+     * Function to decrease count of an element in the sketch when it is deleted.
+     *
+     * @param toDecrement- element which is deleted
+     */
     @Override
     public void decrement(T toDecrement) {
         int input;
@@ -220,6 +229,11 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
         elementsProcessed--;
     }
 
+    /**
+     * Function to subtract one CountMin sketch from another one.
+     *
+     * @param other- the sketched to be subtracted
+     */
     @Override
     public CountMinSketch<T> invert(InvertibleSynopsis<T> other) {
         if (other instanceof CountMinSketch) {
@@ -238,7 +252,12 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
         throw new IllegalArgumentException("MergeableSynopsis.Sketches to invert have to be the same size and hash Functions");
     }
 
-
+    /**
+     * convert the information contained in the sketch to string .
+     * could be used to print the sketch.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         String result = "CountMinSketch{";
@@ -260,6 +279,11 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
         return result;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(width);
         out.writeInt(height);
@@ -273,6 +297,11 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         width = in.readInt();
         height = in.readInt();

@@ -4,7 +4,6 @@ import Synopsis.Sketches.HashFunctions.EfficientH3Functions;
 import Synopsis.MergeableSynopsis;
 import Synopsis.CommutativeSynopsis;
 import Synopsis.StratifiedSynopsis;
-
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
@@ -12,8 +11,8 @@ import java.io.Serializable;
 import java.util.BitSet;
 
 /**
- * Implementation of classical Bloom Filter sketch to estimate the the elements that were contained in a
- * datastream.
+ * Implementation of classical Bloom Filter sketch to estimate the elements that were contained in a
+ * data stream.
  * Tis implementation uses a family of pairwise independent hash functions to update the hash map of the
  * sketch.
  *
@@ -22,8 +21,8 @@ import java.util.BitSet;
  * @author Rudi Poepsel Lemaitre
  */
 public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSynopsis<T>, Serializable {
-    private BitSet hashmap;
-    private int nHashFunctions;
+    private BitSet hashmap; // hashmap of the sketch
+    private int nHashFunctions; // number of hash functions
     private int numberBits;
     private int elementsProcessed;
     private static final double LN2 = 0.6931471805599453; // ln(2)
@@ -34,6 +33,7 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
      *
      * @param maxNumElements Expected number of distinct elements
      * @param numberBits     Desired size of the container in bits
+     * @param seed for the randomness of the hash functions
      **/
     public BloomFilter(Integer maxNumElements, Integer numberBits, Long seed) {
         this.numberBits = numberBits;
@@ -69,6 +69,12 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
         elementsProcessed++;
     }
 
+    /**
+     * find whether datastream contains a specific element or not
+     * @param element queried element
+     * @return true if the element is contained otherwise return false
+     */
+
     public boolean query(T element){
         int input;
         if (element instanceof Number){
@@ -85,22 +91,47 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
         return true;
     }
 
+    /**
+     * Returns the hashmap.
+     *
+     * @return the hashmap
+     */
     public BitSet getHashmap() {
         return hashmap;
     }
 
+    /**
+     * Returns the nHashFunctions.
+     *
+     * @return the nHashFunctions
+     */
     public int getnHashFunctions() {
         return nHashFunctions;
     }
 
+    /**
+     * Returns the numberBits.
+     *
+     * @return the numberBits
+     */
     public int getNumberBits() {
         return numberBits;
     }
 
+    /**
+     * Returns the elementsProcessed.
+     *
+     * @return the elementsProcessed
+     */
     public int getElementsProcessed() {
         return elementsProcessed;
     }
 
+    /**
+     * Returns the hashFunctions.
+     *
+     * @return the hashFunctions
+     */
     public EfficientH3Functions getHashFunctions() {
         return hashFunctions;
     }
@@ -133,7 +164,12 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
         return this;
     }
 
-
+    /**
+     * convert the information contained in the Bloom Filter to string .
+     * could be used to print the sketch.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         return "BloomFilter{" +
@@ -145,6 +181,11 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
                 '}';
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(nHashFunctions);
         out.writeInt(numberBits);
@@ -154,6 +195,11 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         nHashFunctions = in.readInt();
         numberBits = in.readInt();
