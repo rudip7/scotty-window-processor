@@ -28,14 +28,20 @@ import java.util.BitSet;
 public class FastAGMS<T> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
 
     private int[][] array;
-    private int width;
-    private int height;
+    private int width; //amount of buckets in each row - it is recommended to use powers of 2
+    private int height; //mount of hash functions / rows in the sketch array
     private EfficientH3Functions hashFunctions;
     private EH3_HashFunction eh3_boolean_hashfunctions;
-    private final byte n = 32;
-    long seed;
+    private final byte n = 32; // length of bitset
+    long seed; //seed for the RandomNumber Generator
 
 
+    /**
+     * convert the information contained in the sketch to string .
+     * could be used to print the sketch.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         String arrayString = "";
@@ -116,17 +122,31 @@ public class FastAGMS<T> extends StratifiedSynopsis implements InvertibleSynopsi
         }
     }
 
+    /**
+     * update element by adding new incoming element
+     * @param element new incoming element
+     */
     @Override
     public void update(T element){
         update(element, true);
     }
 
+    /**
+     * update element by deleting an element
+     * @param toDecrement element to be deleted
+     */
     @Override
     public void decrement(T toDecrement) {
         update(toDecrement, false);
     }
 
-
+    /**
+     * Function to remove one FastAGMS sketch from another one by subtracting their arrays.
+     *
+     * @param toRemove- the sketched to be removed
+     * @return the remaining sketch with new values
+     * @throws IllegalArgumentException
+     */
     @Override
     public InvertibleSynopsis<T> invert(InvertibleSynopsis<T> toRemove) {
         if (toRemove instanceof FastAGMS){
@@ -144,34 +164,76 @@ public class FastAGMS<T> extends StratifiedSynopsis implements InvertibleSynopsi
         throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
+    /**
+     * Returns the array.
+     *
+     * @return the array
+     */
     public int[][] getArray() {
         return array;
     }
 
+    /**
+     * Returns the width.
+     *
+     * @return the width
+     */
     public int getWidth() {
         return width;
     }
 
+    /**
+     * Returns the height.
+     *
+     * @return the height
+     */
     public int getHeight() {
         return height;
     }
 
+    /**
+     * Returns the n.
+     *
+     * @return the n
+     */
     public byte getN() {
         return n;
     }
 
+    /**
+     * Returns the hashFunctions.
+     *
+     * @return the hashFunctions
+     */
     public EfficientH3Functions getHashFunctions() {
         return hashFunctions;
     }
 
+    /**
+     * Returns the eh3_boolean_hashfunctions.
+     *
+     * @return the eh3_boolean_hashfunctions
+     */
     public EH3_HashFunction getEh3_boolean_hashfunctions() {
         return eh3_boolean_hashfunctions;
     }
 
+    /**
+     * Returns the seed.
+     *
+     * @return the seed
+     */
     public long getSeed() {
         return seed;
     }
 
+    /**
+     * Function to Merge two DDSketches by adding up their arrays.
+     *
+     * @param other FastAGMS to be merged with
+     * @return merged FastAGMS
+     * @throws IllegalArgumentException
+     */
     @Override
     public FastAGMS<T> merge(MergeableSynopsis other){
         if (other instanceof FastAGMS){
@@ -231,7 +293,11 @@ public class FastAGMS<T> extends StratifiedSynopsis implements InvertibleSynopsi
         return f2_array[height/2];  // median of the sorted array of estimated F2 values
     }
 
-
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(array);
         out.writeInt(width);
@@ -242,6 +308,11 @@ public class FastAGMS<T> extends StratifiedSynopsis implements InvertibleSynopsi
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         array = (int[][])in.readObject();
         width = in.readInt();

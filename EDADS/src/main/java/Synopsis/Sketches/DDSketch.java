@@ -25,17 +25,17 @@ import java.util.stream.Collectors;
  * @author Rudi Poepsel Lemaitre
  */
 public class DDSketch<T extends Number> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
-    private int maxNumBins;
-    private boolean isCollapsed;
-    private double relativeAccuracy;
-    private double logGamma;
-    private int zeroCount;
-    private int globalCount;
+    private int maxNumBins; // possible maximum number of bins in the sketch
+    private boolean isCollapsed; // boolean shows if the max number of bins is exceeded
+    private double relativeAccuracy;// the relative accuracy of quantiles
+    private double logGamma; // accuracy factor used to calculate indices
+    private int zeroCount;// number of elements that are less than lowest indexable value
+    private int globalCount; // total frequency in the sketch
 
-    private double minIndexedValue;
-    private double maxIndexedValue;
+    private double minIndexedValue;//lowest indexable value
+    private double maxIndexedValue;//maximum indexable value
 
-    private TreeMap<Integer, Integer> counts;
+    private TreeMap<Integer, Integer> counts; // structure maintain the sketch
 
     /**
      * Construct a DDSketch
@@ -82,6 +82,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
 
     /**
      * Test if the value can be inserted in the structure.
+     * @throws IllegalArgumentException
      */
     private void checkValueTrackable(double value) {
         if (value < 0 || value > maxIndexedValue) {
@@ -119,7 +120,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
      * Given a value calculate the index of the corresponding Bin.
      *
      * @param value to get the index from
-     * @return the log index correspondig the accuracy factor (logGamma)
+     * @return the log index corresponding to the accuracy factor (logGamma)
      */
     public int index(double value) {
         final double index = Math.log(value) / logGamma;
@@ -127,10 +128,10 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
     }
 
     /**
-     * Calculate the representative value from the given index acording to the relative accuracy
+     * Calculate the representative value from the given index according to the relative accuracy
      *
-     * @param index to calcule the value from
-     * @return the reprentative value
+     * @param index to calculate the value from
+     * @return the representative value
      */
     public double value(int index) {
         return Math.exp(index * logGamma) * (1 + relativeAccuracy);
@@ -157,10 +158,28 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
             return value(counts.lastKey());
         }
     }
+
+    /**
+     * Returns the globalCount.
+     *
+     * @return the globalCount
+     */
     public int getGlobalCount()
     {return globalCount;}
+
+    /**
+     * Returns the zeroCount.
+     *
+     * @return the zeroCount
+     */
     public int getZeroCount()
     {return zeroCount;}
+
+    /**
+     * Returns the maxNumBins.
+     *
+     * @return the maxNumBins
+     */
     public int getMaxNumBins(){return maxNumBins;}
 
     /**
@@ -187,7 +206,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
     }
 
     /**
-     * Estimate the p-Quantile value considering only a given number of elements
+     * private method, Estimate the p-Quantile value considering only a given number of elements
      *
      * @param quantile p value of the quantile (0 < p < 1)
      * @param count    the number of elements to be considered as total
@@ -236,10 +255,22 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         }
     }
 
+    /**
+     * Returns the counts.
+     *
+     * @return the counts
+     */
     public TreeMap<Integer, Integer> getCounts() {
         return counts;
     }
 
+    /**
+     * Function to remove one DD sketch from another one by subtracting their calculated counts.
+     *
+     * @param toRemove- the sketched to be removed
+     * @return the remaining sketch with new counts
+     * @throws IllegalArgumentException
+     */
     @Override
     public DDSketch<T> invert(InvertibleSynopsis<T> toRemove) {
         if (toRemove instanceof DDSketch) {
@@ -290,6 +321,11 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
+    /**
+     * Function to decrease count of an element in the sketch when it is deleted.
+     *
+     * @param toDecrement- element which is deleted
+     */
     @Override
     public void decrement(T toDecrement) {
         double elemValue = toDecrement.doubleValue();
@@ -317,7 +353,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
      *
      * @param other DDSketch to be merged with
      * @return merged DDSketch
-     * @throws Exception in case
+     * @throws IllegalArgumentException
      */
     @Override
     public DDSketch merge(MergeableSynopsis other) {
@@ -343,6 +379,12 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         throw new IllegalArgumentException("MergeableSynopsis.Sketches to merge have to be the same size and hash Functions");
     }
 
+    /**
+     * convert the information contained in the sketch to string .
+     * could be used to print the sketch.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString() {
         String sketch = new String();
@@ -356,6 +398,11 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         return sketch;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(maxNumBins);
         out.writeBoolean(isCollapsed);
@@ -370,6 +417,11 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
     }
 
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         maxNumBins = in.readInt();
         isCollapsed = in.readBoolean();

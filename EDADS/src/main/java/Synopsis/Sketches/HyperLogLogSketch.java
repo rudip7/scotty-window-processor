@@ -31,9 +31,11 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
     private EfficientH3Functions hashFunctions;
 
     /**
+     * Constructor- create a HyperLogLogSketch
      * @param logRegNum the logarithm of the number of registers. should be in 4...16
      *        Going beyond 16 would make the data structure big for no good reason.
      *        Setting logRegNum in at 10-12 should give roughly 2% accuracy most of the time
+     * @param seed for the randomness of the hash functions
      */
     public HyperLogLogSketch(Integer logRegNum, Long seed) {
         HyperLogLogSketch.checkSpaceValid(logRegNum);
@@ -68,8 +70,11 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
     }
 
     /**
-     * @param synopsis the synopsis to merge
-     * @return the merged HyperLogLogSketch Datastructure
+     * Function to Merge two HyperLogLogSketch.
+     *
+     * @param synopsis the synopsis to merge with
+     * @return the merged HyperLogLogSketch
+     * @throws IllegalArgumentException
      */
     public HyperLogLogSketch merge(MergeableSynopsis synopsis){
 
@@ -89,28 +94,56 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
         return this;
     }
 
+    /**
+     * Returns the regNum.
+     *
+     * @return the regNum
+     */
     public int getRegNum() {
         return regNum;
     }
 
+    /**
+     * Returns the logRegNum.
+     *
+     * @return the logRegNum
+     */
     public int getLogRegNum() {
         return logRegNum;
     }
 
+    /**
+     * Returns the registers.
+     *
+     * @return the registers
+     */
     public byte[] getRegisters() {
         return registers;
     }
 
+    /**
+     * Returns the distinctItemCount.
+     *
+     * @return the distinctItemCount
+     */
     public long getDistinctItemCount() {
         return distinctItemCount;
     }
 
+    /**
+     * Returns the hashFunctions.
+     *
+     * @return the hashFunctions
+     */
     public EfficientH3Functions getHashFunctions() {
         return hashFunctions;
     }
 
     /**
-     * @return an estimation of the number of distinct items
+     * estimate the number of distinct items
+     *
+     * @return an estimated number
+     * @throws IllegalArgumentException
      */
     public long distinctItemsEstimator() {
         double alpha;
@@ -147,15 +180,23 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
 
 
     /**
+     * check the validity of logSpaceSize
+     *
      * @param logSpaceSize the logarithm of the number of registers in the HLL structure.
      * Going beyond 16 is too big and does not
      * add accuracy. Going below 4 does not save Space.
+     * @throws IllegalArgumentException
      */
     public static void checkSpaceValid(int logSpaceSize) {
         if ((logSpaceSize > 16) || (logSpaceSize < 4))
             throw new IllegalArgumentException("HLogLog initialized with logSpaceSize out of range");
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
 
         out.writeInt(this.regNum);
@@ -166,6 +207,11 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
         out.writeObject(this.getPartitionValue());
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException{
         this.regNum = in.readInt();
         this.logRegNum = in.readInt();
@@ -181,6 +227,12 @@ public class HyperLogLogSketch<T> extends StratifiedSynopsis implements Commutat
         throw new NotSerializableException("Serialization error in class " + this.getClass().getName());
     }
 
+    /**
+     * convert the information contained in the sketch to string .
+     * could be used to print the sketch.
+     *
+     * @return a string of contained information
+     */
     @Override
     public String toString(){
         String s = null;

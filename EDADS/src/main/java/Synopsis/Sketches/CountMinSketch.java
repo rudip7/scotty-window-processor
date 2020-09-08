@@ -230,9 +230,11 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
     }
 
     /**
-     * Function to subtract one CountMin sketch from another one.
+     * Function to remove counts of one CountMin sketch from another one by subtracting their calculated counts.
      *
-     * @param other- the sketched to be subtracted
+     * @param other- the sketched to be removed
+     * @return the remaining sketch with new counts
+     * @throws IllegalArgumentException
      */
     @Override
     public CountMinSketch<T> invert(InvertibleSynopsis<T> other) {
