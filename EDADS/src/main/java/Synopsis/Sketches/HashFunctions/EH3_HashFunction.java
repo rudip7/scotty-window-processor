@@ -17,6 +17,8 @@ public class EH3_HashFunction implements Serializable {
     private int height;
 
     /**
+     * constructor
+     *
      * @param seed      seed for the random number generator
      * @param height    the amount of eh3 hash_functions
      */
@@ -60,11 +62,21 @@ public class EH3_HashFunction implements Serializable {
         return results;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(seeds);
         out.writeInt(height);
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         seeds = (long[]) in.readObject();
         height = in.readInt();

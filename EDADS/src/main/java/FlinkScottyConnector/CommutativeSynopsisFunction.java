@@ -16,12 +16,17 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class CommutativeSynopsisFunction<Input extends Tuple2,T extends CommutativeSynopsis> implements CommutativeAggregateFunction<Input, CommutativeSynopsis, CommutativeSynopsis>, Serializable {
-    private Class<T> synopsisClass;
-    private Object[] constructorParam;
-    private Class<?>[] parameterClasses;
+    private Class<T> synopsisClass; // specific classes of synopsis
+    private Object[] constructorParam; // parameters for constructors of each type of synopsis
+    private Class<?>[] parameterClasses; // class type of constructor parameters
     private boolean stratified = false;
 
-
+    /**
+     * the constructor- creates a CommutativeSynopsisFunction and initialize the attributes
+     *
+     * @param synopsisClass
+     * @param constructorParam
+     */
     public CommutativeSynopsisFunction(Class<T> synopsisClass, Object... constructorParam){
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -31,6 +36,14 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         this.synopsisClass = synopsisClass;
     }
 
+    /**
+     * the constructor- creates a CommutativeSynopsisFunction when stratified parameter is specified too.
+     *
+     * @param stratified
+     * @param synopsisClass
+     * @param constructorParam
+     * @throws IllegalArgumentException when the synopsis class is not subclass of StratifiedSynopsis but stratified is True
+     */
     public CommutativeSynopsisFunction(boolean stratified, Class<T> synopsisClass, Object... constructorParam){
         this.stratified = stratified;
         this.constructorParam = constructorParam;
@@ -44,6 +57,13 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         this.synopsisClass = synopsisClass;
     }
 
+    /**
+     * Create and initialize a new instance of the synopsis class with the specified constructor parameters
+     *
+     * @return a new object created by calling the constructor
+     * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
+     * instantiated, access is not permitted or other exceptions thrown by invoked methods.
+     */
 
     public CommutativeSynopsis createAggregate() {
         try {
@@ -63,7 +83,12 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         }
     }
 
-
+    /**
+     * add new element to the synopsis and set its partition value if it is stratified
+     *
+     * @param inputTuple input element
+     * @return updated synopsis
+     */
     @Override
     public CommutativeSynopsis lift(Input inputTuple) {
         CommutativeSynopsis partialAggregate = createAggregate();
@@ -74,6 +99,13 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         return partialAggregate;
     }
 
+    /**
+     * merge two Commutative Synopsis
+     *
+     * @param input
+     * @param partialAggregate
+     * @return merged synopsis
+     */
     @Override
     public CommutativeSynopsis combine(CommutativeSynopsis input, CommutativeSynopsis partialAggregate) {
         try {
@@ -84,6 +116,13 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         return null;
     }
 
+    /**
+     * add new element to the synopsis and set its partition value if it is stratified
+     *
+     * @param partialAggregate synopsis
+     * @param inputTuple input element
+     * @return updated synopsis
+     */
     @Override
     public CommutativeSynopsis liftAndCombine(CommutativeSynopsis partialAggregate, Input inputTuple) {
         partialAggregate.update(inputTuple.f1);
@@ -93,11 +132,21 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         return partialAggregate;
     }
 
+    /**
+     * returns the input synopsis
+     * @param inputCommutativeSynopsis
+     * @return  the input CommutativeSynopsis
+     */
     @Override
     public CommutativeSynopsis lower(CommutativeSynopsis inputCommutativeSynopsis) {
         return inputCommutativeSynopsis;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeBoolean(stratified);
         out.writeObject(synopsisClass);
@@ -110,6 +159,11 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         }
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.stratified = in.readBoolean();
         this.synopsisClass = (Class<T>) in.readObject();

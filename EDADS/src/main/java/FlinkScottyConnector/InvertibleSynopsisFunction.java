@@ -16,12 +16,20 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class InvertibleSynopsisFunction<Input extends Tuple2, T extends InvertibleSynopsis> implements InvertibleAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, CommutativeAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, Serializable {
-    private Class<T> synopsisClass;
-    private Object[] constructorParam;
-    private Class<?>[] parameterClasses;
+    private Class<T> synopsisClass; // specific classes of synopsis
+    private Object[] constructorParam; // parameters for constructors of each type of synopsis
+    private Class<?>[] parameterClasses; // class type of constructor parameters
     private boolean stratified = false;
 
 
+    /**
+     * the constructor- creates a InvertibleSynopsisFunction when stratified parameter is specified too.
+     *
+     * @param stratified
+     * @param synopsisClass
+     * @param constructorParam
+     * @throws IllegalArgumentException when the synopsis class is not subclass of StratifiedSynopsis but stratified is True
+     */
     public InvertibleSynopsisFunction(boolean stratified, Class<T> synopsisClass, Object... constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -35,6 +43,12 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         this.stratified = stratified;
     }
 
+    /**
+     * the constructor- creates a InvertibleSynopsisFunction and initialize the attributes
+     *
+     * @param synopsisClass
+     * @param constructorParam
+     */
     public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -44,6 +58,13 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         this.synopsisClass = synopsisClass;
     }
 
+    /**
+     * Create and initialize a new instance of the synopsis class with the specified constructor parameters
+     *
+     * @return a new object created by calling the constructor
+     * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
+     * instantiated, access is not permitted or other exceptions thrown by invoked methods.
+     */
     public InvertibleSynopsis createAggregate() {
         try {
             Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
@@ -62,6 +83,12 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         }
     }
 
+    /**
+     * remove one synopsis from another synopsis
+     * @param partialAggregate //main synopsis
+     * @param toRemove // synopsis that should be removed
+     * @return inverted synopsis
+     */
     @Override
     public InvertibleSynopsis invert(InvertibleSynopsis partialAggregate, InvertibleSynopsis toRemove) {
         try {
@@ -72,6 +99,12 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         return null;
     }
 
+    /**
+     * remove one element from the synopsis and set its partition value if it is stratified
+     * @param partialAggregate //synopsis
+     * @param inputTuple // element that should be removed
+     * @return result synopsis after removing
+     */
     @Override
     public InvertibleSynopsis liftAndInvert(InvertibleSynopsis partialAggregate, Input inputTuple) {
         if (stratified) {
@@ -81,6 +114,12 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         return partialAggregate;
     }
 
+    /**
+     * add new element to the synopsis and set its partition value if it is stratified
+     *
+     * @param inputTuple input element
+     * @return updated synopsis
+     */
     @Override
     public InvertibleSynopsis lift(Input inputTuple) {
         InvertibleSynopsis partialAggregate = createAggregate();
@@ -91,6 +130,13 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         return partialAggregate;
     }
 
+    /**
+     * merge two Commutative Synopsis
+     *
+     * @param input
+     * @param partialAggregate
+     * @return merged synopsis
+     */
     @Override
     public InvertibleSynopsis combine(InvertibleSynopsis input, InvertibleSynopsis partialAggregate) {
         try {
@@ -101,6 +147,13 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         return null;
     }
 
+    /**
+     * add new element to the synopsis and set its partition value if it is stratified
+     *
+     * @param partialAggregate synopsis
+     * @param inputTuple input element
+     * @return updated synopsis
+     */
     @Override
     public InvertibleSynopsis liftAndCombine(InvertibleSynopsis partialAggregate, Input inputTuple) {
         if (stratified) {
