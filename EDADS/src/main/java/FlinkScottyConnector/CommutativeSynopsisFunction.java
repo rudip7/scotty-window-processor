@@ -58,7 +58,7 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
     }
 
     /**
-     * Create and initialize a new instance of the synopsis class with the specified constructor parameters
+     * Create a new instance of the synopsis  (Aggregate) with the specified constructor parameters
      *
      * @return a new object created by calling the constructor
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
@@ -84,10 +84,10 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
     }
 
     /**
-     * add new element to the synopsis and set its partition value if it is stratified
+     * Transforms a tuple to a partial aggregate,by updating aggregator with the tuple
      *
      * @param inputTuple input element
-     * @return updated synopsis
+     * @return updated synopsis aggregate
      */
     @Override
     public CommutativeSynopsis lift(Input inputTuple) {
@@ -100,7 +100,9 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
     }
 
     /**
-     * merge two Commutative Synopsis
+     * merge two Commutative Synopsis,
+     * This method can be used to add a single tuple partial aggregate to a larger aggregate
+     * or to merge two big aggregates (or slices)
      *
      * @param input
      * @param partialAggregate
@@ -117,7 +119,7 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
     }
 
     /**
-     * add new element to the synopsis and set its partition value if it is stratified
+     * add new element to a synopsis (Aggregate) , the result is the same as invoking lift and then combine function.
      *
      * @param partialAggregate synopsis
      * @param inputTuple input element
@@ -133,9 +135,9 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
     }
 
     /**
-     * returns the input synopsis
+     * returns the final synopsis
      * @param inputCommutativeSynopsis
-     * @return  the input CommutativeSynopsis
+     * @return  the final CommutativeSynopsis
      */
     @Override
     public CommutativeSynopsis lower(CommutativeSynopsis inputCommutativeSynopsis) {

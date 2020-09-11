@@ -59,7 +59,7 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
     }
 
     /**
-     * Create and initialize a new instance of the synopsis class with the specified constructor parameters
+     * Create a new instance of the synopsis (Aggregate) with the specified constructor parameters
      *
      * @return a new object created by calling the constructor
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
@@ -85,6 +85,7 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
 
     /**
      * remove one synopsis from another synopsis
+     *
      * @param partialAggregate //main synopsis
      * @param toRemove // synopsis that should be removed
      * @return inverted synopsis
@@ -100,7 +101,8 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
     }
 
     /**
-     * remove one element from the synopsis and set its partition value if it is stratified
+     * remove one element from the synopsis (Aggregate), the result is the same as invoking lift and then invert function.
+     *
      * @param partialAggregate //synopsis
      * @param inputTuple // element that should be removed
      * @return result synopsis after removing
@@ -115,7 +117,7 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
     }
 
     /**
-     * add new element to the synopsis and set its partition value if it is stratified
+     *Transforms a tuple to a partial aggregate,by updating aggregator with the tuple
      *
      * @param inputTuple input element
      * @return updated synopsis
@@ -131,8 +133,9 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
     }
 
     /**
-     * merge two Commutative Synopsis
-     *
+     * merge two Invertible Synopsis
+     * This method can be used to add a single tuple partial aggregate to a larger aggregate
+     * or to merge two big aggregates (or slices)
      * @param input
      * @param partialAggregate
      * @return merged synopsis
@@ -148,7 +151,7 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
     }
 
     /**
-     * add new element to the synopsis and set its partition value if it is stratified
+     * add new element to a synopsis (Aggregate), the result is the same as invoking lift and then combine function.
      *
      * @param partialAggregate synopsis
      * @param inputTuple input element
@@ -163,11 +166,21 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         return partialAggregate;
     }
 
+    /**
+     * returns the final synopsis
+     * @param inputInvertibleSynopsis
+     * @return  the final InvertibleSynopsis
+     */
     @Override
     public InvertibleSynopsis lower(InvertibleSynopsis inputInvertibleSynopsis) {
         return inputInvertibleSynopsis;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeBoolean(stratified);
         out.writeObject(synopsisClass);
@@ -180,6 +193,11 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
         }
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.stratified = in.readBoolean();
         this.synopsisClass = (Class<T>) in.readObject();

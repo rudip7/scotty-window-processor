@@ -28,10 +28,10 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalStreamEnvironment.class);
     private boolean stratified = false;
-    private Class<? extends Synopsis> sketchClass;
-    private Object[] constructorParam;
-    private int miniBatchSize;
-    private PriorityQueue<TimestampedElement<Tuple2>> dispatchList;
+    private Class<? extends Synopsis> sketchClass; // specific classes of synopsis
+    private Object[] constructorParam;// parameters for constructors of each type of synopsis
+    private int miniBatchSize; // the size of batches to process
+    private PriorityQueue<TimestampedElement<Tuple2>> dispatchList; //list of incoming element (used in case of batch processing)
 
     /**
      * Construct a new MergeableSynopsis Aggregator Function.
@@ -59,6 +59,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     /**
      * Construct a new MergeableSynopsis Aggregator Function.
      *
+     * @param miniBatchSize
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
      */
@@ -78,6 +79,8 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
      * is the size of the accumulator.
      *
      * @return A new MergeableSynopsis (accumulator), corresponding to an empty MergeableSynopsis.
+     * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
+     * instantiated, access is not permitted or other exceptions thrown by invoked methods.
      */
     @Override
     public Synopsis createAccumulator() {
@@ -109,6 +112,8 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
      *
      * @param value       The value to add
      * @param accumulator The MergeableSynopsis to add the value to
+     * @return updated accumulator
+     * @throws IllegalArgumentException
      */
     @Override
     public Synopsis add(T1 value, Synopsis accumulator) {
@@ -166,6 +171,11 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
         return null;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(constructorParam);
         out.writeObject(sketchClass);
@@ -176,6 +186,11 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
         }
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         constructorParam = (Object[]) in.readObject();
         sketchClass = (Class<? extends MergeableSynopsis>) in.readObject();
