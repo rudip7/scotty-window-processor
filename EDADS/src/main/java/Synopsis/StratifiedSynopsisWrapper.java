@@ -3,7 +3,7 @@ package Synopsis;
 import java.io.Serializable;
 
 public class StratifiedSynopsisWrapper<K extends Serializable, S extends Synopsis> implements Serializable{
-    final K key; // key of Synopsis
+    final K key; // Stratification key value
     final S synopsis; //
 
     /**

@@ -34,7 +34,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     private PriorityQueue<TimestampedElement<Tuple2>> dispatchList; //list of incoming element (used in case of batch processing)
 
     /**
-     * Construct a new MergeableSynopsis Aggregator Function.
+     * Construct a new nonMergeableSynopsis Aggregator Function.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array

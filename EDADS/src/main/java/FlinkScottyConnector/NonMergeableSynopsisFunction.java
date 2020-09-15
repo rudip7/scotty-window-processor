@@ -16,12 +16,22 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends NonMergeableSynopsisManager> implements AggregateFunction<Input, NonMergeableSynopsisManager, NonMergeableSynopsisManager>, Serializable {
-    private int keyField;
-    private Class<S> synopsisClass;
+    private int keyField; // key value of the synopsis
+    private Class<S> synopsisClass; //classes of synopsis
     private Class<SM> sliceManagerClass;
-    private Object[] constructorParam;
-    private Class<?>[] parameterClasses;
+    private Object[] constructorParam; //parameters for constructors of each type of synopsis
+    private Class<?>[] parameterClasses; // class type of constructor parameters
 
+    /**
+     * Construct a new NonMergeableSynopsisFunction.
+     *
+     * @param keyField
+     * @param partitionField
+     * @param synopsisClass
+     * @param sliceManagerClass
+     * @param constructorParam
+     * @throws IllegalArgumentException
+     */
     public NonMergeableSynopsisFunction(int keyField, int partitionField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
         this.keyField = keyField;
         this.constructorParam = constructorParam;
@@ -35,7 +45,13 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
             throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
         }
     }
-
+    /**
+     * Construct a new NonMergeableSynopsisFunction.
+     *
+     * @param synopsisClass
+     * @param sliceManagerClass
+     * @param constructorParam
+     */
     public NonMergeableSynopsisFunction(Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
         this.keyField = -1;
         this.constructorParam = constructorParam;
@@ -47,6 +63,13 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         this.sliceManagerClass = sliceManagerClass;
     }
 
+    /**
+     * Create a new instance of the slice manager (Aggregate) and add synopsis with the specified constructor parameters to it.
+     *
+     * @return the slice manager
+     * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
+     * instantiated, access is not permitted or other exceptions thrown by invoked methods.
+     */
     public NonMergeableSynopsisManager createAggregate() {
         try {
             Constructor<S> constructor = synopsisClass.getConstructor(parameterClasses);
@@ -68,6 +91,7 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         }
     }
 
+
     @Override
     public NonMergeableSynopsisManager lift(Input input) {
         if (!(input instanceof Tuple2)) {
@@ -86,6 +110,11 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
 
     }
 
+    /**
+     * unify two noneNonMergeable Synopses collections
+     *
+     * @param other
+     */
     @Override
     public NonMergeableSynopsisManager combine(NonMergeableSynopsisManager input, NonMergeableSynopsisManager partialAggregate) {
         input.unify(partialAggregate);
@@ -109,11 +138,21 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
 
     }
 
+    /**
+     * returns the final synopsis manager
+     * @param inputInvertibleSynopsis
+     * @return  the final InvertibleSynopsis
+     */
     @Override
     public NonMergeableSynopsisManager lower(NonMergeableSynopsisManager inputSynopsis) {
         return inputSynopsis;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeInt(keyField);
         out.writeObject(synopsisClass);
@@ -127,6 +166,11 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         }
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.keyField = in.readInt();
         this.synopsisClass = (Class<S>) in.readObject();

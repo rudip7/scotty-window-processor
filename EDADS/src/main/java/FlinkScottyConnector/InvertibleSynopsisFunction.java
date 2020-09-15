@@ -61,7 +61,7 @@ public class InvertibleSynopsisFunction<Input extends Tuple2, T extends Invertib
     /**
      * Create a new instance of the synopsis (Aggregate) with the specified constructor parameters
      *
-     * @return a new object created by calling the constructor
+     * @return a new aggregation created by calling the constructor
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
      * instantiated, access is not permitted or other exceptions thrown by invoked methods.
      */
