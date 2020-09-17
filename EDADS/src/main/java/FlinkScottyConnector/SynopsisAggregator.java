@@ -43,6 +43,7 @@ public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSy
     /**
      * Construct a new MergeableSynopsis Aggregator Function.
      *
+     * @param stratified
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
      */
@@ -136,12 +137,22 @@ public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSy
         return null;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(constructorParam);
         out.writeObject(sketchClass);
         out.writeBoolean(stratified);
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         constructorParam = (Object[]) in.readObject();
         sketchClass = (Class<? extends MergeableSynopsis>) in.readObject();

@@ -19,7 +19,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.PriorityQueue;
 
 /**
- * General {@link AggregateFunction} to build a customized MergeableSynopsis in an incremental way.
+ * General {@link AggregateFunction} to build a customized non-MergeableSynopsis in an incremental way.
  *
  * @param <T1>
  * @author Rudi Poepsel Lemaitre
@@ -34,7 +34,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     private PriorityQueue<TimestampedElement<Tuple2>> dispatchList; //list of incoming element (used in case of batch processing)
 
     /**
-     * Construct a new nonMergeableSynopsis Aggregator Function.
+     * Construct a new NonMergeableSynopsis Aggregator Function.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
@@ -45,7 +45,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Construct a new MergeableSynopsis Aggregator Function.
+     * Construct a new NonMergeableSynopsis Aggregator Function.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
@@ -57,7 +57,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Construct a new MergeableSynopsis Aggregator Function.
+     * Construct a new NonMergeableSynopsis Aggregator Function.
      *
      * @param miniBatchSize
      * @param sketchClass the MergeableSynopsis.class
@@ -73,12 +73,12 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Creates a new MergeableSynopsis (accumulator), starting a new aggregate.
+     * Creates a new NonMergeableSynopsis (accumulator), starting a new aggregate.
      * The accumulator is the state of a running aggregation. When a program has multiple
      * aggregates in progress (such as per key and window), the state (per key and window)
      * is the size of the accumulator.
      *
-     * @return A new MergeableSynopsis (accumulator), corresponding to an empty MergeableSynopsis.
+     * @return A new NonMergeableSynopsis (accumulator), corresponding to an empty NonMergeableSynopsis.
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
      * instantiated, access is not permitted or other exceptions thrown by invoked methods.
      */
@@ -105,7 +105,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Updates the MergeableSynopsis structure by the given input value, returning the
+     * Updates the NonMergeableSynopsis structure by the given input value, returning the
      * new accumulator value.
      * <p>
      * For efficiency, the input accumulator is modified and returned.
@@ -155,17 +155,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
         return accumulator;
     }
 
-    /**
-     * Merges two accumulators, returning an accumulator with the merged state.
-     * <p>
-     * This function may reuse any of the given accumulators as the target for the merge
-     * and return that. The assumption is that the given accumulators will not be used any
-     * more after having been passed to this function.
-     *
-     * @param a An accumulator to merge
-     * @param b Another accumulator to merge
-     * @return The accumulator with the merged state
-     */
+
     @Override
     public Synopsis merge(Synopsis a, Synopsis b) {
         return null;

@@ -45,6 +45,8 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
             throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
         }
     }
+
+
     /**
      * Construct a new NonMergeableSynopsisFunction.
      *
@@ -91,6 +93,12 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         }
     }
 
+    /**
+     * Transforms a tuple to a partial aggregate,by updating aggregator with the tuple.
+     *
+     * @param input input element
+     * @return updated synopsis aggregate
+     */
 
     @Override
     public NonMergeableSynopsisManager lift(Input input) {
@@ -113,7 +121,8 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     /**
      * unify two noneNonMergeable Synopses collections
      *
-     * @param other
+     * @param input
+     * @param partialAggregate
      */
     @Override
     public NonMergeableSynopsisManager combine(NonMergeableSynopsisManager input, NonMergeableSynopsisManager partialAggregate) {
@@ -121,6 +130,13 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
         return input;
     }
 
+    /**
+     * add new element to a synopsis (Aggregate) , the result is the same as invoking lift and then combine function.
+     *
+     * @param partialAggregate synopsis
+     * @param input input element
+     * @return updated synopsis
+     */
     @Override
     public NonMergeableSynopsisManager liftAndCombine(NonMergeableSynopsisManager partialAggregate, Input input) {
 
@@ -140,7 +156,7 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
 
     /**
      * returns the final synopsis manager
-     * @param inputInvertibleSynopsis
+     * @param inputSynopsis
      * @return  the final InvertibleSynopsis
      */
     @Override

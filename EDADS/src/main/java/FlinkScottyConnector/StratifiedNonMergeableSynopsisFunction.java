@@ -18,13 +18,21 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.PriorityQueue;
 
 public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends NonMergeableSynopsisManager> implements AggregateFunction<Input, NonMergeableSynopsisManager, NonMergeableSynopsisManager>, Serializable {
-    private Class<S> synopsisClass;
+    private Class<S> synopsisClass; // specific classes of synopsis
     private Class<SM> sliceManagerClass;
-    private Object[] constructorParam;
-    private Class<?>[] parameterClasses;
-    private int miniBatchSize;
-    private PriorityQueue<TimestampedElement<Tuple2>> dispatchList;
+    private Object[] constructorParam; // parameters for constructors of each type of synopsis
+    private Class<?>[] parameterClasses;// class type of constructor parameters
+    private int miniBatchSize;// the size of batches to process
+    private PriorityQueue<TimestampedElement<Tuple2>> dispatchList; //list of incoming element (used in case of batch processing)
 
+    /**
+     * Constructor.
+     *
+     * @param miniBatchSize
+     * @param synopsisClass
+     * @param sliceManagerClass
+     * @param constructorParam
+     */
     public StratifiedNonMergeableSynopsisFunction(int miniBatchSize, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -39,6 +47,13 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
         }
     }
 
+    /**
+     * Constructor.
+     *
+     * @param synopsisClass
+     * @param sliceManagerClass
+     * @param constructorParam
+     */
     public StratifiedNonMergeableSynopsisFunction(Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -49,6 +64,13 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
         this.sliceManagerClass = sliceManagerClass;
     }
 
+    /**
+     * Create a new instance of the slice manager (Aggregate) and add synopsis with the specified constructor parameters to it.
+     *
+     * @return the slice manager
+     * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
+     * instantiated, access is not permitted or other exceptions thrown by invoked methods.
+     */
     public NonMergeableSynopsisManager createAggregate() {
         try {
             Constructor<S> constructor = synopsisClass.getConstructor(parameterClasses);
@@ -70,6 +92,12 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
         }
     }
 
+    /**
+     * Transforms a tuple to a partial aggregate,by updating aggregator with the tuple.
+     *
+     * @param input input element
+     * @return updated synopsis aggregate
+     */
     @Override
     public NonMergeableSynopsisManager lift(Input input) {
         if (miniBatchSize <= 0) {
@@ -107,6 +135,13 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
 
     }
 
+    /**
+     * unify two Non-Mergeable Synopsis collections,
+     *
+     * @param input
+     * @param partialAggregate
+     * @return merged synopsis manager
+     */
     @Override
     public NonMergeableSynopsisManager combine(NonMergeableSynopsisManager input, NonMergeableSynopsisManager partialAggregate) {
         Object partitionValue = partialAggregate.getPartitionValue();
@@ -124,6 +159,13 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
         return input;
     }
 
+    /**
+     * add new element to a synopsis manager (Aggregate) , the result is the same as invoking lift and then combine function.
+     *
+     * @param partialAggregate synopsis
+     * @param input input element
+     * @return updated synopsis
+     */
     @Override
     public NonMergeableSynopsisManager liftAndCombine(NonMergeableSynopsisManager partialAggregate, Input input) {
         if (miniBatchSize <= 0) {
@@ -158,11 +200,21 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
         }
     }
 
+    /**
+     * returns the final synopsis manager
+     * @param inputSynopsis
+     * @return  the final InvertibleSynopsis
+     */
     @Override
     public NonMergeableSynopsisManager lower(NonMergeableSynopsisManager inputSynopsis) {
         return inputSynopsis;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeObject(synopsisClass);
         out.writeObject(sliceManagerClass);
@@ -179,6 +231,11 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
         }
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.synopsisClass = (Class<S>) in.readObject();
         this.sliceManagerClass = (Class<SM>) in.readObject();
