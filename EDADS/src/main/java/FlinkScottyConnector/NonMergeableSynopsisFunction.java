@@ -23,7 +23,7 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     private Class<?>[] parameterClasses; // class type of constructor parameters
 
     /**
-     * Construct a new NonMergeableSynopsisFunction.
+     * Construct a new NonMergeable Synopsis Function.
      *
      * @param keyField
      * @param partitionField
@@ -66,7 +66,7 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     }
 
     /**
-     * Create a new instance of the slice manager (Aggregate) and add synopsis with the specified constructor parameters to it.
+     * Create a new instance of the nonmergable slice manager (Aggregate) and add synopsis with the specified constructor parameters to it.
      *
      * @return the slice manager
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
@@ -119,7 +119,7 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     }
 
     /**
-     * unify two noneNonMergeable Synopses collections
+     * unify two NonMergeable Synopses collections
      *
      * @param input
      * @param partialAggregate
@@ -131,7 +131,7 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     }
 
     /**
-     * add new element to a synopsis (Aggregate) , the result is the same as invoking lift and then combine function.
+     * add new element to a slice manager  (Aggregate) , the result is the same as invoking lift and then combine function.
      *
      * @param partialAggregate synopsis
      * @param input input element

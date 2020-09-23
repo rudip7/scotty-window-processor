@@ -65,7 +65,7 @@ public class StratifiedNonMergeableSynopsisFunction<Input, S extends Synopsis, S
     }
 
     /**
-     * Create a new instance of the slice manager (Aggregate) and add synopsis with the specified constructor parameters to it.
+     * Create a new instance of the slice manager (Aggregate) and add synopsis with the specified constructor parameters to slice manager which is a collection of synopses.
      *
      * @return the slice manager
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be

@@ -34,7 +34,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     private PriorityQueue<TimestampedElement<Tuple2>> dispatchList; //list of incoming element (used in case of batch processing)
 
     /**
-     * Construct a new NonMergeableSynopsis Aggregator Function.
+     * Construct a new nonMergeableSynopsis Aggregator.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
@@ -45,7 +45,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Construct a new NonMergeableSynopsis Aggregator Function.
+     * Construct a new nonMergeableSynopsis Aggregator.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
@@ -57,7 +57,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Construct a new NonMergeableSynopsis Aggregator Function.
+     * Construct a new nonMergeableSynopsis Aggregator.
      *
      * @param miniBatchSize
      * @param sketchClass the MergeableSynopsis.class
@@ -73,12 +73,12 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Creates a new NonMergeableSynopsis (accumulator), starting a new aggregate.
+     * Creates a new Synopsis (accumulator), starting a new aggregate.
      * The accumulator is the state of a running aggregation. When a program has multiple
      * aggregates in progress (such as per key and window), the state (per key and window)
      * is the size of the accumulator.
      *
-     * @return A new NonMergeableSynopsis (accumulator), corresponding to an empty NonMergeableSynopsis.
+     * @return A new MergeableSynopsis (accumulator), corresponding to an empty NonMergeableSynopsis.
      * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
      * instantiated, access is not permitted or other exceptions thrown by invoked methods.
      */
@@ -105,7 +105,7 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
     /**
-     * Updates the NonMergeableSynopsis structure by the given input value, returning the
+     * Updates the Synopsis structure by the given input value, returning the
      * new accumulator value.
      * <p>
      * For efficiency, the input accumulator is modified and returned.
@@ -156,6 +156,10 @@ public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1,
     }
 
 
+    /**
+     * it is a Nonmergable synopsis aggregator, does not perform any merge
+     * @return The final aggregation result.
+     */
     @Override
     public Synopsis merge(Synopsis a, Synopsis b) {
         return null;

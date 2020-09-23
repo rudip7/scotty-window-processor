@@ -14,11 +14,17 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis> implements AggregateFunction<Input, MergeableSynopsis, MergeableSynopsis>, Serializable {
-    private Class<T> synopsisClass;
-    private Object[] constructorParam;
-    private Class<?>[] parameterClasses;
+    private Class<T> synopsisClass; // specific classes of synopsis
+    private Object[] constructorParam; // parameters for constructors of each type of synopsis
+    private Class<?>[] parameterClasses;// class type of constructor parameters
     private boolean stratified = false;
 
+    /**
+     * Construct a new Synopsis Function.
+     *
+     * @param synopsisClass the Synopsis.class
+     * @param constructorParam      The parameters of the Synopsis as an Object array
+     */
     public SynopsisFunction(boolean stratified, Class<T> synopsisClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -32,6 +38,12 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         this.stratified = stratified;
     }
 
+    /**
+     * Construct a new Synopsis Function.
+     *
+     * @param synopsisClass the Synopsis.class
+     * @param constructorParam      The parameters of the Synopsis as an Object array
+     */
     public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
@@ -41,6 +53,13 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         this.synopsisClass = synopsisClass;
     }
 
+    /**
+     * Create a new instance of the mergable Synopsis (Aggregate) with the specified constructor parameters.
+     *
+     * @return MergeableSynopsis
+     * @throws IllegalArgumentException when there is no matching constructor, the specified class object cannot be
+     * instantiated, access is not permitted or other exceptions thrown by invoked methods.
+     */
     public MergeableSynopsis createAggregate() {
         try {
             Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
@@ -59,6 +78,12 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         }
     }
 
+    /**
+     * Transforms a tuple to a partial aggregate,by updating aggregator with the tuple
+     *
+     * @param inputTuple input element
+     * @return updated Synopsis aggregate
+     */
     @Override
     public MergeableSynopsis lift(Input inputTuple) {
         MergeableSynopsis partialAggregate = createAggregate();
@@ -69,6 +94,15 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         return partialAggregate;
     }
 
+    /**
+     * merge two Mergeable Synopsis,
+     * This method can be used to add a single tuple partial aggregate to a larger aggregate
+     * or to merge two big aggregates (or slices)
+     *
+     * @param input
+     * @param partialAggregate
+     * @return merged synopsis
+     */
     @Override
     public MergeableSynopsis combine(MergeableSynopsis input, MergeableSynopsis partialAggregate) {
         try {
@@ -92,6 +126,13 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         return null;
     }
 
+    /**
+     * add new element to a synopsis (Aggregate) , the result is the same as invoking lift and then combine function.
+     *
+     * @param partialAggregate synopsis
+     * @param inputTuple input element
+     * @return updated synopsis
+     */
     @Override
     public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Input inputTuple) {
         if (stratified) {
@@ -101,11 +142,21 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         return partialAggregate;
     }
 
+    /**
+     * returns the final synopsis
+     * @param inputCommutativeSynopsis
+     * @return  the final CommutativeSynopsis
+     */
     @Override
     public MergeableSynopsis lower(MergeableSynopsis inputSynopsis) {
         return inputSynopsis;
     }
 
+    /**
+     * Method needed for Serializability.
+     * write object to an output Stream
+     * @param out, output stream to write object to
+     */
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.writeBoolean(stratified);
         out.writeObject(synopsisClass);
@@ -118,6 +169,11 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         }
     }
 
+    /**
+     * Method needed for Serializability.
+     * read object from an input Stream
+     * @param in, input stream to read from
+     */
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         this.stratified = in.readBoolean();
         this.synopsisClass = (Class<T>) in.readObject();

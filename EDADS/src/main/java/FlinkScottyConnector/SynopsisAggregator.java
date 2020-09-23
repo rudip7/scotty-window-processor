@@ -30,7 +30,7 @@ public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSy
     private Object[] constructorParam;
 
     /**
-     * Construct a new MergeableSynopsis Aggregator Function.
+     * Construct a new MergeableSynopsis Aggregator.
      *
      * @param sketchClass the MergeableSynopsis.class
      * @param params      The parameters of the MergeableSynopsis as an Object array
@@ -41,7 +41,7 @@ public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSy
     }
 
     /**
-     * Construct a new MergeableSynopsis Aggregator Function.
+     * Construct a new MergeableSynopsis Aggregator .
      *
      * @param stratified
      * @param sketchClass the MergeableSynopsis.class
