@@ -61,7 +61,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     private final int throughput;
     private boolean running = true;
 
-    private final List<Tuple2<Long, Long>> gaps;
+    private final List<Tuple2<Long, Long>> gaps; // random delays
     private int currentGapIndex;
 
     private long nextGapStart = 0;
@@ -70,7 +70,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
 
 
     /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
+     * Serves the TaxiRide records from the specified dataFile and ordered gzipped input file.
      * Rides are served exactly in order of their time stamps
      * in a serving speed which is proportional to the specified serving speed factor.
      *
@@ -81,7 +81,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     }
 
     /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
+     * Serves the TaxiRide records from the specified dataFile and ordered gzipped input file.
      * Rides are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
      *
@@ -96,7 +96,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     }
 
     /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
+     * Serves the TaxiRide records from the specified dataFile and ordered gzipped input file.
      * Rides are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
      */
@@ -108,6 +108,11 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     }
 
     @Override
+    /**
+     * emit elements that read from the gzipped input file until the runtime does not get exceeded
+     *
+     * @param sourceContext
+     */
     public void run(SourceContext<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> sourceContext) throws Exception {
 
         gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
@@ -142,6 +147,12 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
 
     }
 
+    /**
+     * emit input value if there should be a gap based on values in gaps list apply it.
+     *
+     * @param ride
+     * @param ctx
+     */
     private void emitValue(final Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride, final SourceContext<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> ctx) {
 
         if (getEventTime(ride) > nextGapStart) {
@@ -160,6 +171,12 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
         ctx.collect(ride);
     }
 
+    /**
+     * read a line of source file and returns a Tuple11 element resulting from that line
+     *
+     * @return calculated tuple
+     * @throws Exception when fromString(line)throws an exception
+     */
     private Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> readNextTuple() throws Exception {
         String line;
         Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride;
@@ -172,6 +189,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     }
 
     /**
+     * convert input string to a Tuple11 data with the below structure:
      * Total number of bytes 59.
      *
      * f0:  rideId         : Long      // a unique id for each ride
@@ -185,6 +203,10 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
      * f8:  endLon         : Float     // the longitude of the ride end location
      * f9:  endLat         : Float     // the latitude of the ride end location
      * f10:  passengerCnt  : Short     // number of passengers on the ride
+     *
+     * @param line input string
+     * @return calculated tuple
+     * @throws RuntimeException when string is not in correct format or can not parse desired number formats.
      */
     public Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> fromString(String line) {
 
@@ -234,6 +256,11 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
         return ride;
     }
 
+    /**
+     * return event time
+     * @param ride
+     * @return event time
+     */
     public long getEventTime(Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride) {
         if (ride.f3) {
             return ride.f4;
@@ -242,6 +269,11 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
         }
     }
 
+    /**
+     * cancel generating data stream
+     *
+     * @throws RuntimeException there is a IOException
+     */
     @Override
     public void cancel() {
         try {

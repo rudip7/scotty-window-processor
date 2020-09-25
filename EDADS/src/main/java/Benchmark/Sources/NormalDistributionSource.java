@@ -39,6 +39,13 @@ public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<
     private int median = 10;
     private int standardDeviation = 3;
 
+    /**
+     * Constructor new NormalDistributionSource
+     * @param runtime
+     * @param throughput
+     * @param gaps
+     */
+
     public NormalDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
 
         this.throughput = throughput;
@@ -47,6 +54,11 @@ public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<
         this.runtime = runtime;
     }
 
+    /**
+     * set initialization parameters to generate Normal distributed stream elements
+     * @param parameters
+     * @throws Exception
+     */
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
@@ -57,6 +69,11 @@ public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<
     private int backpressureCounter = 0;
 
     @Override
+    /**
+     * emit generated elements until the runtime does not get exceeded
+     *
+     * @param ctx
+     */
     public void run(final SourceContext<Tuple3<Integer, Integer, Long>> ctx) throws Exception {
         long startTime = System.currentTimeMillis();
 
@@ -79,6 +96,12 @@ public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<
         }
     }
 
+    /**
+     * emit input value, if there should be a gap based on values in gaps list apply it.
+     *
+     * @param tuple3 input value
+     * @param ctx
+     */
     private void emitValue(final Tuple3<Integer, Integer, Long> tuple3, final SourceContext<Tuple3<Integer, Integer, Long>> ctx) {
 
         if (tuple3.f2 > nextGapStart) {
@@ -97,6 +120,12 @@ public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<
         ctx.collect(tuple3);
     }
 
+    /**
+     * generate a timestamped tuple of calculated normally distributed data
+     *
+     * @return generated tuple
+     * @throws Exception
+     */
     private Tuple3<Integer, Integer, Long> readNextTuple() throws Exception {
         int newKey = (int) (standardDeviation*key.nextGaussian() + median);
         while (newKey < 0){
@@ -107,6 +136,9 @@ public class NormalDistributionSource extends RichParallelSourceFunction<Tuple3<
     }
 
     @Override
+    /**
+     * cancel generating data stream
+     */
     public void cancel() {
         running = false;
     }

@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 /**
- * This SourceFunction generates a data stream of TaxiRide records which are
+ * This SourceFunction generates a data stream of Uniform distributed records which are
  * read from a gzipped input file. Each record has a time stamp and the input file must be
  * ordered by this time stamp.
  * <p>
@@ -66,23 +66,27 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
 
 
     /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
-     * Rides are served exactly in order of their time stamps
+     * Serves the records from the specified dataFile and ordered gzipped input file.
+     * Records are served exactly in order of their time stamps
      * in a serving speed which is proportional to the specified serving speed factor.
      *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
+     * @param dataFilePath       The gzipped input file from which the Uniform records are read.
+     * @param runtime
+     * @param throughput
      */
     public UniformFileDistributionSource(String dataFilePath, long runtime, int throughput) {
         this(dataFilePath, runtime, throughput, new ArrayList<>());
     }
 
     /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
-     * Rides are served out-of time stamp order with specified maximum random delay
+     * Serves the records from the specified dataFile and ordered gzipped input file.
+     * Records are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
      *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
-     *
+     * @param dataFilePath       The gzipped input file from which the Uniform records are read.
+     * @param runtime
+     * @param throughput
+     * @param gaps
      */
     public UniformFileDistributionSource(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = dataFilePath;
@@ -92,9 +96,14 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
     }
 
     /**
-     * Serves the TaxiRide records from the specified and ordered gzipped input file.
-     * Rides are served out-of time stamp order with specified maximum random delay
+     * Serves the records from the specified dataFile and ordered gzipped input file.
+     * Records are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
+     *
+     * @param runtime
+     * @param throughput
+     * @param gaps
+     *
      */
     public UniformFileDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = "/share/hadoop/EDADS/uniformTimestamped.gz";
@@ -105,6 +114,11 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
     }
 
     @Override
+    /**
+     * emit elements that read from the gzipped input file until the runtime does not get exceeded
+     *
+     * @param sourceContext
+     */
     public void run(SourceContext<Tuple3<Integer, Integer, Long>> sourceContext) throws Exception {
 
         gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
@@ -139,6 +153,12 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
 
     }
 
+    /**
+     * emit input value if there should be a gap based on values in gaps list apply it.
+     *
+     * @param tuple
+     * @param ctx
+     */
     private void emitValue(final Tuple3<Integer, Integer, Long> tuple, final SourceContext<Tuple3<Integer, Integer, Long>> ctx) {
 
         if (tuple.f2 > nextGapStart) {
@@ -157,6 +177,12 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
         ctx.collect(tuple);
     }
 
+    /**
+     * read a line of source file and returns a Tuple3 element resulting from that line
+     *
+     *  @return calculated tuple
+     * @throws Exception when fromString(line)throws an exception
+     */
     private Tuple3<Integer, Integer, Long> readNextTuple() throws Exception {
         String line;
         if (reader.ready() && (line = reader.readLine()) != null) {
@@ -168,9 +194,13 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
     }
 
     /**
+     * convert input string to a Tuple3 data with the below structure:
      * f0:  key            : Integer      // a random integer selected from a ZIPF distribution
      * f1:  value          : Integer      // a random integer
      * f2:  eventTime      : Long      // a unique id for each driver
+     * @param line input string
+     * @return calculated tuple
+     * @throws RuntimeException when string is not in correct format or can not parse desired number formats.
      */
     public Tuple3<Integer, Integer, Long> fromString(String line) {
 
@@ -194,6 +224,11 @@ public class UniformFileDistributionSource implements ParallelSourceFunction<Tup
     }
 
     @Override
+    /**
+     * cancel generating data stream
+     *
+     * @throws RuntimeException there is a IOException
+     */
     public void cancel() {
         try {
             if (this.reader != null) {

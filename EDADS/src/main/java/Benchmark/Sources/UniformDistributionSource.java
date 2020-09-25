@@ -38,6 +38,13 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
     private int median = 10;
     private int standardDeviation = 3;
 
+
+    /**
+     * Construct new UniformDistributionSource
+     * @param runtime
+     * @param throughput
+     * @param gaps
+     */
     public UniformDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
 
         this.throughput = throughput;
@@ -47,6 +54,11 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
     }
 
     @Override
+    /**
+     * set initialization parameters to generate uniformly distributed stream elements
+     * @param parameters
+     * @throws Exception
+     */
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
         this.key = new XORShiftRandom(42);
@@ -55,6 +67,11 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
     private int backpressureCounter = 0;
 
     @Override
+    /**
+     * emit generated elements until running time does not exceed specified runtime
+     *
+     * @param ctx
+     */
     public void run(final SourceContext<Tuple3<Integer, Integer, Long>> ctx) throws Exception {
         long startTime = System.currentTimeMillis();
 
@@ -77,6 +94,12 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
         }
     }
 
+    /**
+     * emit input value, if there should be a gap based on values in gaps list apply it.
+     *
+     * @param tuple3 input value
+     * @param ctx
+     */
     private void emitValue(final Tuple3<Integer, Integer, Long> tuple3, final SourceContext<Tuple3<Integer, Integer, Long>> ctx) {
 
         if (tuple3.f2 > nextGapStart) {
@@ -95,6 +118,12 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
         ctx.collect(tuple3);
     }
 
+    /**
+     * generate a timestamped tuple of calculated values
+     *
+     * @return generated tuple
+     * @throws Exception
+     */
     private Tuple3<Integer, Integer, Long> readNextTuple() throws Exception {
         int newKey = key.nextInt(101);
 //        while (newKey < 0){
@@ -104,6 +133,9 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
 
     }
 
+    /**
+     * cancel generating data stream
+     */
     @Override
     public void cancel() {
         running = false;
