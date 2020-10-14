@@ -42,7 +42,7 @@ public class ADABenchmark {
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
         final String outputDir = parameterTool.get("outputDir", null);
         final boolean test = parameterTool.has("test");
-        int maxParallelism = test ? 2 : 64;
+        int maxParallelism = test ? 2 : 256;
         final int stratification = 10;
         final int sketchTroughput = 1000; // # tuples / seconds to build the sketch
         final List<Tuple2<Long, Long>> gaps = new ArrayList<>();
@@ -58,9 +58,9 @@ public class ADABenchmark {
         env.setParallelism(env.getMaxParallelism());
 
 
-
-        for (int parallelism = 2; parallelism <= maxParallelism; parallelism *= 2) {
-            for (int queryThroughput = 300000; queryThroughput <= 500000; queryThroughput += 50000) {
+        // initial parallelism is set to 256 to make the last measurement - change if needed
+        for (int parallelism = 256; parallelism <= maxParallelism; parallelism *= 2) {
+            for (int queryThroughput = 400000; queryThroughput <= 500000; queryThroughput += 100000) {
                 for (int iteration = 0; iteration < 10; iteration++) {
                     env.setParallelism(parallelism);
                     String configString = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughput;
@@ -69,7 +69,7 @@ public class ADABenchmark {
                     runQueryStratifiedTimestamped(configString, outputDir,env, sketchTroughput, queryThroughput, stratification, gaps, config, params);
                 }
             }
-            for (int queryThroughput = 600000; queryThroughput <= 1000000 ; queryThroughput += 200000) {
+            for (int queryThroughput = 800000; queryThroughput <= 1000000 ; queryThroughput += 200000) {
                 for (int iteration = 0; iteration < 10; iteration++) {
                     env.setParallelism(parallelism);
                     String configString = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughput;

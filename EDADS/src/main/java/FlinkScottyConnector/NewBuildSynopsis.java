@@ -1,13 +1,18 @@
 package FlinkScottyConnector;
 
+import Synopsis.NonMergeableSynopsisManager;
+import FlinkScottyConnector.FunctionClasses.*;
 import Synopsis.MergeableSynopsis;
 import Synopsis.Sampling.SamplerWithTimestamps;
+import Synopsis.Synopsis;
 import Synopsis.WindowedSynopsis;
 import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.api.common.functions.RichMapFunction;
+import org.apache.flink.api.java.tuple.Tuple;
+import org.apache.flink.api.java.tuple.Tuple2;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
@@ -33,23 +38,9 @@ public class NewBuildSynopsis {
         return parallelismKeys;
     }
 
-    /**
-     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
-     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
-     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
-     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
-     *
-     * @param inputStream   the data stream to build the MergeableSynopsis
-     * @param synopsisClass the type of MergeableSynopsis to be computed
-     * @param config        additional optional parameters like window time, slide time and key-field
-     * @param parameters    the initialization parameters for the MergeableSynopsis
-     * @param <T>           the type of the input elements
-     * @param <S>           the type of the Mergeable Synopsis
-     * @return stream of the window based Synopis
-     */
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, Class<S> synopsisClass, BuildSynopsisConfig config, Object... parameters){
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, TimeBasedConfig config){
 
-        AllWindowedStream allWindowedStream = timeBasedHelperFunction(inputStream, synopsisClass, config, parameters);
+        AllWindowedStream allWindowedStream = timeBasedHelperFunction(inputStream, config);
 
         SingleOutputStreamOperator result = allWindowedStream.reduce(new ReduceFunction<S>() { // Merge all sketches in the global window
             @Override
@@ -57,16 +48,16 @@ public class NewBuildSynopsis {
                 MergeableSynopsis merged = value1.merge(value2);
                 return merged;
             }
-        }).returns(synopsisClass);
+        }).returns(config.synopsisClass);
         return result;
     }
 
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<WindowedSynopsis<S>> timeBasedWithWindowTimes(DataStream<T> inputStream, Class<S> synopsisClass, BuildSynopsisConfig config, Object... parameters){
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<WindowedSynopsis<S>> timeBasedWithWindowTimes(DataStream<T> inputStream, TimeBasedConfig config){
         if (config.getWindowTime() == null){
             throw new IllegalArgumentException("windowTime == null! must be set in order for this function to work!");
         }
 
-        AllWindowedStream partialAggregate = timeBasedHelperFunction(inputStream, synopsisClass, config, parameters);
+        AllWindowedStream partialAggregate = timeBasedHelperFunction(inputStream, config);
 
         return partialAggregate
                 .reduce(new ReduceFunction<S>() {
@@ -87,12 +78,12 @@ public class NewBuildSynopsis {
                 }).returns(WindowedSynopsis.class);
     }
 
-    private static <T, S extends MergeableSynopsis> AllWindowedStream timeBasedHelperFunction(DataStream<T> inputStream, Class<S> synopsisClass, BuildSynopsisConfig config, Object... parameters) {
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters);
+    private static <T, S extends MergeableSynopsis> AllWindowedStream timeBasedHelperFunction(DataStream<T> inputStream, TimeBasedConfig config) {
+        SynopsisAggregator agg = new SynopsisAggregator(config.synopsisClass, config.synParams);
 
         DataStream<T> rescaled = inputStream.rescale();
         KeyedStream keyBy;
-        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
+        if (SamplerWithTimestamps.class.isAssignableFrom(config.synopsisClass)) {
             keyBy = rescaled
                     .process(new BuildSynopsis.ConvertToSample(config.keyField))
                     .assignTimestampsAndWatermarks(new BuildSynopsis.SampleTimeStampExtractor())
@@ -124,34 +115,129 @@ public class NewBuildSynopsis {
         return allWindowedStream;
     }
 
-    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, long windowSize, long slideSize, int keyField, Class<S> synopsisClass, Object... parameters){
-        SynopsisAggregator agg = new SynopsisAggregator(synopsisClass, parameters);
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> countBased(DataStream<T> inputStream, CountBasedConfig config) {
+        SynopsisAggregator agg = new SynopsisAggregator(config.synopsisClass, config.synParams);
         int parallelism = inputStream.getExecutionEnvironment().getParallelism();
 
         KeyedStream keyBy;
         DataStream<T> rescaled = inputStream.rescale();
-        if (SamplerWithTimestamps.class.isAssignableFrom(synopsisClass)) {
+        if (SamplerWithTimestamps.class.isAssignableFrom(config.synopsisClass)) {
             keyBy = rescaled
-                    .process(new BuildSynopsis.ConvertToSample(keyField))
-                    .assignTimestampsAndWatermarks(new BuildSynopsis.SampleTimeStampExtractor())
-                    .map(new BuildSynopsis.AddParallelismIndex(-1))
+                    .process(new ConvertToSample(config.keyField))
+                    .assignTimestampsAndWatermarks(new SampleTimeStampExtractor())
+                    .map(new AddParallelismIndex(-1))
                     .keyBy(0);
         } else {
             keyBy = rescaled
-                    .map(new BuildSynopsis.AddParallelismIndex(keyField))
+                    .map(new AddParallelismIndex(config.keyField))
                     .keyBy(0);
         }
         WindowedStream windowedStream;
-        if (slideSize == -1) {
-            windowedStream = keyBy.countWindow(windowSize / parallelism);
+        if (config.slideSize == -1) {
+            windowedStream = keyBy.countWindow(config.windowSize / parallelism);
         } else {
-            windowedStream = keyBy.countWindow(windowSize / parallelism, slideSize / parallelism);
+            windowedStream = keyBy.countWindow(config.windowSize / parallelism, config.slideSize / parallelism);
         }
 
         SingleOutputStreamOperator preAggregated = windowedStream
                 .aggregate(agg);
 
-        SingleOutputStreamOperator result = preAggregated.flatMap(new BuildSynopsis.MergeCountPreAggregates(getParallelismKeys())).returns(synopsisClass);
+        SingleOutputStreamOperator result = preAggregated.flatMap(new MergeCountPreAggregates(getParallelismKeys())).returns(config.synopsisClass);
         return result;
+    }
+
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> nonMergeableTimeBased(DataStream<T> inputStream, NonMergeableTimeBasedConfig config) {
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(config.synopsisClass, config.synParams);
+        KeyedStream keyBy = inputStream
+                .process(new OrderAndIndex(config.keyField, config.miniBatchSize, getParallelismKeys())).setParallelism(1)
+                .keyBy(0);
+
+        WindowedStream windowedStream;
+        if (config.slideTime == null) {
+            windowedStream = keyBy.timeWindow(config.windowTime);
+        } else {
+            windowedStream = keyBy.timeWindow(config.windowTime, config.slideTime);
+        }
+
+        SingleOutputStreamOperator preAggregated = windowedStream
+                .aggregate(agg);
+
+        AllWindowedStream allWindowedStream;
+        if (config.slideTime == null) {
+            allWindowedStream = preAggregated.timeWindowAll(config.windowTime);
+        } else {
+            allWindowedStream = preAggregated.timeWindowAll(config.windowTime, config.slideTime);
+        }
+
+        SingleOutputStreamOperator returns = allWindowedStream.aggregate(new NonMergeableSynopsisUnifier(config.managerClass))
+                .returns(config.managerClass);
+        return returns;
+    }
+
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, NonMergeableCountBasedConfig config) {
+        int parallelism = inputStream.getExecutionEnvironment().getParallelism();
+
+        NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(config.synopsisClass, config.synParams);
+        KeyedStream keyBy = inputStream
+                .process(new OrderAndIndex(config.keyField, config.miniBatchSize, getParallelismKeys())).setParallelism(1)
+                .keyBy(0);
+
+        WindowedStream windowedStream;
+        if (config.slideSize == -1) {
+            windowedStream = keyBy.countWindow(config.windowSize / parallelism);
+        } else {
+            windowedStream = keyBy.countWindow(config.windowSize / parallelism, config.slideSize / parallelism);
+        }
+
+        SingleOutputStreamOperator preAggregated = windowedStream
+                .aggregate(agg);
+
+        SingleOutputStreamOperator returns = preAggregated.flatMap(new NonMergeableSynopsisCountUnifier(config.managerClass, getParallelismKeys()))
+                .returns(config.managerClass);
+        return returns;
+    }
+
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Stateful map functions to add the parallelism variable
+     *
+     * @param <T0> type of input elements
+     */
+    public static class AddParallelismIndex<T0> extends RichMapFunction<T0, Tuple2<Integer, Object>> {
+        public int keyField;
+        private Tuple2<Integer, Object> newTuple;
+
+
+        public AddParallelismIndex(int keyField) {
+            this.keyField = keyField;
+            newTuple = new Tuple2<Integer, Object>();
+        }
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            if (parallelismKeys < 1) {
+                setParallelismKeys(this.getRuntimeContext().getNumberOfParallelSubtasks());
+            }
+        }
+
+        @Override
+        public Tuple2<Integer, Object> map(T0 value) throws Exception {
+            if (value instanceof Tuple && keyField != -1) {
+                newTuple.setField(((Tuple) value).getField(keyField), 1);
+            } else {
+                newTuple.setField(value, 1);
+            }
+            newTuple.setField(this.getRuntimeContext().getIndexOfThisSubtask(), 0);
+            return newTuple;
+        }
     }
 }

@@ -1,44 +1,45 @@
 package FlinkScottyConnector;
 
-import Synopsis.MergeableSynopsis;
+import Synopsis.Synopsis;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
-public class BuildSynopsisConfig {
-    Time windowTime;
-    Time slideTime;
+
+public class BuildSynopsisConfig <S extends Synopsis> {
+
+    Class<S> synopsisClass;
     int keyField = -1;
+    Object[] synParams;
 
+    public BuildSynopsisConfig(Class<S> synopsisClass, Object[] synParams) {
+        this.synopsisClass = synopsisClass;
+        this.synParams = synParams;
+    }
 
-    /**
-     *
-     * @param windowTime    Window Time
-     * @param slideTime     Slide Time
-     * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
-     */
-    public BuildSynopsisConfig(Time windowTime, Time slideTime, int keyField) {
-        this.windowTime = windowTime;
-        this.slideTime = slideTime;
+    public BuildSynopsisConfig(int keyField, Class<S> synopsisClass, Object... params) {
         this.keyField = keyField;
+        this.synopsisClass = synopsisClass;
+        this.synParams = params;
     }
 
-    public Time getWindowTime() {
-        return windowTime;
+    public Class<S> getSynopsisClass() {
+        return synopsisClass;
     }
 
-    public void setWindowTime(Time windowTime) {
-        this.windowTime = windowTime;
+    public void setSynopsisClass(Class<S> synopsisClass) {
+        this.synopsisClass = synopsisClass;
     }
 
-    public Time getSlideTime() {
-        return slideTime;
-    }
-
-    public void setSlideTime(Time slideTime) {
-        this.slideTime = slideTime;
-    }
 
     public int getKeyField() {
         return keyField;
+    }
+
+    public Object[] getSynParams() {
+        return synParams;
+    }
+
+    public void setSynParams(Object[] synParams) {
+        this.synParams = synParams;
     }
 
     public void setKeyField(int keyField) {
