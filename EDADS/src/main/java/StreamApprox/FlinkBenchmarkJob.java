@@ -23,7 +23,8 @@ import java.util.List;
 public class FlinkBenchmarkJob {
     public FlinkBenchmarkJob(ApproxConfiguration config, StreamExecutionEnvironment env, String configString){
         List<Tuple2<Long, Long>> gaps = new LinkedList<>();
-
+        Time windowTime = Time.seconds(6);
+        Time slideTime = null;
 
         DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = null;
         if (config.source == Source.Zipf){
@@ -37,7 +38,7 @@ public class FlinkBenchmarkJob {
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new NormalFlinkJob.TimestampsAndWatermarks());
 
-        SingleOutputStreamOperator<ReservoirSampler> synopsisStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.seconds(6), Time.seconds(3), new RichStratifier(), ReservoirSampler.class, config.sampleSize);
+        SingleOutputStreamOperator<ReservoirSampler> synopsisStream = BuildStratifiedSynopsis.timeBased(timestamped, windowTime, slideTime, new RichStratifier(), ReservoirSampler.class, config.sampleSize);
 
         synopsisStream.addSink(new SinkFunction<ReservoirSampler>() {
             @Override
