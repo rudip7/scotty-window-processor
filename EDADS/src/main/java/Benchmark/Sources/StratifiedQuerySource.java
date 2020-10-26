@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class StratifiedQuerySource extends RichParallelSourceFunction<Tuple2<Integer, Double>> {
+public class StratifiedQuerySource extends RichParallelSourceFunction<Tuple2<Integer, Integer>> {
 
     private final long runtime;
     private final int throughput;
@@ -23,7 +23,7 @@ public class StratifiedQuerySource extends RichParallelSourceFunction<Tuple2<Int
     }
 
     @Override
-    public void run(SourceContext<Tuple2<Integer, Double>> ctx) throws Exception {
+    public void run(SourceContext<Tuple2<Integer, Integer>> ctx) throws Exception {
         Random random = new Random();
 
         long startTs = System.currentTimeMillis();
@@ -38,7 +38,7 @@ public class StratifiedQuerySource extends RichParallelSourceFunction<Tuple2<Int
             long time = System.currentTimeMillis();
 
             for (int i = 0; i < throughput; i++) {
-                ctx.collectWithTimestamp(new Tuple2<>(random.nextInt(stratification), random.nextDouble()), time);
+                ctx.collectWithTimestamp(new Tuple2<>(random.nextInt(stratification), random.nextInt()), time);
             }
 
             while (System.currentTimeMillis() < time + 1000) {

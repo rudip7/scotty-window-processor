@@ -7,7 +7,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class TimestampedQuerySource extends RichParallelSourceFunction<TimestampedQuery<Double>> {
+public class TimestampedQuerySource extends RichParallelSourceFunction<TimestampedQuery<Integer>> {
 
     private final long runtime; // in millis
     private final int throughput;
@@ -22,7 +22,7 @@ public class TimestampedQuerySource extends RichParallelSourceFunction<Timestamp
     }
 
     @Override
-    public void run(SourceContext<TimestampedQuery<Double>> ctx) throws Exception {
+    public void run(SourceContext<TimestampedQuery<Integer>> ctx) throws Exception {
         Random random = new Random();
 
         long startTs = System.currentTimeMillis();
@@ -39,7 +39,7 @@ public class TimestampedQuerySource extends RichParallelSourceFunction<Timestamp
             for (int i = 0; i < throughput; i++) {
                 int relativeTimestamp = random.nextInt(synopsisRuntime); // upper bound in seconds from job start
                 long query_timestamp = startTs + relativeTimestamp * 1000;
-                ctx.collectWithTimestamp(new TimestampedQuery<Double>(random.nextDouble(), query_timestamp), time);
+                ctx.collectWithTimestamp(new TimestampedQuery<Integer>(random.nextInt(), query_timestamp), time);
             }
 
             while (System.currentTimeMillis() < time + 1000) {

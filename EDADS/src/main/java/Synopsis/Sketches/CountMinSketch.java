@@ -17,7 +17,6 @@ import java.util.Arrays;
  * This implementation uses a family of pairwise independent hash functions to update the counters of the
  * sketch.
  *
- * @param <T> the type of elements maintained by this sketch
  * @author Rudi Poepsel Lemaitre
  */
 public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleSynopsis<T>, Serializable {
@@ -197,7 +196,7 @@ public class CountMinSketch<T> extends StratifiedSynopsis implements InvertibleS
     }
 
     @Override
-    public CountMinSketch<T> invert(InvertibleSynopsis<T> other) {
+    public CountMinSketch invert(InvertibleSynopsis<T> other) {
         if (other instanceof CountMinSketch) {
             CountMinSketch otherCM = (CountMinSketch) other;
             if (otherCM.getWidth() == width && otherCM.getHeight() == height && hashFunctions.equals(otherCM.hashFunctions)) {

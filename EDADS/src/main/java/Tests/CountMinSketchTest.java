@@ -13,7 +13,9 @@ import java.util.Arrays;
  * @author Zahra Salmani
  */
 
+
 public class CountMinSketchTest {
+    /*
     @Test
     public void updateTest(){
        CountMinSketch countmin = new CountMinSketch(12,10,7136673L);
@@ -153,7 +155,7 @@ public class CountMinSketchTest {
                 Assert.assertTrue(mergefrequency[row][col] == 2 * oldFrequencyArr[row][col]);
             }
         }
-    }
+    }*/
 
 }
 
