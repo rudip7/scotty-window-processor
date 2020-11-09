@@ -133,7 +133,8 @@ public class WaveletSynopsis<T> extends StratifiedSynopsis<T> implements Synopsi
             throw new IllegalArgumentException("rightIndex has to be greater than leftIndex.");
         }
         if (leftIndex > streamElementCounter || leftIndex < 0 || rightIndex > streamElementCounter || rightIndex < 0) {
-            throw new IllegalArgumentException("Local index must be higher than 0 and lower than " + streamElementCounter);
+            throw new IllegalArgumentException("Local index must be higher than 0 and lower than " + streamElementCounter+
+                    ", but was[ "+leftIndex+", "+rightIndex+" ]");
         }
 
         if (rootnode == null) {

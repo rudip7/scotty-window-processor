@@ -64,6 +64,8 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
      * @return the lowest value that can be indexed
      */
     public double minIndexableValue() {
+        double exp = Math.exp((Integer.MIN_VALUE + 1) * logGamma);
+        double exp2 = Double.MIN_NORMAL * Math.exp(logGamma);
         return Math.max(
                 Math.exp((Integer.MIN_VALUE + 1) * logGamma), // so that index >= Integer.MIN_VALUE
                 Double.MIN_NORMAL * Math.exp(logGamma) // so that Math.exp(index * logGamma) >= Double.MIN_NORMAL

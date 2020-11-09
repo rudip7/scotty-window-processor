@@ -17,17 +17,11 @@
 package Benchmark.Sources;
 
 import Benchmark.Old.ThroughputStatistics;
-import Benchmark.ParallelThroughputLogger;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.functions.source.ParallelSourceFunction;
-import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -53,8 +47,9 @@ import java.util.zip.GZIPInputStream;
  * <p>
  * StreamExecutionEnvironment.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
  */
-public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Integer, Integer, Long>> {
-
+public class NYCTaxiRideSourceDoubles implements ParallelSourceFunction<Tuple11<Long, Long, Long, Boolean, Long, Long, Double, Double, Double, Double, Short>> {
+    private static transient DateTimeFormatter timeFormatter =
+            DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss").withLocale(Locale.US).withZoneUTC();
     private final String dataFilePath;
 
     private transient BufferedReader reader;
@@ -72,19 +67,15 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
     private long nextGapStart = 0;
     private long nextGapEnd;
 
-    private static final Logger LOG = LoggerFactory.getLogger(ParallelThroughputLogger.class);
-
-
-
 
     /**
      * Serves the TaxiRide records from the specified and ordered gzipped input file.
      * Rides are served exactly in order of their time stamps
      * in a serving speed which is proportional to the specified serving speed factor.
      *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
+     * @param dataFilePath The gzipped input file from which the TaxiRide records are read.
      */
-    public ZipfDistributionSource(String dataFilePath, long runtime, int throughput) {
+    public NYCTaxiRideSourceDoubles(String dataFilePath, long runtime, int throughput) {
         this(dataFilePath, runtime, throughput, new ArrayList<>());
     }
 
@@ -93,10 +84,9 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
      * Rides are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
      *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
-     *
+     * @param dataFilePath The gzipped input file from which the TaxiRide records are read.
      */
-    public ZipfDistributionSource(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
+    public NYCTaxiRideSourceDoubles(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = dataFilePath;
         this.throughput = throughput;
         this.gaps = gaps;
@@ -108,20 +98,19 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
      * Rides are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
      */
-    public ZipfDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
-        this.dataFilePath = "/share/hadoop/EDADS/zipfTimestamped.gz";
-//        this.dataFilePath = "EDADS/Data/zipfTimestamped.gz";
+    public NYCTaxiRideSourceDoubles(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
+        this.dataFilePath = "/share/hadoop/EDADS/nycTaxiRides.gz";
+//        this.dataFilePath = "EDADS/Data/nycTaxiRides.gz";
         this.throughput = throughput;
         this.gaps = gaps;
         this.runtime = runtime;
     }
 
     @Override
-    public void run(SourceContext<Tuple3<Integer, Integer, Long>> sourceContext) throws Exception {
+    public void run(SourceContext<Tuple11<Long, Long, Long, Boolean, Long, Long, Double, Double, Double, Double, Short>> sourceContext) throws Exception {
 
         gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
         reader = new BufferedReader(new InputStreamReader(gzipStream, "UTF-8"));
-
 
         long startTime = System.currentTimeMillis();
         long endTime = startTime + runtime;
@@ -130,13 +119,11 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
             long startTs = System.currentTimeMillis();
 
             for (int i = 0; i < throughput; i++) {
-                Tuple3<Integer, Integer, Long> tuple = readNextTuple();
-                if (tuple == null){
-                    LOG.info("Zipf file completely read");
-                    System.out.println("Zipf file completely read");
+                Tuple11<Long, Long, Long, Boolean, Long, Long, Double, Double, Double, Double, Short> ride = readNextTuple();
+                if (ride == null) {
                     break loop;
                 }
-                sourceContext.collect(tuple);
+                sourceContext.collect(ride);
             }
 
             if (runtime != -1) {
@@ -156,12 +143,12 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
 
     }
 
-    private void emitValue(final Tuple3<Integer, Integer, Long> tuple, final SourceContext<Tuple3<Integer, Integer, Long>> ctx) {
+    private void emitValue(final Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride, final SourceContext<Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short>> ctx) {
 
-        if (tuple.f2 > nextGapStart) {
+        if (getEventTime(ride) > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
-            //System.out.println("in Gap");
-            if (tuple.f2 > this.nextGapEnd) {
+            //Environment.out.println("in Gap");
+            if (getEventTime(ride) > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;
                 if (currentGapIndex < gaps.size()) {
@@ -171,13 +158,14 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
             } else
                 return;
         }
-        ctx.collect(tuple);
+        ctx.collect(ride);
     }
 
-    private Tuple3<Integer, Integer, Long> readNextTuple() throws Exception {
+    private Tuple11<Long, Long, Long, Boolean, Long, Long, Double, Double, Double, Double, Short> readNextTuple() throws Exception {
         String line;
+        Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride;
         if (reader.ready() && (line = reader.readLine()) != null) {
-            // read first tuple
+            // read first ride
             return fromString(line);
         } else {
             return null;
@@ -185,33 +173,76 @@ public class ZipfDistributionSource implements ParallelSourceFunction<Tuple3<Int
     }
 
     /**
-     * f0:  key            : Integer      // a random integer selected from a ZIPF distribution
-     * f1:  value          : Integer      // a random integer
-     * f2:  eventTime      : Long
+     * Total number of bytes 59.
+     * <p>
+     * f0:  rideId         : Long      // a unique id for each ride
+     * f1:  taxiId         : Long      // a unique id for each taxi
+     * f2:  driverId       : Long      // a unique id for each driver
+     * f3:  isStart        : Boolean   // TRUE for ride start events, FALSE for ride end events
+     * f4:  startTime      : Long      // the start time of a ride
+     * f5:  endTime        : Long      // the end time of a ride, "1970-01-01 00:00:00" for start events
+     * f6:  startLon       : Float     // the longitude of the ride start location
+     * f7:  startLat       : Float     // the latitude of the ride start location
+     * f8:  endLon         : Float     // the longitude of the ride end location
+     * f9:  endLat         : Float     // the latitude of the ride end location
+     * f10:  passengerCnt  : Short     // number of passengers on the ride
      */
-    public Tuple3<Integer, Integer, Long> fromString(String line) {
+    public Tuple11<Long, Long, Long, Boolean, Long, Long, Double, Double, Double, Double, Short> fromString(String line) {
 
         String[] tokens = line.split(",");
-        if (tokens.length != 3) {
+        if (tokens.length != 11) {
             throw new RuntimeException("Invalid record: " + line);
         }
 
-        Tuple3<Integer, Integer, Long> tuple = new Tuple3<>();
+        Tuple11 ride = new Tuple11();
 
         try {
-            tuple.f0 = Integer.parseInt(tokens[0]);
-            tuple.f1 = Integer.parseInt(tokens[1]);
-            // tuple.f2 = Long.parseLong(tokens[2]); // TODO: hint that this was changed for the example query job
-            if (runtime == -1){
-                tuple.f2 = 1603388370564L;
-            } else {
-                tuple.f2 = System.currentTimeMillis();
+            ride.f0 = Long.parseLong(tokens[0]);
+
+            switch (tokens[1]) {
+                case "START":
+                    ride.f3 = true;
+//                    ride.f4 = DateTime.parse(tokens[2], timeFormatter).getMillis();
+//                    ride.f5 = DateTime.parse(tokens[3], timeFormatter).getMillis();
+                    break;
+                case "END":
+                    ride.f3 = false;
+//                    ride.f5 = DateTime.parse(tokens[2], timeFormatter).getMillis();
+//                    ride.f4 = DateTime.parse(tokens[3], timeFormatter).getMillis();
+                    break;
+                default:
+                    throw new RuntimeException("Invalid record: " + line);
             }
+
+            if (runtime == -1) {
+                ride.f4 = 1603388370564L;
+                ride.f5 = 1603388370564L;
+            } else {
+                ride.f4 = System.currentTimeMillis();
+                ride.f5 = System.currentTimeMillis();
+            }
+
+            ride.f6 = tokens[4].length() > 0 ? Double.parseDouble(tokens[4]) : 0.0f;
+            ride.f7 = tokens[5].length() > 0 ? Double.parseDouble(tokens[5]) : 0.0f;
+            ride.f8 = tokens[6].length() > 0 ? Double.parseDouble(tokens[6]) : 0.0f;
+            ride.f9 = tokens[7].length() > 0 ? Double.parseDouble(tokens[7]) : 0.0f;
+            ride.f10 = Short.parseShort(tokens[8]);
+            ride.f1 = Long.parseLong(tokens[9]);
+            ride.f2 = Long.parseLong(tokens[10]);
+
         } catch (NumberFormatException nfe) {
             throw new RuntimeException("Invalid record: " + line, nfe);
         }
 
-        return tuple;
+        return ride;
+    }
+
+    public long getEventTime(Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride) {
+        if (ride.f3) {
+            return ride.f4;
+        } else {
+            return ride.f5;
+        }
     }
 
     @Override
