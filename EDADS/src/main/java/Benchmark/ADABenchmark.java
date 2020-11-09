@@ -48,12 +48,13 @@ public class ADABenchmark {
         final boolean test = parameterTool.has("test");
         final boolean latest = parameterTool.has("l");
         final boolean timestamped = parameterTool.has("t");
+        final boolean latestStratified = parameterTool.has("ls");
+        final boolean timestampedStratified = parameterTool.has("ts");
         int maxParallelism = test ? 2 : 128;
         final int stratification = 10;
         final int sketchThroughput = 1000; // # tuples / seconds to build the sketch
-        final List<Tuple2<Long, Long>> gaps = new ArrayList<>();
-        final Integer width = test ? 128 : 16384; // width of the Count Min Sketch -> high to reduce #collisions
-        final Integer depth = test ? 32 : 512; // depths of the Count Min Sketch
+        final Integer width = test ? 128 : 512; // width of the Count Min Sketch -> high to reduce #collisions
+        final Integer depth = test ? 32 : 16; // depths of the Count Min Sketch
         final Long seed = 42L;
         final Object[] params = new Object[]{width, depth, seed}; // sketch parameters
         final Time windowTime = Time.seconds(5);
@@ -79,26 +80,30 @@ public class ADABenchmark {
          * -> latest queries: 1,000,000
          * -> timestamped queries: 250,000
          */
-        for (int parallelism = 2; parallelism <= maxParallelism; parallelism *= 2) {
+        for (int parallelism = 128; parallelism <= maxParallelism; parallelism *= 2) {
             env.setParallelism(parallelism);
 
             String configStringLatest = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughputLatest;
             String configStringTimestamped = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughputTimestamped;
-            if (latest){
-                for (int iteration = 0; iteration < iterations; iteration++) {
-                    System.out.println(configStringLatest+";latest");
-                    runQueryLatest(configStringLatest, outputDir, env, sketchThroughput, queryThroughputLatest, config, params);
-                }
+            if(latestStratified){
                 for (int iteration = 0; iteration < iterations; iteration++) {
                     System.out.println(configStringLatest+";latest_stratified");
                     runQueryStratifiedLatest(configStringLatest, outputDir,env, sketchThroughput, queryThroughputLatest, stratification, config, params);
                 }
             }
-            if (timestamped){
+            if (latest) {
                 for (int iteration = 0; iteration < iterations; iteration++) {
-                    System.out.println(configStringTimestamped+";timestamped");
-                    runQueryTimestamped(configStringLatest, outputDir,env, sketchThroughput, queryThroughputTimestamped, config, params);
+                    System.out.println(configStringLatest + ";latest");
+                    runQueryLatest(configStringLatest, outputDir, env, sketchThroughput, queryThroughputLatest, config, params);
                 }
+            }
+            if (timestamped) {
+                for (int iteration = 0; iteration < iterations; iteration++) {
+                    System.out.println(configStringTimestamped + ";timestamped");
+                    runQueryTimestamped(configStringTimestamped, outputDir, env, sketchThroughput, queryThroughputTimestamped, config, params);
+                }
+            }
+            if(timestampedStratified){
                 for (int iteration = 0; iteration < iterations; iteration++) {
                     System.out.println(configStringTimestamped+";timestamped_stratified");
                     runQueryStratifiedTimestamped(configStringTimestamped, outputDir, env, sketchThroughput, queryThroughputTimestamped, stratification, config, params);
@@ -182,7 +187,7 @@ public class ADABenchmark {
         }
 
         try {
-            return env.execute("Query Latest Job");
+            return env.execute("Query Latest Stratified Job");
         } catch (Exception e) {
             e.printStackTrace();
         }
