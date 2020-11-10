@@ -8,6 +8,7 @@ import FlinkScottyConnector.BuildStratifiedSynopsis;
 import Synopsis.Sampling.ReservoirSampler;
 import de.tub.dima.scotty.core.AggregateWindow;
 import de.tub.dima.scotty.core.windowType.SlidingWindow;
+import de.tub.dima.scotty.core.windowType.TumblingWindow;
 import de.tub.dima.scotty.core.windowType.Window;
 import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import org.apache.flink.api.common.functions.MapFunction;
@@ -37,7 +38,8 @@ public class ScottyBenchmarkJob {
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new NormalFlinkJob.TimestampsAndWatermarks());
 
-        Window window = new SlidingWindow(WindowMeasure.Time, 6000, 3000); // creates a window of of size 6 seconds which slides every 3 seconds
+        Window window = new TumblingWindow(WindowMeasure.Time, 6000);
+        // Window window = new SlidingWindow(WindowMeasure.Time, 6000, 3000); // creates a window of of size 6 seconds which slides every 3 seconds
         Window[] windows = {window};
 
 
