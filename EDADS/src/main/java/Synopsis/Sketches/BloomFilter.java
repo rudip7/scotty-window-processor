@@ -61,7 +61,7 @@ public class BloomFilter<T> extends StratifiedSynopsis implements CommutativeSyn
         }
         int[] indices = hashFunctions.hash(input);
 //        for (int el : indices){
-//            System.out.println(el);
+//            Environment.out.println(el);
 //        }
         for (int i = 0; i < nHashFunctions; i++) {
             hashmap.set(indices[i] % numberBits);

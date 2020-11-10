@@ -25,7 +25,7 @@ public class SumScottyJob {
     public static void main(String[] args) throws Exception {
 
 
-        // set up the streaming execution environment
+        // set up the streaming execution Environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 

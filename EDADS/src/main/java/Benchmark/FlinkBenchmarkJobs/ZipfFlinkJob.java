@@ -96,6 +96,7 @@ public class ZipfFlinkJob<S extends MergeableSynopsis> {
 			e.printStackTrace();
 		}
 
+
 	}
 
 

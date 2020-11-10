@@ -17,6 +17,7 @@
 package Benchmark.Sources;
 
 import Benchmark.Old.ThroughputStatistics;
+import Benchmark.ParallelThroughputLogger;
 import org.apache.flink.api.java.tuple.Tuple11;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
@@ -26,6 +27,8 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -69,6 +72,9 @@ public class ZipfDistributionSource extends RichParallelSourceFunction<Tuple3<In
 
     private long nextGapStart = 0;
     private long nextGapEnd;
+
+    private static final Logger LOG = LoggerFactory.getLogger(ParallelThroughputLogger.class);
+
 
 
 
@@ -117,6 +123,7 @@ public class ZipfDistributionSource extends RichParallelSourceFunction<Tuple3<In
         gzipStream = new GZIPInputStream(new FileInputStream(dataFilePath));
         reader = new BufferedReader(new InputStreamReader(gzipStream, "UTF-8"));
 
+
         long startTime = System.currentTimeMillis();
         long endTime = startTime + runtime;
         loop:
@@ -126,17 +133,21 @@ public class ZipfDistributionSource extends RichParallelSourceFunction<Tuple3<In
             for (int i = 0; i < throughput; i++) {
                 Tuple3<Integer, Integer, Long> tuple = readNextTuple();
                 if (tuple == null){
+                    LOG.info("Zipf file completely read");
+                    System.out.println("Zipf file completely read");
                     break loop;
                 }
                 sourceContext.collect(tuple);
             }
 
-            while (System.currentTimeMillis() < startTs + 1000) {
-                // active waiting
-            }
+            if (runtime != -1) {
+                while (System.currentTimeMillis() < startTs + 1000) {
+                    // active waiting
+                }
 
-            if(endTime <= System.currentTimeMillis())
-                running = false;
+                if (endTime <= System.currentTimeMillis())
+                    running = false;
+            }
         }
 
         this.reader.close();
@@ -193,7 +204,12 @@ public class ZipfDistributionSource extends RichParallelSourceFunction<Tuple3<In
 //            tuple.f1 = Integer.parseInt(tokens[1]);
             tuple.f1 = this.getRuntimeContext().getIndexOfThisSubtask();
 //            tuple.f2 = Long.parseLong(tokens[2]);
-            tuple.f2 = System.currentTimeMillis();
+            if (runtime == -1){
+                tuple.f2 = 1603388370564L;
+            } else {
+                tuple.f2 = System.currentTimeMillis();
+            }
+
         } catch (NumberFormatException nfe) {
             throw new RuntimeException("Invalid record: " + line, nfe);
         }

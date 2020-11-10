@@ -31,7 +31,7 @@ public class TestRoundRobinJob {
     public static void main(String[] args) throws Exception {
 
 
-        // set up the streaming execution environment
+        // set up the streaming execution Environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         BuildSynopsis.IntegerState count = new BuildSynopsis.IntegerState();

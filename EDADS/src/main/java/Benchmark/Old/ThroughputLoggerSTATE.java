@@ -49,7 +49,7 @@ public class ThroughputLoggerSTATE<T> extends RichFlatMapFunction<T, Integer> {
 					timeDiff, elementDiff, elementDiff * ex);
 
 				ThroughputStatistics.getInstance().addThrouputResult(elementDiff * ex);
-				//System.out.println(ThroughputStatistics.getInstance().toString());
+				//Environment.out.println(ThroughputStatistics.getInstance().toString());
 				// reinit
 				lastLogTimeMs.update(now);
 				lastTotalReceived.update(totalReceived.value);

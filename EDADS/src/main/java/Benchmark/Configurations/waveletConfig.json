@@ -5,8 +5,9 @@
       "parallelism": 8,
       "iterations": 1,
       "runtime": 15000,
-      "throughput": 25000,
+      "throughput": 4000,
       "source": "Uniform",
+      "stratified" : "true",
       "windowConfigurations": [
         [
           "Sliding(10000,5000)"

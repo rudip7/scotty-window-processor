@@ -34,7 +34,6 @@ public class ZipfScottyJob<S extends MergeableSynopsis> {
 	public ZipfScottyJob(String configuration, List<Window> assigner, StreamExecutionEnvironment env, final long runtime,
                          final int throughput, final List<Tuple2<Long, Long>> gaps, Class<S> synopsisClass, boolean stratified, Object[] parameters) {
 
-
 		Map<String, String> configMap = new HashMap<>();
 		ParameterTool parametersTool = ParameterTool.fromMap(configMap);
 
@@ -62,7 +61,7 @@ public class ZipfScottyJob<S extends MergeableSynopsis> {
 
 			@Override
 			public void invoke(final Object value) throws Exception {
-				//System.out.println(value);
+				//Environment.out.println(value);
 			}
 		});
 

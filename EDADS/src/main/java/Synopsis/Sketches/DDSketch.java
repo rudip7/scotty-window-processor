@@ -64,6 +64,8 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
      * @return the lowest value that can be indexed
      */
     public double minIndexableValue() {
+        double exp = Math.exp((Integer.MIN_VALUE + 1) * logGamma);
+        double exp2 = Double.MIN_NORMAL * Math.exp(logGamma);
         return Math.max(
                 Math.exp((Integer.MIN_VALUE + 1) * logGamma), // so that index >= Integer.MIN_VALUE
                 Double.MIN_NORMAL * Math.exp(logGamma) // so that Math.exp(index * logGamma) >= Double.MIN_NORMAL
@@ -205,7 +207,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
         final long rank = (long) (quantile * (count - 1));
 
         if (rank < zeroCount) {
-            //System.out.println("zero rank");
+            //Environment.out.println("zero rank");
             return 0;
         }
 
@@ -265,7 +267,7 @@ public class DDSketch<T extends Number> extends StratifiedSynopsis implements In
              counts.clear();
              counts.putAll(collect);
 
-//                System.out.println(collect);
+//                Environment.out.println(collect);
 
 //                    for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
 //

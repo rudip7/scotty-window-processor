@@ -56,6 +56,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
             if (assigners.get(0) instanceof TumblingWindow) {
                 if (stratified) {
                     synopsesStream = BuildStratifiedSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()), 0, 0, synopsisClass, parameters);
+
                 } else {
                     synopsesStream = BuildSynopsis.timeBased(timestamped, Time.milliseconds(((TumblingWindow) assigners.get(0)).getSize()),0, synopsisClass, parameters);
                 }
@@ -95,6 +96,7 @@ public class NormalFlinkJob<S extends MergeableSynopsis> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
 
     }
 

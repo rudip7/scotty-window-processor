@@ -46,6 +46,7 @@ public class EquiWidthHistogram<T extends Number> extends StratifiedSynopsis imp
     @Override
     public void update(T number) {
         double input = number.doubleValue();
+
         if (input >= upperBound || input < lowerBound){
 //            throw new IllegalArgumentException("input is out of Bounds!");
             return;

@@ -38,7 +38,7 @@ public class EH3_HashFunction implements Serializable {
      * @return  true =1 , false = 0
      */
     public boolean[] rand(int input){
-
+//TODO: Wrong indices for the h function.........
         long longInput = input + (1 << 32); // [1,input] concatenation -> longInput has exactly 32 + 1 bits
         boolean[] results = new boolean[height];
 

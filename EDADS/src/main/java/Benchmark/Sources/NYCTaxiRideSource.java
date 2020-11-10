@@ -68,13 +68,12 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
     private long nextGapEnd;
 
 
-
     /**
      * Serves the TaxiRide records from the specified and ordered gzipped input file.
      * Rides are served exactly in order of their time stamps
      * in a serving speed which is proportional to the specified serving speed factor.
      *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
+     * @param dataFilePath The gzipped input file from which the TaxiRide records are read.
      */
     public NYCTaxiRideSource(String dataFilePath, long runtime, int throughput) {
         this(dataFilePath, runtime, throughput, new ArrayList<>());
@@ -85,8 +84,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
      * Rides are served out-of time stamp order with specified maximum random delay
      * in a serving speed which is proportional to the specified serving speed factor.
      *
-     * @param dataFilePath       The gzipped input file from which the TaxiRide records are read.
-     *
+     * @param dataFilePath The gzipped input file from which the TaxiRide records are read.
      */
     public NYCTaxiRideSource(String dataFilePath, long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = dataFilePath;
@@ -102,6 +100,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
      */
     public NYCTaxiRideSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
         this.dataFilePath = "/share/hadoop/EDADS/nycTaxiRides.gz";
+//        this.dataFilePath = "EDADS/Data/nycTaxiRides.gz";
         this.throughput = throughput;
         this.gaps = gaps;
         this.runtime = runtime;
@@ -121,18 +120,20 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
 
             for (int i = 0; i < throughput; i++) {
                 Tuple11<Long, Long, Long, Boolean, Long, Long, Float, Float, Float, Float, Short> ride = readNextTuple();
-                if (ride == null){
+                if (ride == null) {
                     break loop;
                 }
                 sourceContext.collect(ride);
             }
 
-            while (System.currentTimeMillis() < startTs + 1000) {
-                // active waiting
-            }
+            if (runtime != -1) {
+                while (System.currentTimeMillis() < startTs + 1000) {
+                    // active waiting
+                }
 
-            if(endTime <= System.currentTimeMillis())
-                running = false;
+                if (endTime <= System.currentTimeMillis())
+                    running = false;
+            }
         }
 
         this.reader.close();
@@ -146,7 +147,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
 
         if (getEventTime(ride) > nextGapStart) {
             ThroughputStatistics.getInstance().pause(true);
-            //System.out.println("in Gap");
+            //Environment.out.println("in Gap");
             if (getEventTime(ride) > this.nextGapEnd) {
                 ThroughputStatistics.getInstance().pause(false);
                 this.currentGapIndex++;
@@ -173,7 +174,7 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
 
     /**
      * Total number of bytes 59.
-     *
+     * <p>
      * f0:  rideId         : Long      // a unique id for each ride
      * f1:  taxiId         : Long      // a unique id for each taxi
      * f2:  driverId       : Long      // a unique id for each driver
@@ -203,20 +204,22 @@ public class NYCTaxiRideSource implements ParallelSourceFunction<Tuple11<Long, L
                     ride.f3 = true;
 //                    ride.f4 = DateTime.parse(tokens[2], timeFormatter).getMillis();
 //                    ride.f5 = DateTime.parse(tokens[3], timeFormatter).getMillis();
-
-                    ride.f4 = System.currentTimeMillis();
-                    ride.f5 = System.currentTimeMillis();
                     break;
                 case "END":
                     ride.f3 = false;
 //                    ride.f5 = DateTime.parse(tokens[2], timeFormatter).getMillis();
 //                    ride.f4 = DateTime.parse(tokens[3], timeFormatter).getMillis();
-
-                    ride.f4 = System.currentTimeMillis();
-                    ride.f5 = System.currentTimeMillis();
                     break;
                 default:
                     throw new RuntimeException("Invalid record: " + line);
+            }
+
+            if (runtime == -1) {
+                ride.f4 = 1603388370564L;
+                ride.f5 = 1603388370564L;
+            } else {
+                ride.f4 = System.currentTimeMillis();
+                ride.f5 = System.currentTimeMillis();
             }
 
             ride.f6 = tokens[4].length() > 0 ? Float.parseFloat(tokens[4]) : 0.0f;

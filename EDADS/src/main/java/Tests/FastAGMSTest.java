@@ -10,7 +10,7 @@ import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.Environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
@@ -25,7 +25,7 @@ public class FastAGMSTest {
     public static void main(String[] args) throws Exception {
 
 
-        // set up the streaming execution environment
+        // set up the streaming execution Environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
@@ -81,11 +81,11 @@ public class FastAMSTest {
         }
         int correct=0;
         double error_bound= Math.sqrt(51467/200d);
-        System.out.println(error_bound);
+        Environment.out.println(error_bound);
         for (int element :rowSumArray){
-            System.out.println(element);
-            System.out.println(Math.abs(element-3173));
-            System.out.println("------------------------");
+            Environment.out.println(element);
+            Environment.out.println(Math.abs(element-3173));
+            Environment.out.println("------------------------");
             //Assertions.assertTrue(element==4000);
         }
 
