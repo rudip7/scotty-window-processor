@@ -12,8 +12,8 @@ public class SimpleQuerySource extends RichParallelSourceFunction<Double> {
     private final int throughput;
     private final long wait;
 
-    public SimpleQuerySource(Time runtime, int throughput, Time wait) {
-        this.runtime = runtime.toMilliseconds();
+    public SimpleQuerySource(Time queryRuntime, int throughput, Time wait) {
+        this.runtime = queryRuntime.toMilliseconds();
         this.throughput = throughput;
         this.wait = wait.toMilliseconds();
     }
@@ -23,7 +23,7 @@ public class SimpleQuerySource extends RichParallelSourceFunction<Double> {
         Random random = new Random();
 
         long startTs = System.currentTimeMillis();
-        long endTs = startTs + runtime;
+        long endTs = startTs + runtime + wait;
 
         while (System.currentTimeMillis() < startTs + wait) {
             // active waiting
@@ -34,7 +34,7 @@ public class SimpleQuerySource extends RichParallelSourceFunction<Double> {
             long time = System.currentTimeMillis();
 
             for (int i = 0; i < throughput; i++) {
-                ctx.collectWithTimestamp(random.nextDouble(), System.currentTimeMillis());
+                ctx.collectWithTimestamp(random.nextDouble(), time);
             }
 
             while (System.currentTimeMillis() < time + 1000) {

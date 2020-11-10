@@ -19,7 +19,7 @@ public class Runner {
 
 
         configPath = args[0];
-        // configPath = "/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/src/main/java/StreamApprox/testLocal.json";
+        configPath = "/Users/joschavonhein/Workspace/scotty-window-processor/EDADS/src/main/java/StreamApprox/testLocal.json";
         System.out.println("\n\nLoading configurations: "+configPath);
 
         BenchmarkList benchmark = loadConfig();

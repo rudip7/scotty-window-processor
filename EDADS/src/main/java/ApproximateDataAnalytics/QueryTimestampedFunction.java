@@ -15,10 +15,14 @@ import java.util.Comparator;
 import java.util.TreeSet;
 
 /**
+ * Function used by the ApproximateDataAnalytics Class to query the synopsisStream based on a specific timestamp.
+ * The user can specify how many synopsis to 'store' in memory.
  *
  * @param <Q>   Query Type
  * @param <S>   Synopsis Type
  * @param <O>   Query Result Type
+ *
+ * @author Joscha von Hein
  */
 public class QueryTimestampedFunction<Q extends Serializable, S extends Synopsis, O extends Serializable> extends
         BroadcastProcessFunction<TimestampedQuery<Q>, WindowedSynopsis<S>, QueryResult<TimestampedQuery<Q>, O>> {

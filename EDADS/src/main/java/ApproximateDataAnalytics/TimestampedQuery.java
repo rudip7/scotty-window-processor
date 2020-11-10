@@ -2,6 +2,11 @@ package ApproximateDataAnalytics;
 
 import java.io.Serializable;
 
+/**
+ * TimestampedQuery Class which is used by the ApproximateDataAnalytics Class in queries which pertain to a specific time.
+ *
+ * @param <Q>   Query Type
+ */
 public class TimestampedQuery<Q extends Serializable> implements Serializable{
     private final Q query;
     private final long timeStamp;

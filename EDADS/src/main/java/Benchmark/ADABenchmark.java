@@ -16,6 +16,7 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -26,17 +27,24 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * Used to Benchmark the Approximate Data Analytics Package.
+ *
+ * It will run queryLatest, queryStratified, queryTimestamped and queryStratifiedTimestamped a number of times with a given
+ * Synopsis to measure the throughput in the queryStream for varying parallelism.
+ *
+ *
+ * @author Joscha von Hein
+ */
 public class ADABenchmark {
 
     public static void main(String[] args){
         ParameterTool parameterTool = ParameterTool.fromArgs(args);
         final String outputDir = parameterTool.get("outputDir", null);
-//        final String outputDir = null;
-
-        final Time runtime = Time.minutes(1);
+        final boolean test = parameterTool.has("test");
+        int maxParallelism = test ? 2 : 256;
         final int stratification = 10;
-        final int sketchTroughput = 200; // # tuples / seconds to build the sketch
+        final int sketchTroughput = 1000; // # tuples / seconds to build the sketch
         final List<Tuple2<Long, Long>> gaps = new ArrayList<>();
         final double accuracy = 0.01; // relative accuracy of DD-Sketch
         final int maxNumberOfBins = 500; // maximum number of bins of DD-Sketch
@@ -45,29 +53,48 @@ public class ADABenchmark {
         final BuildSynopsisConfig config = new BuildSynopsisConfig(windowTime, null, 0); // config object for tumbling window with 5 seconds slide time
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-//        int queryThroughput = Integer.parseInt(args[0]);
-//        System.out.println(queryThroughput);
-//        runQueryLatest(outputDir, env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
-//
-        for (int queryThroughput = 10000; queryThroughput <= 20000; queryThroughput *= 5) {
-            System.out.println(queryThroughput);
-            runQueryLatest(outputDir, env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
-            runQueryStratifiedLatest(outputDir,env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
-            runQueryTimestamped(outputDir,env, runtime, sketchTroughput, queryThroughput, gaps, config, params);
-            runQueryStratifiedTimestamped(outputDir,env, runtime, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.getConfig().enableObjectReuse();
+        env.setParallelism(env.getMaxParallelism());
+
+
+        // initial parallelism is set to 256 to make the last measurement - change if needed
+        for (int parallelism = 256; parallelism <= maxParallelism; parallelism *= 2) {
+            for (int queryThroughput = 400000; queryThroughput <= 500000; queryThroughput += 100000) {
+                for (int iteration = 0; iteration < 10; iteration++) {
+                    env.setParallelism(parallelism);
+                    String configString = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughput;
+                    System.out.println(configString);
+                    runQueryTimestamped(configString, outputDir,env, sketchTroughput, queryThroughput, gaps, config, params);
+                    runQueryStratifiedTimestamped(configString, outputDir,env, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+                }
+            }
+            for (int queryThroughput = 800000; queryThroughput <= 1000000 ; queryThroughput += 200000) {
+                for (int iteration = 0; iteration < 10; iteration++) {
+                    env.setParallelism(parallelism);
+                    String configString = "ADA_Benchmark;parallelism;" + parallelism + ";targetQueryThroughput;" + queryThroughput;
+                    System.out.println(configString);
+                    runQueryLatest(configString, outputDir, env, sketchTroughput, queryThroughput, gaps, config, params);
+                    runQueryStratifiedLatest(configString, outputDir,env, sketchTroughput, queryThroughput, stratification, gaps, config, params);
+                }
+            }
         }
+
     }
 
-    static JobExecutionResult runQueryLatest(String outputDir,StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
+    static JobExecutionResult runQueryLatest(String configString, String outputDir,StreamExecutionEnvironment env, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+        // synopsis stream runtime is 20 seconds, queryStream waiting time is 40 seconds and after that 20 seconds query stream runtime
+        // -> 60 seconds total runtime  for all methods
+
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(20000, sketchThroughput, gaps));
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
         final DataStream<WindowedSynopsis<DDSketch>> synopsisStream = NewBuildSynopsis.timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params);
 
-        final DataStreamSource<Double> queryStreamSource = env.addSource(new SimpleQuerySource(runtime, queryThroughput, config.getWindowTime()));
-        final SingleOutputStreamOperator<Double> queryStream = queryStreamSource.flatMap(new ParallelThroughputLogger<Double>(1000, "query_latest - " + queryThroughput));
+        final DataStreamSource<Double> queryStreamSource = env.addSource(new SimpleQuerySource(Time.seconds(20), queryThroughput, Time.seconds(40)));
+        final SingleOutputStreamOperator<Double> queryStream = queryStreamSource.flatMap(new ParallelThroughputLogger<Double>(1000, configString + ";latest"));
 
         final QueryFunction<Double, DDSketch, Double> queryFunction = new QueryFunction<Double, DDSketch, Double>() {
             @Override
@@ -99,17 +126,18 @@ public class ADABenchmark {
         return null;
     }
 
-    static JobExecutionResult runQueryStratifiedLatest(String outputDir, StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryStratifiedLatest(String configString, String outputDir, StreamExecutionEnvironment env, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
         Stratifier stratifier = new Stratifier(stratification);
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(20000, sketchThroughput, gaps));
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
         DataStream<StratifiedSynopsisWrapper<Integer, WindowedSynopsis<DDSketch>>> stratifiedSynopsisStream = BuildStratifiedSynopsis.timeBasedADA(timestamped, config.getWindowTime(), config.getSlideTime(), stratifier, DDSketch.class, params);
 
-        final DataStreamSource<Tuple2<Integer, Double>> queryStream = env.addSource(new StratifiedQuerySource(runtime, queryThroughput, config.getWindowTime(), stratification));
+        final DataStreamSource<Tuple2<Integer, Double>> queryStreamSource = env.addSource(new StratifiedQuerySource(Time.seconds(20), queryThroughput, Time.seconds(40), stratification));
+        final SingleOutputStreamOperator<Tuple2<Integer, Double>> queryStream = queryStreamSource.flatMap(new ParallelThroughputLogger<Tuple2<Integer, Double>>(1000, configString + ";stratified_latest"));
 
         QueryFunction<Double, DDSketch, Double> queryFunction = new QueryFunction<Double, DDSketch, Double>() {
             @Override
@@ -140,16 +168,17 @@ public class ADABenchmark {
         return null;
     }
 
-    static JobExecutionResult runQueryTimestamped(String outputDir, StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryTimestamped(String configString, String outputDir, StreamExecutionEnvironment env, int sketchThroughput, int queryThroughput, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(20000, sketchThroughput, gaps));
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new TimestampsAndWatermarks());
 
         DataStream<WindowedSynopsis<DDSketch>> synopsesStream = NewBuildSynopsis.timeBasedWithWindowTimes(timestamped, DDSketch.class, config, params);
 
-        DataStream<TimestampedQuery<Double>> timestampedQueries = env.addSource(new TimestampedQuerySource(runtime, config.getWindowTime(), queryThroughput));
+        DataStream<TimestampedQuery<Double>> timestampedQueriesSource = env.addSource(new TimestampedQuerySource(Time.seconds(20), Time.seconds(40), queryThroughput, Time.seconds(20)));
+        final SingleOutputStreamOperator<TimestampedQuery<Double>> timestampedQueries = timestampedQueriesSource.flatMap(new ParallelThroughputLogger<TimestampedQuery<Double>>(1000, configString + ";timestamped"));
 
         QueryFunction<TimestampedQuery<Double>, WindowedSynopsis<DDSketch>, QueryResult<TimestampedQuery<Double>, Double>> queryFunction =
                 new QueryFunction<TimestampedQuery<Double>, WindowedSynopsis<DDSketch>, QueryResult<TimestampedQuery<Double>, Double>>() {
@@ -182,9 +211,9 @@ public class ADABenchmark {
         return null;
     }
 
-    static JobExecutionResult runQueryStratifiedTimestamped(String outputDir, StreamExecutionEnvironment env, Time runtime, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
+    static JobExecutionResult runQueryStratifiedTimestamped(String configString, String outputDir, StreamExecutionEnvironment env, int sketchThroughput, int queryThroughput, int stratification, List<Tuple2<Long, Long>> gaps, BuildSynopsisConfig config, Object... params){
 
-        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(runtime.toMilliseconds(), sketchThroughput, gaps));
+        DataStreamSource<Tuple3<Integer, Integer, Long>> messageStream = env.addSource(new UniformDistributionSource(20000, sketchThroughput, gaps));
 
         final SingleOutputStreamOperator<Tuple3<Integer, Integer, Long>> timestamped = messageStream
                 .assignTimestampsAndWatermarks(new ExampleStratifiedADAJob.TimestampsAndWatermarks());
@@ -192,7 +221,8 @@ public class ADABenchmark {
         SingleOutputStreamOperator<StratifiedSynopsisWrapper<Integer, WindowedSynopsis<DDSketch>>> stratifiedSynopsisStream = BuildStratifiedSynopsis
                 .timeBasedADA(timestamped, config.getWindowTime(), config.getSlideTime(), new Stratifier(stratification), DDSketch.class, params);
 
-        DataStream<Tuple2<Integer, TimestampedQuery<Double>>> queryStream = env.addSource(new StratifiedTimestampedQuerySource(queryThroughput, config.getWindowTime(), runtime, stratification));
+        DataStream<Tuple2<Integer, TimestampedQuery<Double>>> queryStreamSource = env.addSource(new StratifiedTimestampedQuerySource(queryThroughput, Time.seconds(40), Time.seconds(20), Time.seconds(20), stratification));
+        final SingleOutputStreamOperator<Tuple2<Integer, TimestampedQuery<Double>>> queryStream = queryStreamSource.flatMap(new ParallelThroughputLogger<Tuple2<Integer, TimestampedQuery<Double>>>(1000, configString + ";stratified_timestamped"));
 
         QueryFunction<Tuple2<Integer, TimestampedQuery<Double>>, WindowedSynopsis<DDSketch>, StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>> queryFunction =
                 new QueryFunction<Tuple2<Integer, TimestampedQuery<Double>>, WindowedSynopsis<DDSketch>, StratifiedQueryResult<TimestampedQuery<Double>, Double, Integer>>() {

@@ -1,21 +1,24 @@
 package Benchmark.Sources;
 
 import ApproximateDataAnalytics.TimestampedQuery;
+import org.apache.flink.streaming.api.functions.source.RichParallelSourceFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 import java.util.Random;
 
-public class TimestampedQuerySource implements SourceFunction<TimestampedQuery<Double>> {
+public class TimestampedQuerySource extends RichParallelSourceFunction<TimestampedQuery<Double>> {
 
-    private final long runtime;
+    private final long runtime; // in millis
     private final int throughput;
-    private final long wait;
+    private final long wait; // in millis
+    private final int synopsisRuntime; // in seconds
 
-    public TimestampedQuerySource(Time runtime, Time wait, int throughput) {
+    public TimestampedQuerySource(Time queryRuntime, Time wait, int throughput, Time synopsisRuntime) {
         this.wait = wait.toMilliseconds();
-        this.runtime = runtime.toMilliseconds() - this.wait;
+        this.runtime = queryRuntime.toMilliseconds();
         this.throughput = throughput;
+        this.synopsisRuntime = (int)(synopsisRuntime.toMilliseconds() / 1000);
     }
 
     @Override
@@ -32,10 +35,9 @@ public class TimestampedQuerySource implements SourceFunction<TimestampedQuery<D
         while (System.currentTimeMillis() < endTs){
 
             long time = System.currentTimeMillis();
-            int upperBound = (int)((time - startTs) / 1000);
 
             for (int i = 0; i < throughput; i++) {
-                int relativeTimestamp = random.nextInt(upperBound); // upper bound in seconds from job start
+                int relativeTimestamp = random.nextInt(synopsisRuntime); // upper bound in seconds from job start
                 long query_timestamp = startTs + relativeTimestamp * 1000;
                 ctx.collectWithTimestamp(new TimestampedQuery<Double>(random.nextDouble(), query_timestamp), time);
             }

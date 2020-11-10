@@ -180,21 +180,9 @@ public final class BuildSynopsis {
         return countBased(inputStream, windowSize, slideSize, -1, synopsisClass, parameters);
     }
 
-    /**
-     * Build an operator pipeline to generate a stream of time window based Synopses. Firstly each element will be
-     * assigned to a random partition. Then based on the partition a {@link KeyedStream} will be generated and an
-     * {@link KeyedStream#timeWindow} will accumulate the a MergeableSynopsis via the {@link SynopsisAggregator}. Afterwards
-     * the partial results of the partitions will be reduced (merged) to a single MergeableSynopsis representing the whole window.
-     *
-     * @param inputStream   the data stream to build the MergeableSynopsis
-     * @param windowTime    the size of the time window
-     * @param keyField      the field of the tuple to build the MergeableSynopsis. Set to -1 to build the MergeableSynopsis over the whole tuple.
-     * @param synopsisClass the type of MergeableSynopsis to be computed
-     * @param parameters    the initialization parameters for the MergeableSynopsis
-     * @param <T>           the type of the input elements
-     * @param <S>           the type of the MergeableSynopsis
-     * @return stream of time window based Synopses
-     */
+
+
+    // NON-MERGEABLE !!!
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters);
         KeyedStream keyBy = inputStream

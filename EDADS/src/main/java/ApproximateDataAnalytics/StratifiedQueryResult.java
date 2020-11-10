@@ -5,6 +5,14 @@ import org.apache.flink.api.java.tuple.Tuple2;
 
 import java.io.Serializable;
 
+/**
+ * Query Result Object in case of Stratified Synopsis Streams.
+ * This Class behaves exactly as the normal QueryResult but also contains the Partition / Key of the Query.
+ *
+ * @param <Q>   Query Type
+ * @param <O>   Query Result Type
+ * @param <P>   Partition / Key Type
+ */
 public class StratifiedQueryResult<Q extends Serializable, O extends Serializable, P extends Serializable> implements Serializable {
     private O queryResult;
     private Q query;

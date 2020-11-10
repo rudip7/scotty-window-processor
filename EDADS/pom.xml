@@ -252,17 +252,17 @@ under the License.
 
 			<dependencies>
 				<dependency>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-java</artifactId>
-					<version>${flink.version}</version>
-					<scope>compile</scope>
-				</dependency>
-				<dependency>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
-					<version>${flink.version}</version>
-					<scope>compile</scope>
-				</dependency>
+				<groupId>org.apache.flink</groupId>
+				<artifactId>flink-java</artifactId>
+				<version>${flink.version}</version>
+				<scope>compile</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.flink</groupId>
+				<artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+				<version>${flink.version}</version>
+				<scope>compile</scope>
+			</dependency>
 			</dependencies>
 		</profile>
 	</profiles>

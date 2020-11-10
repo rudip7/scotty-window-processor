@@ -4,6 +4,12 @@ import Synopsis.WindowedSynopsis;
 
 import java.io.Serializable;
 
+/**
+ * Generic Query Result Object containing query and Window Information.
+ *
+ * @param <Q>   Query Type
+ * @param <R>   Query Result Type
+ */
 public class QueryResult<Q extends Serializable, R extends Serializable> implements Serializable {
     private R queryResult;
     private Q query;

@@ -18,6 +18,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
+/**
+ * Function used by the ApproximateDataAnalytics Class to query the latest stratified synopsis stream.
+ *
+ * @param <P>   Strata Type (the element type by which the synopis stream is keyed on)
+ * @param <Q>   Query Type
+ * @param <S>   Synopsis Type
+ * @param <O>   Query Result Type
+ * @author Joscha von Hein
+ */
 public class QueryLatestStratifiedFunction<P extends Serializable, Q extends Serializable, S extends Synopsis, O extends Serializable> extends KeyedBroadcastProcessFunction<P, Tuple2<P,Q>, StratifiedSynopsisWrapper<P, WindowedSynopsis<S>>, StratifiedQueryResult<Q, O, P>> {
 
     HashMap<P, ArrayList<Tuple2<P,Q>>> queryList;
