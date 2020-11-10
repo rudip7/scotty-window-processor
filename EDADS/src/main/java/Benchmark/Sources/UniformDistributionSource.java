@@ -37,6 +37,7 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
 
     private int median = 10;
     private int standardDeviation = 3;
+    private int stratification = 0;
 
     public UniformDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps) {
 
@@ -44,6 +45,15 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
         this.gaps = gaps;
         this.random = new XORShiftRandom();
         this.runtime = runtime;
+    }
+
+    public UniformDistributionSource(long runtime, int throughput, final List<Tuple2<Long, Long>> gaps, int stratification) {
+
+        this.throughput = throughput;
+        this.gaps = gaps;
+        this.random = new XORShiftRandom();
+        this.runtime = runtime;
+        this.stratification = stratification;
     }
 
     @Override
@@ -96,12 +106,11 @@ public class UniformDistributionSource extends RichParallelSourceFunction<Tuple3
     }
 
     private Tuple3<Integer, Integer, Long> readNextTuple() throws Exception {
-        int newKey = key.nextInt(101);
-//        while (newKey < 0){
-//            newKey = (int) (standardDeviation*key.nextGaussian() + median);
-//        }
-        return new Tuple3<>(newKey, key.nextInt(10), System.currentTimeMillis());
-
+        if (stratification > 0){
+            return new Tuple3<>(key.nextInt(stratification*1000), key.nextInt(10), System.currentTimeMillis());
+        }else {
+            return new Tuple3<>(key.nextInt(101), key.nextInt(10), System.currentTimeMillis());
+        }
     }
 
     @Override

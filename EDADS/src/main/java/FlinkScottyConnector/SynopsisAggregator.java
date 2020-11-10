@@ -3,9 +3,11 @@ package FlinkScottyConnector;
 import Synopsis.MergeableSynopsis;
 import Synopsis.StratifiedSynopsis;
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.RichAggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
+import org.apache.flink.metrics.Counter;
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,13 +18,16 @@ import java.io.ObjectStreamException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
+
 /**
  * General {@link AggregateFunction} to build a customized MergeableSynopsis in an incremental way.
  *
  * @param <T1>
  * @author Rudi Poepsel Lemaitre
  */
-public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSynopsis, MergeableSynopsis> {
+public class SynopsisAggregator<T1> extends RichAggregateFunction<T1, MergeableSynopsis, MergeableSynopsis> {
+
+    private transient Counter counter;
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalStreamEnvironment.class);
     private boolean stratified = false;
@@ -38,6 +43,9 @@ public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSy
     public SynopsisAggregator(Class<? extends MergeableSynopsis> sketchClass, Object[] params) {
         this.sketchClass = sketchClass;
         this.constructorParam = params;
+        this.counter = getRuntimeContext()
+                .getMetricGroup()
+                .counter("synopsesCounter");
     }
 
     /**
@@ -69,6 +77,8 @@ public class SynopsisAggregator<T1> implements AggregateFunction<T1, MergeableSy
         try {
             Constructor<? extends MergeableSynopsis> constructor = sketchClass.getConstructor(parameterClasses);
             MergeableSynopsis synopsis = constructor.newInstance(constructorParam);
+
+            counter.inc();
             return synopsis;
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException("There is no constructor in class " + sketchClass + " that match with the given parameters.");

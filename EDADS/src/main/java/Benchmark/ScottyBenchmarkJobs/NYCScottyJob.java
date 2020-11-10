@@ -1,6 +1,8 @@
 package Benchmark.ScottyBenchmarkJobs;
 
 import Benchmark.ParallelThroughputLogger;
+import Benchmark.RichStratifier;
+import Benchmark.RichStratifierNYC;
 import Benchmark.Sources.NYCTaxiRideSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
 import FlinkScottyConnector.BuildSynopsis;
@@ -55,7 +57,8 @@ public class NYCScottyJob<S extends MergeableSynopsis> {
 
 		SingleOutputStreamOperator<AggregateWindow<S>> synopsesStream;
 		if (stratified){
-			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
+//			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped, windows, 0, 0, synopsisClass, parameters);
+			synopsesStream = BuildStratifiedSynopsis.scottyWindows(timestamped,windows,new RichStratifierNYC(env.getParallelism()),synopsisClass, parameters);
 		} else {
 			synopsesStream = BuildSynopsis.scottyWindows(timestamped, windows, 0, synopsisClass, parameters);
 		}
