@@ -1,11 +1,11 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.Configs;
 
 import Synopsis.NonMergeableSynopsisManager;
 
 public class NonMergeableCountBasedConfig<M extends NonMergeableSynopsisManager> extends CountBasedConfig {
 
-    int miniBatchSize = 0;
-    Class<M> managerClass;
+    public int miniBatchSize = 0;
+    public Class<M> managerClass;
 
     public NonMergeableCountBasedConfig(Class synopsisClass, Object[] synParams, long windowSize, Class<M> managerClass) {
         super(synopsisClass, synParams, windowSize);

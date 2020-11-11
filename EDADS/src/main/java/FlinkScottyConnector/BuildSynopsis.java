@@ -1,5 +1,6 @@
 package FlinkScottyConnector;
 
+import FlinkScottyConnector.FunctionClasses.*;
 import Synopsis.MergeableSynopsis;
 import Synopsis.NonMergeableSynopsisManager;
 import Synopsis.Sampling.TimestampedElement;
@@ -17,8 +18,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.*;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
-import org.apache.flink.streaming.api.functions.windowing.AllWindowFunction;
-import org.apache.flink.streaming.api.functions.windowing.WindowFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
@@ -183,7 +182,8 @@ public final class BuildSynopsis {
 
 
     // NON-MERGEABLE !!!
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased
+            (DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(synopsisClass, parameters);
         KeyedStream keyBy = inputStream
                 .process(new OrderAndIndex(keyField, miniBatchSize, getParallelismKeys())).setParallelism(1)
@@ -211,23 +211,28 @@ public final class BuildSynopsis {
         return returns;
     }
 
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased
+            (DataStream<T> inputStream, Time windowTime, Time slideTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         return timeBased(inputStream, 0, windowTime, slideTime, -1, synopsisClass, managerClass, parameters);
     }
 
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased
+            (DataStream<T> inputStream, int miniBatchSize, Time windowTime, Time slideTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         return timeBased(inputStream, miniBatchSize, windowTime, slideTime, -1, synopsisClass, managerClass, parameters);
     }
 
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased
+            (DataStream<T> inputStream, Time windowTime, Time slideTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         return timeBased(inputStream, 0, windowTime, slideTime, keyField, synopsisClass, managerClass, parameters);
     }
 
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased
+            (DataStream<T> inputStream, Time windowTime, int keyField, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         return timeBased(inputStream, 0, windowTime, null, keyField, synopsisClass, managerClass, parameters);
     }
 
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased(DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> timeBased
+            (DataStream<T> inputStream, Time windowTime, Class<S> synopsisClass, Class<M> managerClass, Object... parameters) {
         return timeBased(inputStream, 0, windowTime, null, -1, synopsisClass, managerClass, parameters);
     }
 

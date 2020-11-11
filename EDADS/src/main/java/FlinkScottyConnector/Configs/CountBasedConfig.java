@@ -1,4 +1,4 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.Configs;
 
 /**
  * Configuration Class to build Count Based Synopsis.
@@ -6,8 +6,8 @@ package FlinkScottyConnector;
  */
 public class CountBasedConfig extends BuildSynopsisConfig {
 
-    long windowSize;
-    long slideSize = -1;
+    public long windowSize;
+    public long slideSize = -1;
 
     public long getWindowSize() {
         return windowSize;

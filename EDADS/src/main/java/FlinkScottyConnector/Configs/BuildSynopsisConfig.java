@@ -1,14 +1,16 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.Configs;
 
 import Synopsis.Synopsis;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
+import java.io.Serializable;
 
-public class BuildSynopsisConfig <S extends Synopsis> {
 
-    Class<S> synopsisClass;
-    int keyField = -1;
-    Object[] synParams;
+public class BuildSynopsisConfig <S extends Synopsis> implements Serializable {
+
+    public Class<S> synopsisClass;
+    public int keyField = -1;
+    public Object[] synParams;
 
     public BuildSynopsisConfig(Class<S> synopsisClass, Object[] synParams) {
         this.synopsisClass = synopsisClass;
@@ -44,6 +46,6 @@ public class BuildSynopsisConfig <S extends Synopsis> {
 
     public void setKeyField(int keyField) {
         this.keyField = keyField;
-    }
 
+    }
 }

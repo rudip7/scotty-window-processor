@@ -1,11 +1,12 @@
 package FlinkScottyConnector;
 
+import FlinkScottyConnector.Configs.*;
 import Synopsis.NonMergeableSynopsisManager;
 import FlinkScottyConnector.FunctionClasses.*;
-import Synopsis.MergeableSynopsis;
+import Synopsis.*;
 import Synopsis.Sampling.SamplerWithTimestamps;
-import Synopsis.Synopsis;
-import Synopsis.WindowedSynopsis;
+import de.tub.dima.scotty.core.AggregateWindow;
+import de.tub.dima.scotty.flinkconnector.KeyedScottyWindowOperator;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.java.tuple.Tuple;
@@ -36,6 +37,40 @@ public class NewBuildSynopsis {
 
     public static int getParallelismKeys(){
         return parallelismKeys;
+    }
+
+    /**
+     * Stateful map functions to add the parallelism variable
+     *
+     * @param <T0> type of input elements
+     */
+    public static class AddParallelismIndex<T0> extends RichMapFunction<T0, Tuple2<Integer, Object>> {
+        public int keyField;
+        private Tuple2<Integer, Object> newTuple;
+
+
+        public AddParallelismIndex(int keyField) {
+            this.keyField = keyField;
+            newTuple = new Tuple2<Integer, Object>();
+        }
+
+        @Override
+        public void open(Configuration parameters) throws Exception {
+            if (parallelismKeys < 1) {
+                setParallelismKeys(this.getRuntimeContext().getNumberOfParallelSubtasks());
+            }
+        }
+
+        @Override
+        public Tuple2<Integer, Object> map(T0 value) throws Exception {
+            if (value instanceof Tuple && keyField != -1) {
+                newTuple.setField(((Tuple) value).getField(keyField), 1);
+            } else {
+                newTuple.setField(value, 1);
+            }
+            newTuple.setField(this.getRuntimeContext().getIndexOfThisSubtask(), 0);
+            return newTuple;
+        }
     }
 
     public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<S> timeBased(DataStream<T> inputStream, TimeBasedConfig config){
@@ -146,6 +181,14 @@ public class NewBuildSynopsis {
         return result;
     }
 
+    /**
+     * Method which creates non-mergeable Synopsis which can be accessed via a Manager Class
+     *
+     * The following configuration parameters can be left null:
+     * keyField (default: -1)
+     * slideTime (default: null)
+     * miniBatchSize (default: 0)
+     */
     public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> nonMergeableTimeBased(DataStream<T> inputStream, NonMergeableTimeBasedConfig config) {
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(config.synopsisClass, config.synParams);
         KeyedStream keyBy = inputStream
@@ -174,7 +217,7 @@ public class NewBuildSynopsis {
         return returns;
     }
 
-    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> countBased(DataStream<T> inputStream, NonMergeableCountBasedConfig config) {
+    public static <T, S extends Synopsis, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<M> nonMergeableCountBased(DataStream<T> inputStream, NonMergeableCountBasedConfig config) {
         int parallelism = inputStream.getExecutionEnvironment().getParallelism();
 
         NonMergeableSynopsisAggregator agg = new NonMergeableSynopsisAggregator(config.synopsisClass, config.synParams);
@@ -197,47 +240,54 @@ public class NewBuildSynopsis {
         return returns;
     }
 
-
-
-
-
-
-
-
-
-
-
-    /**
-     * Stateful map functions to add the parallelism variable
-     *
-     * @param <T0> type of input elements
-     */
-    public static class AddParallelismIndex<T0> extends RichMapFunction<T0, Tuple2<Integer, Object>> {
-        public int keyField;
-        private Tuple2<Integer, Object> newTuple;
-
-
-        public AddParallelismIndex(int keyField) {
-            this.keyField = keyField;
-            newTuple = new Tuple2<Integer, Object>();
-        }
-
-        @Override
-        public void open(Configuration parameters) throws Exception {
-            if (parallelismKeys < 1) {
-                setParallelismKeys(this.getRuntimeContext().getNumberOfParallelSubtasks());
+    public static <T, S extends MergeableSynopsis> SingleOutputStreamOperator<AggregateWindow<S>> scottyWindows(DataStream<T> inputStream, BuildScottyConfig config) {
+        DataStream<T> rescaled = inputStream.rescale();
+        if (SamplerWithTimestamps.class.isAssignableFrom(config.synopsisClass)) {
+            KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = rescaled.process(new ConvertToSample<>(config.keyField)).map(new AddParallelismIndex<>(-1)).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Object>, S> processingFunction =
+                    new KeyedScottyWindowOperator<>(new SynopsisFunction(config.synopsisClass, config.synParams));
+            for (int i = 0; i < config.windows.length; i++) {
+                processingFunction.addWindow(config.windows[i]);
             }
-        }
-
-        @Override
-        public Tuple2<Integer, Object> map(T0 value) throws Exception {
-            if (value instanceof Tuple && keyField != -1) {
-                newTuple.setField(((Tuple) value).getField(keyField), 1);
+            return keyedStream.process(processingFunction)
+                    .flatMap(new MergePreAggregates(getParallelismKeys()))
+                    .setParallelism(1);
+        } else {
+            KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = rescaled.map(new AddParallelismIndex<>(config.keyField)).keyBy(0);
+            KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Object>, S> processingFunction;
+            if (InvertibleSynopsis.class.isAssignableFrom(config.synopsisClass)) {
+                processingFunction =
+                        new KeyedScottyWindowOperator<>(new InvertibleSynopsisFunction(config.synopsisClass, config.synParams));
+            } else if (CommutativeSynopsis.class.isAssignableFrom(config.synopsisClass)) {
+                processingFunction =
+                        new KeyedScottyWindowOperator<>(new CommutativeSynopsisFunction(config.synopsisClass, config.synParams));
             } else {
-                newTuple.setField(value, 1);
+                processingFunction =
+                        new KeyedScottyWindowOperator<>(new SynopsisFunction(config.synopsisClass, config.synParams));
             }
-            newTuple.setField(this.getRuntimeContext().getIndexOfThisSubtask(), 0);
-            return newTuple;
+            for (int i = 0; i < config.windows.length; i++) {
+                processingFunction.addWindow(config.windows[i]);
+            }
+            return keyedStream.process(processingFunction)
+                    .flatMap(new MergePreAggregates(getParallelismKeys()))
+                    .setParallelism(1);
         }
     }
+
+    public static <T, S extends Synopsis, SM extends NonMergeableSynopsisManager, M extends NonMergeableSynopsisManager> SingleOutputStreamOperator<AggregateWindow<M>> nonMergeableScottyWindows(DataStream<T> inputStream, BuildScottyConfig config){
+        KeyedStream<Tuple2<Integer, Object>, Tuple> keyedStream = inputStream
+                .process(new OrderAndIndex(config.keyField, config.miniBatchSize, getParallelismKeys())).setParallelism(1)
+                .keyBy(0);
+
+        KeyedScottyWindowOperator<Tuple, Tuple2<Integer, Object>, NonMergeableSynopsisManager> processingFunction =
+                new KeyedScottyWindowOperator<>(new NonMergeableSynopsisFunction(config.keyField, -1, config.synopsisClass, config.sliceManagerClass, config.synParams));
+
+        for (int i = 0; i < config.windows.length; i++) {
+            processingFunction.addWindow(config.windows[i]);
+        }
+        return keyedStream.process(processingFunction)
+                .flatMap(new UnifyToManager<M>(config.managerClass))
+                .setParallelism(1);
+    }
+
 }

@@ -1,4 +1,4 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.Configs;
 
 import Synopsis.NonMergeableSynopsisManager;
 import de.tub.dima.scotty.core.windowType.Window;
@@ -11,10 +11,10 @@ import de.tub.dima.scotty.core.windowType.Window;
  * @param <M>
  */
 public class BuildScottyConfig<SM extends NonMergeableSynopsisManager, M extends NonMergeableSynopsisManager> extends BuildSynopsisConfig {
-    Window[] windows;
-    int miniBatchSize;
-    Class<SM> sliceManagerClass;
-    Class<M> managerClass;
+    public Window[] windows;
+    public int miniBatchSize;
+    public Class<SM> sliceManagerClass;
+    public Class<M> managerClass;
 
     public BuildScottyConfig(Class synopsisClass, Object[] synParams, Window[] windows) {
         super(synopsisClass, synParams);
@@ -30,6 +30,13 @@ public class BuildScottyConfig<SM extends NonMergeableSynopsisManager, M extends
         super(keyField, synopsisClass, params);
         this.windows = windows;
         this.miniBatchSize = miniBatchSize;
+        this.sliceManagerClass = sliceManagerClass;
+        this.managerClass = managerClass;
+    }
+
+    public BuildScottyConfig(Class synopsisClass, Object[] synParams, Window[] windows, Class<SM> sliceManagerClass, Class<M> managerClass) {
+        super(synopsisClass, synParams);
+        this.windows = windows;
         this.sliceManagerClass = sliceManagerClass;
         this.managerClass = managerClass;
     }

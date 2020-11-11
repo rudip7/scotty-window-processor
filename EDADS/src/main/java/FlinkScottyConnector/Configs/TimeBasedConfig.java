@@ -1,10 +1,10 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.Configs;
 
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 public class TimeBasedConfig extends BuildSynopsisConfig {
-    Time windowTime;
-    Time slideTime;
+    public Time windowTime;
+    public Time slideTime;
 
     public TimeBasedConfig(Class synopsisClass, Object[] synParams, Time windowTime) {
         super(synopsisClass, synParams);

@@ -6,7 +6,7 @@ import ApproximateDataAnalytics.TimestampedQuery;
 import ApproximateDataAnalytics.QueryFunction;
 import ApproximateDataAnalytics.QueryResult;
 import Benchmark.Sources.UniformDistributionSource;
-import FlinkScottyConnector.BuildSynopsisConfig;
+import FlinkScottyConnector.Configs.BuildSynopsisConfig;
 import FlinkScottyConnector.NewBuildSynopsis;
 import Synopsis.Sketches.DDSketch;
 import Synopsis.WindowedSynopsis;

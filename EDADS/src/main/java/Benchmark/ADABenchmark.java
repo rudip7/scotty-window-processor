@@ -5,7 +5,7 @@ import Benchmark.Functions.Stratifier;
 import Benchmark.Functions.TimestampsAndWatermarks;
 import Benchmark.Sources.*;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
-import FlinkScottyConnector.BuildSynopsisConfig;
+import FlinkScottyConnector.Configs.BuildSynopsisConfig;
 import FlinkScottyConnector.NewBuildSynopsis;
 import Jobs.ExampleStratifiedADAJob;
 import Synopsis.Sketches.DDSketch;

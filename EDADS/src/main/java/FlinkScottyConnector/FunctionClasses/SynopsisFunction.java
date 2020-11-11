@@ -1,9 +1,7 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.FunctionClasses;
 
 import Synopsis.MergeableSynopsis;
 import Synopsis.StratifiedSynopsis;
-import Synopsis.Synopsis;
-import Synopsis.NonMergeableSynopsisManager;
 import de.tub.dima.scotty.core.windowFunction.AggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
@@ -15,45 +13,38 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends NonMergeableSynopsisManager> implements AggregateFunction<Input, NonMergeableSynopsisManager, NonMergeableSynopsisManager>, Serializable {
-    private int keyField;
-    private Class<S> synopsisClass;
-    private Class<SM> sliceManagerClass;
+public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis> implements AggregateFunction<Input, MergeableSynopsis, MergeableSynopsis>, Serializable {
+    private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
+    private boolean stratified = false;
 
-    public NonMergeableSynopsisFunction(int keyField, int partitionField, Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
-        this.keyField = keyField;
+    public SynopsisFunction(boolean stratified, Class<T> synopsisClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
         for (int i = 0; i < constructorParam.length; i++) {
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
-        this.sliceManagerClass = sliceManagerClass;
-        if (partitionField >= 0 && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
+        if (stratified && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
         }
+        this.stratified = stratified;
     }
 
-    public NonMergeableSynopsisFunction(Class<S> synopsisClass, Class<SM> sliceManagerClass, Object[] constructorParam) {
-        this.keyField = -1;
+    public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
         for (int i = 0; i < constructorParam.length; i++) {
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
-        this.sliceManagerClass = sliceManagerClass;
     }
 
-    public NonMergeableSynopsisManager createAggregate() {
+    public MergeableSynopsis createAggregate() {
         try {
-            Constructor<S> constructor = synopsisClass.getConstructor(parameterClasses);
-            Constructor<SM> managerConstructor = sliceManagerClass.getConstructor();
-            SM agg = managerConstructor.newInstance();
-            agg.addSynopsis(constructor.newInstance(constructorParam));
-            return agg;
+            Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
+            return constructor.newInstance(constructorParam);
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException("MergeableSynopsis parameters didn't match any constructor");
         } catch (InstantiationException e) {
@@ -69,55 +60,55 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     }
 
     @Override
-    public NonMergeableSynopsisManager lift(Input input) {
-        if (!(input instanceof Tuple2)) {
-            throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
-        }
-        Tuple2 inputTuple = (Tuple2) input;
-        NonMergeableSynopsisManager partialAggregate = createAggregate();
-        if (inputTuple.f1 instanceof Tuple && keyField != -1) {
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
-            return partialAggregate;
+    public MergeableSynopsis lift(Input inputTuple) {
+        MergeableSynopsis partialAggregate = createAggregate();
+        if (stratified) {
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
         }
         partialAggregate.update(inputTuple.f1);
         return partialAggregate;
-
-
     }
 
     @Override
-    public NonMergeableSynopsisManager combine(NonMergeableSynopsisManager input, NonMergeableSynopsisManager partialAggregate) {
-        input.unify(partialAggregate);
-        return input;
-    }
-
-    @Override
-    public NonMergeableSynopsisManager liftAndCombine(NonMergeableSynopsisManager partialAggregate, Input input) {
-
-        if (!(input instanceof Tuple2)) {
-            throw new IllegalArgumentException("Input elements must be from type Tuple2 to build a synopsis.");
+    public MergeableSynopsis combine(MergeableSynopsis input, MergeableSynopsis partialAggregate) {
+        try {
+            if (stratified) {
+                Object partitionValue = ((StratifiedSynopsis) partialAggregate).getPartitionValue();
+                Object partitionValue2 = ((StratifiedSynopsis) input).getPartitionValue();
+                if (partitionValue != null
+                        && partitionValue2 == null) {
+                    ((StratifiedSynopsis) input).setPartitionValue(partitionValue);
+                } else if (partitionValue == null
+                        && partitionValue2 != null) {
+                    ((StratifiedSynopsis) partialAggregate).setPartitionValue(partitionValue2);
+                } else if (!partitionValue.equals(partitionValue2)) {
+                    throw new IllegalArgumentException("Some internal error occurred and the synopses to be merged have not the same partition value.");
+                }
+            }
+            return input.merge(partialAggregate);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        Tuple2 inputTuple = (Tuple2) input;
-        if (inputTuple.f1 instanceof Tuple && keyField != -1) {
-            Object field = ((Tuple) inputTuple.f1).getField(this.keyField);
-            partialAggregate.update(field);
-            return partialAggregate;
+        return null;
+    }
+
+    @Override
+    public MergeableSynopsis liftAndCombine(MergeableSynopsis partialAggregate, Input inputTuple) {
+        if (stratified) {
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
         }
         partialAggregate.update(inputTuple.f1);
         return partialAggregate;
-
     }
 
     @Override
-    public NonMergeableSynopsisManager lower(NonMergeableSynopsisManager inputSynopsis) {
+    public MergeableSynopsis lower(MergeableSynopsis inputSynopsis) {
         return inputSynopsis;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
-        out.writeInt(keyField);
+        out.writeBoolean(stratified);
         out.writeObject(synopsisClass);
-        out.writeObject(sliceManagerClass);
         out.writeInt(constructorParam.length);
         for (int i = 0; i < constructorParam.length; i++) {
             out.writeObject(constructorParam[i]);
@@ -128,9 +119,8 @@ public class NonMergeableSynopsisFunction<Input, S extends Synopsis, SM extends 
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        this.keyField = in.readInt();
-        this.synopsisClass = (Class<S>) in.readObject();
-        this.sliceManagerClass = (Class<SM>) in.readObject();
+        this.stratified = in.readBoolean();
+        this.synopsisClass = (Class<T>) in.readObject();
         int nParameters = in.readInt();
         this.constructorParam = new Object[nParameters];
         for (int i = 0; i < nParameters; i++) {

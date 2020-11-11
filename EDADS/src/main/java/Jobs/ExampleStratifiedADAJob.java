@@ -5,7 +5,7 @@ import ApproximateDataAnalytics.ApproximateDataAnalytics;
 import ApproximateDataAnalytics.QueryFunction;
 import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
-import FlinkScottyConnector.BuildSynopsisConfig;
+import FlinkScottyConnector.Configs.BuildSynopsisConfig;
 import Synopsis.Sketches.DDSketch;
 import Synopsis.StratifiedSynopsisWrapper;
 import Synopsis.WindowedSynopsis;

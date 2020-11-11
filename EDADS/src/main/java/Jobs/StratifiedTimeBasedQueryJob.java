@@ -2,12 +2,11 @@ package Jobs;
 
 import ApproximateDataAnalytics.ApproximateDataAnalytics;
 import ApproximateDataAnalytics.TimestampedQuery;
-import ApproximateDataAnalytics.QueryResult;
 import ApproximateDataAnalytics.QueryFunction;
 import ApproximateDataAnalytics.StratifiedQueryResult;
 import Benchmark.Sources.UniformDistributionSource;
 import FlinkScottyConnector.BuildStratifiedSynopsis;
-import FlinkScottyConnector.BuildSynopsisConfig;
+import FlinkScottyConnector.Configs.BuildSynopsisConfig;
 import Synopsis.Sketches.DDSketch;
 import Synopsis.StratifiedSynopsisWrapper;
 import Synopsis.WindowedSynopsis;
@@ -23,7 +22,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;

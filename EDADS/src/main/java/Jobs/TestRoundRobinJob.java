@@ -1,23 +1,14 @@
 package Jobs;
 
 import FlinkScottyConnector.BuildSynopsis;
-import FlinkScottyConnector.NonMergeableSynopsisAggregator;
-import FlinkScottyConnector.SynopsisAggregator;
 import Source.WaveletTestSource;
-import Synopsis.Wavelets.DistributedSliceWaveletsManager;
 import Synopsis.Wavelets.DistributedWaveletsManager;
-import Synopsis.Wavelets.SliceWaveletsManager;
 import Synopsis.Wavelets.WaveletSynopsis;
-import de.tub.dima.scotty.core.AggregateWindow;
-import de.tub.dima.scotty.core.windowType.SlidingWindow;
-import de.tub.dima.scotty.core.windowType.Window;
-import de.tub.dima.scotty.core.windowType.WindowMeasure;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks;

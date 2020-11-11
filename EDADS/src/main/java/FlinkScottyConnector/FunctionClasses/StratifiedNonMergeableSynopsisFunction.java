@@ -1,4 +1,4 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.FunctionClasses;
 
 import Synopsis.MergeableSynopsis;
 import Synopsis.Sampling.TimestampedElement;

@@ -2,32 +2,22 @@ package Jobs;
 
 
 import Benchmark.Sources.UniformDistributionSource;
-import Benchmark.Sources.ZipfDistributionSource;
-import FlinkScottyConnector.BuildSynopsisConfig;
-import FlinkScottyConnector.NewBuildSynopsis;
+import FlinkScottyConnector.Configs.BuildSynopsisConfig;
 import Synopsis.Sketches.DDSketch;
-import org.apache.flink.api.common.functions.MapFunction;
-import org.apache.flink.api.common.typeinfo.TypeHint;
-import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
-import org.apache.flink.api.java.tuple.Tuple4;
-import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
-import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction;
-import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 import javax.annotation.Nullable;
-import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class ExampleQueryJob {

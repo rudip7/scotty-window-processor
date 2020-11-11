@@ -1,12 +1,12 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.Configs;
 
 import Synopsis.NonMergeableSynopsisManager;
 import org.apache.flink.streaming.api.windowing.time.Time;
 
 public class NonMergeableTimeBasedConfig<M extends NonMergeableSynopsisManager> extends TimeBasedConfig {
 
-    int miniBatchSize = 0;
-    Class<M> managerClass;
+    public int miniBatchSize = 0;
+    public Class<M> managerClass;
 
     public NonMergeableTimeBasedConfig(Class synopsisClass, Object[] synParams, Time windowTime, Class<M> managerClass) {
         super(synopsisClass, synParams, windowTime);

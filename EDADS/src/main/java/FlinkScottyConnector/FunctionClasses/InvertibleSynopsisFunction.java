@@ -1,6 +1,6 @@
-package FlinkScottyConnector;
+package FlinkScottyConnector.FunctionClasses;
 
-import Synopsis.CommutativeSynopsis;
+import Synopsis.Sketches.CountMinSketch;
 import Synopsis.InvertibleSynopsis;
 import Synopsis.StratifiedSynopsis;
 import de.tub.dima.scotty.core.windowFunction.CommutativeAggregateFunction;
@@ -15,37 +15,36 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-public class CommutativeSynopsisFunction<Input extends Tuple2,T extends CommutativeSynopsis> implements CommutativeAggregateFunction<Input, CommutativeSynopsis, CommutativeSynopsis>, Serializable {
+public class InvertibleSynopsisFunction<Input extends Tuple2, T extends InvertibleSynopsis> implements InvertibleAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, CommutativeAggregateFunction<Input, InvertibleSynopsis, InvertibleSynopsis>, Serializable {
     private Class<T> synopsisClass;
     private Object[] constructorParam;
     private Class<?>[] parameterClasses;
     private boolean stratified = false;
 
 
-    public CommutativeSynopsisFunction(Class<T> synopsisClass, Object... constructorParam){
+    public InvertibleSynopsisFunction(boolean stratified, Class<T> synopsisClass, Object... constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];
         for (int i = 0; i < constructorParam.length; i++) {
             parameterClasses[i] = constructorParam[i].getClass();
         }
         this.synopsisClass = synopsisClass;
-    }
-
-    public CommutativeSynopsisFunction(boolean stratified, Class<T> synopsisClass, Object... constructorParam){
-        this.stratified = stratified;
-        this.constructorParam = constructorParam;
-        this.parameterClasses = new Class[constructorParam.length];
-        for (int i = 0; i < constructorParam.length; i++) {
-            parameterClasses[i] = constructorParam[i].getClass();
-        }
         if (stratified && !StratifiedSynopsis.class.isAssignableFrom(synopsisClass)) {
             throw new IllegalArgumentException("Synopsis class needs to be a subclass of StratifiedSynopsis in order to build on personalized partitions.");
         }
+        this.stratified = stratified;
+    }
+
+    public InvertibleSynopsisFunction(Class<T> synopsisClass, Object... constructorParam) {
+        this.constructorParam = constructorParam;
+        this.parameterClasses = new Class[constructorParam.length];
+        for (int i = 0; i < constructorParam.length; i++) {
+            parameterClasses[i] = constructorParam[i].getClass();
+        }
         this.synopsisClass = synopsisClass;
     }
 
-
-    public CommutativeSynopsis createAggregate() {
+    public InvertibleSynopsis createAggregate() {
         try {
             Constructor<T> constructor = synopsisClass.getConstructor(parameterClasses);
             return constructor.newInstance(constructorParam);
@@ -63,19 +62,37 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
         }
     }
 
+    @Override
+    public InvertibleSynopsis invert(InvertibleSynopsis partialAggregate, InvertibleSynopsis toRemove) {
+        try {
+            return partialAggregate.invert(toRemove);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     @Override
-    public CommutativeSynopsis lift(Input inputTuple) {
-        CommutativeSynopsis partialAggregate = createAggregate();
-        partialAggregate.update(inputTuple.f1);
+    public InvertibleSynopsis liftAndInvert(InvertibleSynopsis partialAggregate, Input inputTuple) {
         if (stratified) {
             ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
         }
+        partialAggregate.decrement(inputTuple.f1);
         return partialAggregate;
     }
 
     @Override
-    public CommutativeSynopsis combine(CommutativeSynopsis input, CommutativeSynopsis partialAggregate) {
+    public InvertibleSynopsis lift(Input inputTuple) {
+        InvertibleSynopsis partialAggregate = createAggregate();
+        if (stratified) {
+            ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
+        }
+        partialAggregate.update(inputTuple.f1);
+        return partialAggregate;
+    }
+
+    @Override
+    public InvertibleSynopsis combine(InvertibleSynopsis input, InvertibleSynopsis partialAggregate) {
         try {
             return input.merge(partialAggregate);
         } catch (Exception e) {
@@ -85,17 +102,17 @@ public class CommutativeSynopsisFunction<Input extends Tuple2,T extends Commutat
     }
 
     @Override
-    public CommutativeSynopsis liftAndCombine(CommutativeSynopsis partialAggregate, Input inputTuple) {
-        partialAggregate.update(inputTuple.f1);
+    public InvertibleSynopsis liftAndCombine(InvertibleSynopsis partialAggregate, Input inputTuple) {
         if (stratified) {
             ((StratifiedSynopsis) partialAggregate).setPartitionValue(inputTuple.f0);
         }
+        partialAggregate.update(inputTuple.f1);
         return partialAggregate;
     }
 
     @Override
-    public CommutativeSynopsis lower(CommutativeSynopsis inputCommutativeSynopsis) {
-        return inputCommutativeSynopsis;
+    public InvertibleSynopsis lower(InvertibleSynopsis inputInvertibleSynopsis) {
+        return inputInvertibleSynopsis;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
