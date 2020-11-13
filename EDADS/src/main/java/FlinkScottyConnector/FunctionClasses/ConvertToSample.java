@@ -5,25 +5,14 @@ import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 
-public class ConvertToSample<T>
-        extends ProcessFunction<T, TimestampedElement> {
-    private int keyField = -1;
-
-    public ConvertToSample(int keyField) {
-        this.keyField = keyField;
-    }
-
-    public ConvertToSample() {
-    }
-
+/**
+ * Wrap an Element into a TimestampedElement
+ * @param <T>
+ */
+public class ConvertToSample<T> extends ProcessFunction<T, Object> {
     @Override
-    public void processElement(T value, Context ctx, Collector<TimestampedElement> out) throws Exception {
-        if (keyField >= 0 && value instanceof Tuple) {
-            TimestampedElement sample = new TimestampedElement<>(((Tuple) value).getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
-            out.collect(sample);
-        } else {
-            TimestampedElement<T> sample = new TimestampedElement<>(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
-            out.collect(sample);
-        }
+    public void processElement(T value, Context ctx, Collector<Object> out) throws Exception {
+        TimestampedElement<T> sample = new TimestampedElement<>(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime());
+        out.collect(sample);
     }
 }

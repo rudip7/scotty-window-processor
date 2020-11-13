@@ -39,6 +39,7 @@ public class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Objec
         newTuple = new Tuple2<>();
     }
 
+    // TODO: why do we create TimestampedElements and put them in the Queue if we don't also use them as the Output?
     @Override
     public void processElement(T0 value, Context ctx, Collector<Tuple2<Integer, Object>> out) throws Exception {
         if (miniBatchSize > 1) {

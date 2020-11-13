@@ -5,6 +5,7 @@ import Synopsis.Sampling.TimestampedElement;
 import Synopsis.StratifiedSynopsis;
 import Synopsis.Synopsis;
 import org.apache.flink.api.common.functions.AggregateFunction;
+import org.apache.flink.api.common.functions.RichAggregateFunction;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.environment.LocalStreamEnvironment;
@@ -24,7 +25,7 @@ import java.util.PriorityQueue;
  * @param <T1>
  * @author Rudi Poepsel Lemaitre
  */
-public class NonMergeableSynopsisAggregator<T1> implements AggregateFunction<T1, Synopsis, Synopsis> {
+public class NonMergeableSynopsisAggregator<T1> extends RichAggregateFunction<T1, Synopsis, Synopsis> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LocalStreamEnvironment.class);
     private boolean stratified = false;
