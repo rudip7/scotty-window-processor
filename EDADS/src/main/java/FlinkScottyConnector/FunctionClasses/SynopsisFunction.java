@@ -32,6 +32,7 @@ public class SynopsisFunction<Input extends Tuple2, T extends MergeableSynopsis>
         this.stratified = stratified;
     }
 
+
     public SynopsisFunction(Class<T> synopsisClass, Object[] constructorParam) {
         this.constructorParam = constructorParam;
         this.parameterClasses = new Class[constructorParam.length];

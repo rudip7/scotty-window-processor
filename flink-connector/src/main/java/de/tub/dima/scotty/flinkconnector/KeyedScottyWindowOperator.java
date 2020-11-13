@@ -62,7 +62,6 @@ public class KeyedScottyWindowOperator<Key, InputType, FinalAggregateType> exten
         slicingWindowOperator.processElement(value, getTimestamp(ctx));
         processWatermark(ctx, out);
 
-
     }
 
     private long getTimestamp(Context context){

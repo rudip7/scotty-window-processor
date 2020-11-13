@@ -11,18 +11,16 @@ import org.apache.flink.util.Collector;
 
 import java.util.PriorityQueue;
 
-public class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Object>> {
-    private int keyField;
+public class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, T0>> {
     private int miniBatchSize;
     private int parKeys;
 
     private transient ValueState<Integer> state;
-    private Tuple2<Integer, Object> newTuple;
+    private Tuple2<Integer, T0> newTuple;
 
-    private PriorityQueue<TimestampedElement> dispatchList;
+    private PriorityQueue<TimestampedElement<T0>> dispatchList;
 
-    public OrderAndIndex(int keyField, int miniBatchSize, int parKeys) {
-        this.keyField = keyField;
+    public OrderAndIndex(int miniBatchSize, int parKeys) {
         this.miniBatchSize = miniBatchSize;
         this.parKeys = parKeys;
     }
@@ -39,15 +37,12 @@ public class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Objec
         newTuple = new Tuple2<>();
     }
 
-    // TODO: why do we create TimestampedElements and put them in the Queue if we don't also use them as the Output?
+
     @Override
-    public void processElement(T0 value, Context ctx, Collector<Tuple2<Integer, Object>> out) throws Exception {
+    public void processElement(T0 value, Context ctx, Collector<Tuple2<Integer, T0>> out) throws Exception {
         if (miniBatchSize > 1) {
-            if (value instanceof Tuple && keyField != -1) {
-                dispatchList.add(new TimestampedElement(((Tuple) value).getField(keyField), ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
-            } else {
-                dispatchList.add(new TimestampedElement(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
-            }
+
+            dispatchList.add(new TimestampedElement(value, ctx.timestamp() != null ? ctx.timestamp() : ctx.timerService().currentProcessingTime()));
 
             if (dispatchList.size() == miniBatchSize) {
                 while (!dispatchList.isEmpty()) {
@@ -55,9 +50,7 @@ public class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Objec
                     int next = currentNode + 1;
                     next = next % parKeys;
                     state.update(next);
-
-                    Object tupleValue = dispatchList.poll().getValue();
-
+                    T0 tupleValue = dispatchList.poll().getValue();
                     newTuple.setField(tupleValue, 1);
                     newTuple.setField(currentNode, 0);
                     out.collect(newTuple);
@@ -68,12 +61,7 @@ public class OrderAndIndex<T0> extends ProcessFunction<T0, Tuple2<Integer, Objec
             int next = currentNode + 1;
             next = next % parKeys;
             state.update(next);
-
-            if (value instanceof Tuple && keyField != -1) {
-                newTuple.setField(((Tuple) value).getField(keyField), 1);
-            } else {
-                newTuple.setField(value, 1);
-            }
+            newTuple.setField(value, 1);
             newTuple.setField(currentNode, 0);
             out.collect(newTuple);
         }

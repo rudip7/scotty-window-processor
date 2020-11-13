@@ -17,6 +17,7 @@ public class BuildConfiguration <S extends Synopsis, SM extends NonMergeableSyno
     public Class<S> synopsisClass;
     public Window[] windows;
     public Object[] synParams;
+    public int parallelism; // Operator Parallelism
 
     // optional parameters
     public RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor = null;
@@ -24,25 +25,62 @@ public class BuildConfiguration <S extends Synopsis, SM extends NonMergeableSyno
     public Class<SM> sliceManagerClass = null;
     public Class<M> managerClass = null;
 
-    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor, Integer miniBatchSize, Class<SM> sliceManagerClass, Class<M> managerClass) {
+    public int getParallelism() {
+        return parallelism;
+    }
+
+    public void setParallelism(int parallelism) {
+        this.parallelism = parallelism;
+    }
+
+    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, int parallelism, RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor, Integer miniBatchSize, Class<SM> sliceManagerClass, Class<M> managerClass) {
         this.inputStream = inputStream;
         this.synopsisClass = synopsisClass;
         this.windows = windows;
         this.synParams = synParams;
+        this.parallelism = parallelism;
         this.stratificationKeyExtractor = stratificationKeyExtractor;
         this.miniBatchSize = miniBatchSize;
         this.sliceManagerClass = sliceManagerClass;
         this.managerClass = managerClass;
     }
 
-    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, Integer miniBatchSize, Class<SM> sliceManagerClass, Class<M> managerClass) {
+    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, int parallelism, RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor, Class<SM> sliceManagerClass, Class<M> managerClass) {
         this.inputStream = inputStream;
         this.synopsisClass = synopsisClass;
         this.windows = windows;
         this.synParams = synParams;
-        this.miniBatchSize = miniBatchSize;
+        this.parallelism = parallelism;
+        this.stratificationKeyExtractor = stratificationKeyExtractor;
         this.sliceManagerClass = sliceManagerClass;
         this.managerClass = managerClass;
+    }
+
+    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, int parallelism, Class<SM> sliceManagerClass, Class<M> managerClass) {
+        this.inputStream = inputStream;
+        this.synopsisClass = synopsisClass;
+        this.windows = windows;
+        this.synParams = synParams;
+        this.parallelism = parallelism;
+        this.sliceManagerClass = sliceManagerClass;
+        this.managerClass = managerClass;
+    }
+
+    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, int parallelism, RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor) {
+        this.inputStream = inputStream;
+        this.synopsisClass = synopsisClass;
+        this.windows = windows;
+        this.synParams = synParams;
+        this.parallelism = parallelism;
+        this.stratificationKeyExtractor = stratificationKeyExtractor;
+    }
+
+    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, int parallelism) {
+        this.inputStream = inputStream;
+        this.synopsisClass = synopsisClass;
+        this.windows = windows;
+        this.synParams = synParams;
+        this.parallelism = parallelism;
     }
 
     public DataStream<T> getInputStream() {
@@ -109,37 +147,4 @@ public class BuildConfiguration <S extends Synopsis, SM extends NonMergeableSyno
         this.managerClass = managerClass;
     }
 
-    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor, Class<SM> sliceManagerClass, Class<M> managerClass) {
-        this.inputStream = inputStream;
-        this.synopsisClass = synopsisClass;
-        this.windows = windows;
-        this.synParams = synParams;
-        this.stratificationKeyExtractor = stratificationKeyExtractor;
-        this.sliceManagerClass = sliceManagerClass;
-        this.managerClass = managerClass;
-    }
-
-    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, Class<SM> sliceManagerClass, Class<M> managerClass) {
-        this.inputStream = inputStream;
-        this.synopsisClass = synopsisClass;
-        this.windows = windows;
-        this.synParams = synParams;
-        this.sliceManagerClass = sliceManagerClass;
-        this.managerClass = managerClass;
-    }
-
-    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams, RichMapFunction<T, Tuple2<Key, Value>> stratificationKeyExtractor) {
-        this.inputStream = inputStream;
-        this.synopsisClass = synopsisClass;
-        this.windows = windows;
-        this.synParams = synParams;
-        this.stratificationKeyExtractor = stratificationKeyExtractor;
-    }
-
-    public BuildConfiguration(DataStream<T> inputStream, Class<S> synopsisClass, Window[] windows, Object[] synParams) {
-        this.inputStream = inputStream;
-        this.synopsisClass = synopsisClass;
-        this.windows = windows;
-        this.synParams = synParams;
-    }
 }
